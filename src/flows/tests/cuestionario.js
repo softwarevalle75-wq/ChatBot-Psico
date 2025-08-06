@@ -16,12 +16,12 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 	const config = cuestionariosConfig[tipoTest]
 	if (!config) throw new Error('Tipo de test no reconocido')
 
-	const { preguntas, umbrales, resPreg } = config
+	const { preguntas, umbrales, resPreg, umbralesAnsiedad, umbralesDepresion, umbralesEstres } = config
 
 	try {
 		let estado = await getEstadoCuestionario(numeroUsuario, tipoTest)
-
-		// Si no hay estado, inicializamos el cuestionario
+	
+		// Si no hay estado, inicializamos el cuestionario		
 		if (estado.resPreg == null) {
 			let respuesta = apiCuest(msg, tipoTest)
 			respuesta = Number(respuesta)
@@ -32,6 +32,13 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 				preguntaActual: 0,
 				resPreg: resPreg,
 			}
+
+			if (tipoTest === 'dass21') {
+				estado.puntajeDep = 0				
+				estado.puntajeAns = 0				
+				estado.puntajeEstr = 0				
+			}
+
 			await saveEstadoCuestionario(
 				numeroUsuario,
 				estado.Puntaje,
@@ -47,9 +54,28 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 		if (respuesta == 9) {
 			return preguntas[estado.preguntaActual]
 		}
+
 		if (estado.preguntaActual < preguntas.length) {
 			estado.Puntaje += respuesta
-			estado.resPreg[respuesta].push(estado.preguntaActual + 1)
+
+			//En caso seleccionar DASS-21, se suman las subescalas
+			if (tipoTest === 'dass21') {
+				const numPregunta = estado.preguntaActual + 1
+				if (config.subescalas.depresion.includes(numPregunta)) {
+					estado.puntajeDep += respuesta
+					estado.resPreg.depresion.push(numPregunta)
+				}
+				if (config.subescalas.ansiedad.includes(numPregunta)) {
+					estado.puntajeAns += respuesta
+					estado.resPreg.ansiedad.push(numPregunta)
+				}
+				if (config.subescalas.estres.includes(numPregunta)) {
+					estado.puntajeEstr += respuesta
+					estado.resPreg.estres.push(numPregunta)
+				}
+			} else {
+				estado.resPreg[respuesta].push(estado.preguntaActual + 1)
+			}
 
 			if (estado.preguntaActual + 1 >= preguntas.length) {
 				await saveEstadoCuestionario(
@@ -60,8 +86,21 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 					tipoTest
 				)
 				await savePuntajeUsuario(numeroUsuario, estado.Puntaje, estado.resPreg, tipoTest)
-				return await evaluarResultado(estado.Puntaje, umbrales)
-			}
+
+				//Devuelve los puntajes del DASS-21
+				if(tipoTest === 'dass21') {
+					return await evaluarResultadoDASS21(
+						estado.puntajeDep,
+						estado.puntajeAns,
+						estado.puntajeEstr,
+						config.umbralesAnsiedad,					
+						config.umbralesDepresion,					
+						config.umbralesEstres					
+					)
+				} else {
+					return await evaluarResultado(estado.Puntaje, umbrales)				
+				}
+			} 
 
 			estado.preguntaActual += 1
 			await saveEstadoCuestionario(
@@ -74,7 +113,18 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 
 			return preguntas[estado.preguntaActual]
 		} else {
-			return await evaluarResultado(estado.Puntaje, umbrales)
+			if (tipoTest === 'dass21') {
+				return await evaluarResultadoDASS21(
+					estado.puntajeDep,
+					estado.puntajeAns,
+					estado.puntajeEstr,
+					config.umbralesAnsiedad,					
+					config.umbralesDepresion,					
+					config.umbralesEstres,					
+				)
+			} else {				
+				return await evaluarResultado(estado.Puntaje, umbrales)
+			}
 		}
 	} catch (error) {
 		console.log('error en iniciar cuestionario')
@@ -82,6 +132,7 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 	}
 }
 
+//Evaluar resultados demás pruebas
 const evaluarResultado = async (puntaje, umbrales) => {
 	if (puntaje <= umbrales.bajo.max) {
 		return `El cuestionario ha terminado. Su puntaje final es: ${puntaje} \n${umbrales.bajo.mensaje}`
@@ -92,6 +143,57 @@ const evaluarResultado = async (puntaje, umbrales) => {
 	} else {
 		return 'Hubo un error en su puntaje'
 	}
+}
+
+//Evaluar resultados DASS-21
+const evaluarResultadoDASS21 = async (puntajeDep, puntajeAns, puntajeEstr, umbralesDep, umbralesAns, umbralesEstr) => {
+    let resultado = 'El cuestionario DASS-21 ha terminado.\n'
+
+    // Depresión
+    if (puntajeDep <= umbralesDep.bajo.max) {
+        resultado += `\nDepresión: ${puntajeDep} - ${umbralesDep.bajo.mensaje}`
+    } else if (puntajeDep >= umbralesDep.medio.min && puntajeDep <= umbralesDep.medio.max) {
+        resultado += `\nDepresión: ${puntajeDep} - ${umbralesDep.medio.mensaje}`
+    } else if (puntajeDep >= umbralesDep.alto.min && puntajeDep <= umbralesDep.alto.max) {
+        resultado += `\nDepresión: ${puntajeDep} - ${umbralesDep.alto.mensaje}`
+    } else if (puntajeDep >= umbralesDep.muyalto.min) {
+        resultado += `\nDepresión: ${puntajeDep} - ${umbralesDep.muyalto.mensaje}`
+    } else {
+        resultado += `\nDepresión: ${puntajeDep} - Error en el puntaje`
+    }
+
+    // Ansiedad
+    if (puntajeAns <= umbralesAns.bajo.max) {
+        resultado += `\nAnsiedad: ${puntajeAns} - ${umbralesAns.bajo.mensaje}`
+    } else if (puntajeAns >= umbralesAns.medio.min && puntajeAns <= umbralesAns.medio.max) {
+        resultado += `\nAnsiedad: ${puntajeAns} - ${umbralesAns.medio.mensaje}`
+    } else if (puntajeAns >= umbralesAns.alto.min && puntajeAns <= umbralesAns.alto.max) {
+        resultado += `\nAnsiedad: ${puntajeAns} - ${umbralesAns.alto.mensaje}`
+    } else if (puntajeAns >= umbralesAns.muyalto.min) {
+        resultado += `\nAnsiedad: ${puntajeAns} - ${umbralesAns.muyalto.mensaje}`
+    } else {
+        resultado += `\nAnsiedad: ${puntajeAns} - Error en el puntaje`
+    }
+
+    // Estrés
+    if (puntajeEstr <= umbralesEstr.bajo.max) {
+        resultado += `\nEstrés: ${puntajeEstr} - ${umbralesEstr.bajo.mensaje}`
+    } else if (puntajeEstr >= umbralesEstr.medio.min && puntajeEstr <= umbralesEstr.medio.max) {
+        resultado += `\nEstrés: ${puntajeEstr} - ${umbralesEstr.medio.mensaje}`
+    } else if (puntajeEstr >= umbralesEstr.alto.min && puntajeEstr <= umbralesEstr.alto.max) {
+        resultado += `\nEstrés: ${puntajeEstr} - ${umbralesEstr.alto.mensaje}`
+    } else if (puntajeEstr >= umbralesEstr.muyalto.min) {
+        resultado += `\nEstrés: ${puntajeEstr} - ${umbralesEstr.muyalto.mensaje}`
+    } else {
+        resultado += `\nEstrés: ${puntajeEstr} - Error en el puntaje`
+    }
+
+    return resultado
+}
+
+
+function rtasDass21(){
+	'0) No me ha ocurrido.\n    1) Me ha ocurrido un poco, o durante parte del tiempo.\n    2) Me ha ocurrido bastante, o durante una buena parte del tiempo.\n    3) Me ha ocurrido mucho, o la mayor parte del tiempo'	
 }
 
 const cuestionariosConfig = {
@@ -124,8 +226,7 @@ const cuestionariosConfig = {
 			2: [],
 			3: [],
 		},
-	},
-
+	},	
 	dep: {
 		preguntas: [
 			'1. Tristeza\n    0) No me siento triste.\n    1) Me siento triste gran parte del tiempo.\n    2) Me siento triste todo el tiempo.\n    3) Me siento tan triste o soy tan infeliz que no puedo soportarlo.',
@@ -302,6 +403,67 @@ const cuestionariosConfig = {
 			3: [],
 			4: [],
 			5: [],
+		},
+	},
+	dass21: {
+		/*
+		Este cuestionario tiene 3 subescalas:
+		Depresión: 3, 5, 10, 13, 16, 17 y 21
+		Ansiedad: 2, 4, 7, 9, 15, 19 y 20
+		Estrés: 1, 6, 8, 11, 12, 14 y 18
+		*/
+		preguntas: [
+			'1. Me ha costado mucho descargar la tensión\n', rtasDass21(),
+			'2. Me di cuenta que tenía la boca seca\n', rtasDass21(),
+			'3. No podía sentir ningún sentimiento positivo\n', rtasDass21(),
+			'4. Se me hizo difícil respirar\n', rtasDass21(),
+			'5. Se me hizo difícil tomar la iniciativa para hacer cosas\n', rtasDass21(),
+			'6. Reaccioné exageradamente en ciertas situaciones\n', rtasDass21(),
+			'7. Sentí que mis manos temblaban\n', rtasDass21(),
+			'8. He sentido que estaba gastando una gran cantidad de energía\n', rtasDass21(),
+			'9. Estaba preocupado por situaciones en las cuales podía tener pánico o en las que podría hacer el ridículo\n', rtasDass21(),
+			'10. He sentido que no había nada que me ilusionara\n', rtasDass21(),
+			'11. Me he sentido inquieto\n', rtasDass21(),
+			'12. Se me hizo difícil relajarme\n', rtasDass21(),
+			'13. Me sentí triste y deprimido\n', rtasDass21(),
+			'14. No toleré nada que no me permitiera continuar con lo que estaba haciendo\n', rtasDass21(),
+			'15. Sentí que estaba al punto de pánico\n', rtasDass21(),
+			'16. No me pude entusiasmar por nada\n', rtasDass21(),
+			'17. Sentí que valía muy poco como persona\n', rtasDass21(),
+			'18. He tendido a sentirme enfadado con facilidad\n', rtasDass21(),
+			'19. Sentí los latidos de mi corazón a pesar de no haber hecho ningún esfuerzo físico\n', rtasDass21(),
+			'20. Tuve miedo sin razón\n', rtasDass21(),
+			'21. Sentí que la vida no tenía ningún sentido\n', rtasDass21(),
+		],
+
+		subescalas: {
+			depresion: [3, 5, 10, 13, 16, 17, 21],
+			ansiedad: [2, 4, 7, 9, 15, 19, 20],
+			estres: [1, 6, 8, 11, 12, 14, 18],
+		},
+
+		umbralesDepresion: {
+			bajo: {min: 5, max: 6, mensaje: 'Depresión leve'},
+			medio: {min: 7, max: 10, mensaje: 'Depresión moderada'},
+			alto: {min: 11, max: 13, mensaje: 'Depresión severa'},
+			muyalto: {min: 14, mensaje: 'Depresión extremadamente severa'},
+		},
+		umbralesAnsiedad: {
+			bajo: {min: 4, mensaje: 'Ansiedad leve'},
+			medio: {min: 5, max: 7, mensaje: 'Ansiedad moderada'},
+			alto: {min: 8, max: 9, mensaje: 'Ansiedad severa'},
+			muyalto: {min: 10, mensaje: 'Ansiedad extremadamente severa'},
+		},
+		umbralesEstres: {
+			bajo: {min: 8, max: 9, mensaje: 'Estrés leve'},
+			medio: {min: 10, max: 12, mensaje: 'Estrés moderado'},
+			alto: {min: 13, max: 16, mensaje: 'Estrés severo'},
+			muyalto: {min: 17, mensaje: 'Estrés extremadamente severo'},
+		},
+		resPreg: {
+			depresion: [],
+			ansiedad: [],
+			estres: [],
 		},
 	},
 }
