@@ -16,7 +16,7 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 	const config = cuestionariosConfig[tipoTest]
 	if (!config) throw new Error('Tipo de test no reconocido')
 
-	const { preguntas, umbrales, resPreg, umbralesAnsiedad, umbralesDepresion, umbralesEstres } = config
+	const { preguntas, umbrales, resPreg, umbralesDep, umbralesAns, umbralesEstr } = config
 
 	try {
 		let estado = await getEstadoCuestionario(numeroUsuario, tipoTest)
@@ -27,24 +27,57 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 			respuesta = Number(respuesta)
 			console.log(respuesta)
 
+			
 			estado = {
 				Puntaje: 0,
 				preguntaActual: 0,
 				resPreg: resPreg,
 			}
-
+			/*
 			if (tipoTest === 'dass21') {
 				estado.puntajeDep = 0				
 				estado.puntajeAns = 0				
-				estado.puntajeEstr = 0				
+				estado.puntajeEstr = 0		
+				estado.preguntaActual = 0		
+				estado.resPreg = {
+					depresion: [0],
+					ansiedad: [0],
+					estres: [0]
+				}
 			}
+			
+			*/
+			//--------------------  Se inicializa el estado dependiendo si es dass21 u otra prueba
+			/*
+			const estadoInicial = tipoTest === 'dass21'
+				? {
+					Puntaje: 0,
+					preguntaActual: 0,
+					resPreg: { depresion: [], ansiedad: [], estres: [] },
+					puntajeDep: 0,
+					puntajeAns: 0,
+					puntajeEstr: 0,
+				}
+				: {
+					Puntaje: 0,
+					preguntaActual: 0,
+					resPreg: resPreg,
+				}
+
+			estado = estadoInicial
+			*/
+			//--------------------
 
 			await saveEstadoCuestionario(
 				numeroUsuario,
 				estado.Puntaje,
 				estado.preguntaActual,
 				estado.resPreg,
-				tipoTest
+				tipoTest,
+
+				estado.puntajeDep,
+				estado.puntajeAns,
+				estado.puntajeEstr,
 			)
 			return preguntas[estado.preguntaActual]
 		}
@@ -93,9 +126,9 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 						estado.puntajeDep,
 						estado.puntajeAns,
 						estado.puntajeEstr,
-						config.umbralesAnsiedad,					
-						config.umbralesDepresion,					
-						config.umbralesEstres					
+						umbralesDep,
+						umbralesAns,
+						umbralesEstr,
 					)
 				} else {
 					return await evaluarResultado(estado.Puntaje, umbrales)				
@@ -118,9 +151,9 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 					estado.puntajeDep,
 					estado.puntajeAns,
 					estado.puntajeEstr,
-					config.umbralesAnsiedad,					
-					config.umbralesDepresion,					
-					config.umbralesEstres,					
+					umbralesDep,
+					umbralesAns,
+					umbralesEstr,
 				)
 			} else {				
 				return await evaluarResultado(estado.Puntaje, umbrales)
@@ -192,8 +225,8 @@ const evaluarResultadoDASS21 = async (puntajeDep, puntajeAns, puntajeEstr, umbra
 }
 
 
-function rtasDass21(){
-	'0) No me ha ocurrido.\n    1) Me ha ocurrido un poco, o durante parte del tiempo.\n    2) Me ha ocurrido bastante, o durante una buena parte del tiempo.\n    3) Me ha ocurrido mucho, o la mayor parte del tiempo'	
+const rtasDass21 = () => {
+	return '0) No me ha ocurrido.\n    1) Me ha ocurrido un poco, o durante parte del tiempo.\n    2) Me ha ocurrido bastante, o durante una buena parte del tiempo.\n    3) Me ha ocurrido mucho, o la mayor parte del tiempo'
 }
 
 const cuestionariosConfig = {
@@ -354,8 +387,8 @@ const cuestionariosConfig = {
 		],
 		umbrales: {
 			bajo: { max: 1, mensaje: 'Sin indicativo de suicido 🟢' },
-			medio: { min: 2, max: 37, mensaje: 'Alto riesgo de suicido 🔴' },
-			alto: { min: 38, mensaje: 'Alto riesgo de suicido 🔴' },
+			medio: { min: 2, max: 37, mensaje: 'Riesgo de suicido medio 🟠' },
+			alto: { min: 38, mensaje: 'Riesgo de suicido alto 🔴' },
 		},
 		resPreg: {
 			0: [],
@@ -413,27 +446,27 @@ const cuestionariosConfig = {
 		Estrés: 1, 6, 8, 11, 12, 14 y 18
 		*/
 		preguntas: [
-			'1. Me ha costado mucho descargar la tensión\n', rtasDass21(),
-			'2. Me di cuenta que tenía la boca seca\n', rtasDass21(),
-			'3. No podía sentir ningún sentimiento positivo\n', rtasDass21(),
-			'4. Se me hizo difícil respirar\n', rtasDass21(),
-			'5. Se me hizo difícil tomar la iniciativa para hacer cosas\n', rtasDass21(),
-			'6. Reaccioné exageradamente en ciertas situaciones\n', rtasDass21(),
-			'7. Sentí que mis manos temblaban\n', rtasDass21(),
-			'8. He sentido que estaba gastando una gran cantidad de energía\n', rtasDass21(),
-			'9. Estaba preocupado por situaciones en las cuales podía tener pánico o en las que podría hacer el ridículo\n', rtasDass21(),
-			'10. He sentido que no había nada que me ilusionara\n', rtasDass21(),
-			'11. Me he sentido inquieto\n', rtasDass21(),
-			'12. Se me hizo difícil relajarme\n', rtasDass21(),
-			'13. Me sentí triste y deprimido\n', rtasDass21(),
-			'14. No toleré nada que no me permitiera continuar con lo que estaba haciendo\n', rtasDass21(),
-			'15. Sentí que estaba al punto de pánico\n', rtasDass21(),
-			'16. No me pude entusiasmar por nada\n', rtasDass21(),
-			'17. Sentí que valía muy poco como persona\n', rtasDass21(),
-			'18. He tendido a sentirme enfadado con facilidad\n', rtasDass21(),
-			'19. Sentí los latidos de mi corazón a pesar de no haber hecho ningún esfuerzo físico\n', rtasDass21(),
-			'20. Tuve miedo sin razón\n', rtasDass21(),
-			'21. Sentí que la vida no tenía ningún sentido\n', rtasDass21(),
+			'1. Me ha costado mucho descargar la tensión\n' + rtasDass21(),
+			'2. Me di cuenta que tenía la boca seca\n' + rtasDass21(),
+			'3. No podía sentir ningún sentimiento positivo\n' + rtasDass21(),
+			'4. Se me hizo difícil respirar\n' + rtasDass21(),
+			'5. Se me hizo difícil tomar la iniciativa para hacer cosas\n' + rtasDass21(),
+			'6. Reaccioné exageradamente en ciertas situaciones\n' + rtasDass21(),
+			'7. Sentí que mis manos temblaban\n' + rtasDass21(),
+			'8. He sentido que estaba gastando una gran cantidad de energía\n' + rtasDass21(),
+			'9. Estaba preocupado por situaciones en las cuales podía tener pánico o en las que podría hacer el ridículo\n' + rtasDass21(),
+			'10. He sentido que no había nada que me ilusionara\n' + rtasDass21(),
+			'11. Me he sentido inquieto\n' + rtasDass21(),
+			'12. Se me hizo difícil relajarme\n' + rtasDass21(),
+			'13. Me sentí triste y deprimido\n' + rtasDass21(),
+			'14. No toleré nada que no me permitiera continuar con lo que estaba haciendo\n' + rtasDass21(),
+			'15. Sentí que estaba al punto de pánico\n' + rtasDass21(),
+			'16. No me pude entusiasmar por nada\n' + rtasDass21(),
+			'17. Sentí que valía muy poco como persona\n' + rtasDass21(),
+			'18. He tendido a sentirme enfadado con facilidad\n' + rtasDass21(),
+			'19. Sentí los latidos de mi corazón a pesar de no haber hecho ningún esfuerzo físico\n' + rtasDass21(),
+			'20. Tuve miedo sin razón\n' + rtasDass21(),
+			'21. Sentí que la vida no tenía ningún sentido\n' + rtasDass21(),
 		],
 
 		subescalas: {
@@ -442,25 +475,25 @@ const cuestionariosConfig = {
 			estres: [1, 6, 8, 11, 12, 14, 18],
 		},
 
-		umbralesDepresion: {
+		umbralesDep: {
 			bajo: {min: 5, max: 6, mensaje: 'Depresión leve'},
 			medio: {min: 7, max: 10, mensaje: 'Depresión moderada'},
 			alto: {min: 11, max: 13, mensaje: 'Depresión severa'},
 			muyalto: {min: 14, mensaje: 'Depresión extremadamente severa'},
 		},
-		umbralesAnsiedad: {
+		umbralesAns: {
 			bajo: {min: 4, mensaje: 'Ansiedad leve'},
 			medio: {min: 5, max: 7, mensaje: 'Ansiedad moderada'},
 			alto: {min: 8, max: 9, mensaje: 'Ansiedad severa'},
 			muyalto: {min: 10, mensaje: 'Ansiedad extremadamente severa'},
 		},
-		umbralesEstres: {
+		umbralesEstr: {
 			bajo: {min: 8, max: 9, mensaje: 'Estrés leve'},
 			medio: {min: 10, max: 12, mensaje: 'Estrés moderado'},
 			alto: {min: 13, max: 16, mensaje: 'Estrés severo'},
 			muyalto: {min: 17, mensaje: 'Estrés extremadamente severo'},
 		},
-		resPreg: {
+		resPreg: { //se almacena por subescalas
 			depresion: [],
 			ansiedad: [],
 			estres: [],

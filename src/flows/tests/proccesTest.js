@@ -14,9 +14,9 @@ const mensajesTest = {
 	dep: 'Te invitamos a completar el Inventario de Depresión de Beck (BDI-2). Este cuestionario te ayudará a describir cómo te has sentido últimamente. Recuerda, tus respuestas son confidenciales y nos servirán para entenderte mejor.',
 	ans: 'El Inventario de Ansiedad de Beck (BAI) te permitirá compartir cómo la ansiedad ha influido en tu vida en la última semana. Tus respuestas son importantes para nosotros y serán tratadas con el cuidado que merecen.',
 	estr: 'Te presentaremos el Inventario de Estrés de escala percibida. Queremos saber cómo has vivido el estrés en el último mes. Tus respuestas son confidenciales y nos ayudarán a comprender tu experiencia.',
-	calvida:
-		'Este cuestionario te permitirá reflexionar sobre tu calidad de vida. Tus respuestas son muy importantes para nosotros y nos ayudarán a conocerte mejor.',
+	calvida: 'Este cuestionario te permitirá reflexionar sobre tu calidad de vida. Tus respuestas son muy importantes para nosotros y nos ayudarán a conocerte mejor.',
 	suic: 'La Escala de Ideación Suicida es una herramienta que nos ayudará a comprender tus pensamientos y sentimientos. Recuerda, no estás solo y tus respuestas serán tratadas con la mayor confidencialidad.',
+	dass21: 'El Cuestionario DASS-21 es una herramienta que nos permitirá evaluar tus niveles de depresión, ansiedad y estrés. Tus respuestas son confidenciales y nos ayudarán a entenderte mejor.'
 }
 
 export async function procesarMensaje(numeroUsuario, mensaje, tipoTest) {
