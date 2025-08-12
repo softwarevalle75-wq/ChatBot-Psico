@@ -54,6 +54,24 @@ export const assistantFlow = addKeyword(utils.setEvent('ASSISTANT_FLOW')).addAct
 	async (ctx, { flowDynamic, gotoFlow, state }) => {
 		const user = state.get('user')
 
+		//--------------- Bot reconoce dass21
+		const msg = ctx.body.toLowerCase()
+
+		if(
+			msg.includes('dass21') ||
+			msg.includes('estado emocional') ||
+			msg.includes('test emocional') ||
+			msg.includes('evaluar emociones') 
+		) {
+			await changeTest(ctx.from, 'dass21')
+			user.testActual = 'dass21'
+			await state.update({ user: user })
+			await switchFlujo(ctx.from, 'testFlow')
+			await flowDynamic('Perfecto, empecemos con el cuestionario DASS-21')
+			return gotoFlow(testFlow)
+		}
+		//-----------------
+
 		if (user.ayudaPsicologica == 2) {
 			await switchFlujo(user.telefonoPersonal, 'testFlow')
 			return gotoFlow(testFlow)
@@ -86,31 +104,6 @@ export const testFlow = addKeyword(utils.setEvent('TEST_FLOW')).addAction(
 		await flowDynamic(message)
 
 		if (message.includes('El cuestionario ha terminado.')) {
-
-			if (user.testActual === 'dass21') {
-				const { infoCues, preguntasString } = await getInfoCuestionario(
-					ctx.from, 
-					'dass21'
-				)
-				const historialContent = `De las preguntas ${preguntasString}, el usuario respondio asi: ${JSON.stringify(
-					infoCues
-				)}`
-
-				const accion = `Analiza las respuestas del usuario en el test DASS-21.
-				Calcula los puntajes de las subescalas: "depresion", "ansiedad" y "estres".
-				Indica cuál es la subescala más elevada.
-				Responde solo con "dep", "ans" o "estr".`
-
-				const hist = user.historial
-				hist.push({ role: 'system', content: historialContent })
-				let test = await apiBack1(hist, accion)
-				test = test.replace(/"/g, '')
-
-				const nuevoTest = await changeTest(ctx.from, test)
-				await flowDynamic(await procesarMensaje(ctx.from, ctx.body, nuevoTest))
-				return
-			}
-
 			if (user.testActual == 'ghq12') {
 				const { infoCues, preguntasString } = await getInfoCuestionario(
 					ctx.from,

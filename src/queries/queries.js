@@ -184,6 +184,7 @@ export const getEstadoCuestionario = async (telefono, tipoTest) => {
 				Puntaje: true,
 				preguntaActual: true,
 				resPreg: true,
+				respuestas: tipoTest === 'dass21' ? true : false,
 			},
 		})
 		if (!infoCues) {
@@ -259,25 +260,36 @@ export const saveEstadoCuestionario = async (
 	puntaje,
 	preguntaActual,
 	resPreg,
-	tipoTest
+	tipoTest,
+	respuestas
 ) => {
-	return await seleccionarModelo(tipoTest).update({
+	const modelo = seleccionarModelo(tipoTest)
+
+	const data = {
+		Puntaje: puntaje,
+		preguntaActual: preguntaActual,
+		resPreg: resPreg,
+	}
+
+	if (tipoTest === 'dass21') {
+		data.respuestas = respuestas
+	}
+
+	return await modelo.update({
 		where: { telefono },
-		data: {
-			Puntaje: puntaje,
-			preguntaActual: preguntaActual,
-			resPreg: resPreg,
-		},
+		data: data,
 	})
 }
 
 //---------------------------------------------------------------------------------------------------------
 // Función para seleccionar el modelo adecuado basado en el tipo de test
 function seleccionarModelo(tipoTest) {
-	if (tipoTest != 'ghq12') {
-		return prisma.tests
-	} else {
+	if (tipoTest === 'ghq12') {
 		return prisma.ghq12
+	} else if (tipoTest === 'dass21') {
+		return prisma.dass21
+	} else {
+		return prisma.test
 	}
 }
 

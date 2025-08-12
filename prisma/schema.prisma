@@ -28,8 +28,9 @@ model informacionUsuario {
   practicanteAsignado String?
 
   // Relación con ghq12
-  ghq12 ghq12?
-  tests tests?
+  ghq12  ghq12?
+  tests  tests?
+  dass21 dass21?
 
   // Agendamiento
   citas         cita[]
@@ -38,7 +39,7 @@ model informacionUsuario {
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-//GHQ12 + Tests:
+//GHQ12 + DASS21 + Tests:
 model ghq12 {
   idGhq12        String @id @unique @default(uuid())
   telefono       String @unique
@@ -48,6 +49,18 @@ model ghq12 {
   resPreg        Json?
 
   usuario informacionUsuario @relation(fields: [telefono], references: [telefonoPersonal]) // Relación con informacionUsuario
+}
+
+model dass21 {
+  idDass21       String @id @unique @default(uuid())
+  telefono       String @unique
+  historial      Json?
+  Puntaje        Int    @default(0)
+  preguntaActual Int    @default(0)
+  resPreg        Json?
+  respuestas     Json?
+
+  usuario informacionUsuario @relation(fields: [telefono], references: [telefonoPersonal])
 }
 
 model tests {

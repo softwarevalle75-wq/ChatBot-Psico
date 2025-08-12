@@ -1,17 +1,3 @@
-/*  ------------------ cuestionario.js ------------------------
-	Este archivo se encarga de manejar los cuestionarios
-	Dependiendo del cuestionario que se elija, 
-	se inicia el cuestionario y se evalua el puntaje.
-	-----------------------------------------------------------
-*/
-
-import { apiCuest } from './aiCuest.js'
-import {
-	getEstadoCuestionario,
-	saveEstadoCuestionario,
-	savePuntajeUsuario,
-} from '../../queries/queries.js'
-
 export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 	const config = cuestionariosConfig[tipoTest]
 	if (!config) throw new Error('Tipo de test no reconocido')
@@ -31,7 +17,6 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 				Puntaje: 0,
 				preguntaActual: 0,
 				resPreg: resPreg,
-				respuestasDass21: [],
 			}
 			await saveEstadoCuestionario(
 				numeroUsuario,
@@ -50,7 +35,6 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 		}
 		if (estado.preguntaActual < preguntas.length) {
 			estado.Puntaje += respuesta
-			estado.respuestasDass21.push(respuesta)
 			estado.resPreg[respuesta].push(estado.preguntaActual + 1)
 
 			if (estado.preguntaActual + 1 >= preguntas.length) {
@@ -65,28 +49,13 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 				return await evaluarResultado(estado.Puntaje, umbrales)
 			}
 
-			//------------- Resultados dass21
-			if (tipoTest === 'dass21') {
-				return await evaluarResultadoDass21(
-					estado.respuestasDass21,
-					config.subescalas,
-					{
-						depresion: config.umbralesDep,
-						ansiedad: config.umbralesAns,
-						estres: config.umbralesEstr,
-					}
-				)
-			}
-			//-------------
-
 			estado.preguntaActual += 1
 			await saveEstadoCuestionario(
 				numeroUsuario,
 				estado.Puntaje,
 				estado.preguntaActual,
 				estado.resPreg,
-				tipoTest,
-				estado.respuestasDass21
+				tipoTest
 			)
 
 			return preguntas[estado.preguntaActual]
@@ -96,9 +65,9 @@ export const iniciarCuestionario = async (numeroUsuario, msg, tipoTest) => {
 	} catch (error) {
 		console.log('error en iniciar cuestionario')
 		throw new Error('Hubo un error en iniciar cuestionario')
-	}	
+	}
 }
-// Evaluar resultado
+
 const evaluarResultado = async (puntaje, umbrales) => {
 	if (puntaje <= umbrales.bajo.max) {
 		return `El cuestionario ha terminado. Su puntaje final es: ${puntaje} \n${umbrales.bajo.mensaje}`
@@ -109,33 +78,6 @@ const evaluarResultado = async (puntaje, umbrales) => {
 	} else {
 		return 'Hubo un error en su puntaje'
 	}
-}
-
-//---------------- Módulo evaluar subescalas DASS-21
-const evaluarResultadoDass21 = async (respuestas, subescalas, umbrales) => {
-	const resultado = {}
-
-	for (const escala in subescalas) {
-		const indices = subescalas[escala]
-		const puntaje = indices.reduce((acc, i) => acc + respuestas[i - 1], 0)
-
-		const umbral = umbrales[escala]
-		let nivel = 'Sin clasificación'
-
-		if (puntaje >= umbral.muyalto?.min) nivel = umbral.muyalto.mensaje
-		else if (puntaje >= umbral.alto?.min && puntaje <= umbral.alto?.max) nivel = umbral.alto.mensaje
-		else if (puntaje >= umbral.medio?.min && puntaje <= umbral.medio?.max) nivel = umbral.medio.mensaje
-		else if (puntaje >= umbral.bajo?.min && (!umbral.bajo.max || puntaje <= umbral.bajo.max)) nivel = umbral.bajo.mensaje
-
-		resultado[escala] = { puntaje, nivel }
-	}
-
-	return `Resultados DASS-21:\n🧠 Depresión: ${resultado.depresion.nivel} (${resultado.depresion.puntaje})\n😰 Ansiedad: ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje})\n🔥 Estrés: ${resultado.estres.nivel} (${resultado.estres.puntaje})`
-}
-//----------------
-
-const rtasDass21 = () => {
-    return '0) No me ha ocurrido.\n    1) Me ha ocurrido un poco, o durante parte del tiempo.\n    2) Me ha ocurrido bastante, o durante una buena parte del tiempo.\n    3) Me ha ocurrido mucho, o la mayor parte del tiempo'
 }
 
 const cuestionariosConfig = {
@@ -240,9 +182,3 @@ const cuestionariosConfig = {
 		},
 	},
 }
-
-/*
-🎉🎉🎉🎉🎉🎉🎉🎉🎉
-¡FUNCIONA ESTA MIERDA!
-🎉🎉🎉🎉🎉🎉🎉🎉🎉
-*/

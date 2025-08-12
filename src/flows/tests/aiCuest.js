@@ -80,5 +80,17 @@ export function apiCuest(msg, test) {
 			} else {
 				return 9
 			}
+		case 'dass21':
+			if (msg.includes('1')) {
+				return 1
+			} else if (msg.includes('2')) {
+				return 2
+			} else if (msg.includes('3')) {
+				return 3
+			} else if (msg.includes('0')) {
+				return 0
+			} else {
+				return 9
+			}
 	}
 }
