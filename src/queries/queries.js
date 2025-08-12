@@ -178,15 +178,23 @@ export const savePuntajeUsuario = async (telefono, puntaje, jsonPreg, tipoTest) 
 export const getEstadoCuestionario = async (telefono, tipoTest) => {
 	try {
 		const test = seleccionarModelo(tipoTest)
+		//---------------- select para diferentes modelos
+
+		const selectFields = {
+		Puntaje: true,
+		preguntaActual: true,
+		resPreg: true,
+		}
+
+		if (tipoTest === 'dass21') {
+			selectFields.respuestas = true
+		}
+
 		const infoCues = await test.findUnique({
 			where: { telefono },
-			select: {
-				Puntaje: true,
-				preguntaActual: true,
-				resPreg: true,
-				respuestas: tipoTest === 'dass21' ? true : false,
-			},
+			select: selectFields,
 		})
+
 		if (!infoCues) {
 			const infoCues = await test.create({
 				data: {
@@ -196,6 +204,20 @@ export const getEstadoCuestionario = async (telefono, tipoTest) => {
 			return infoCues
 		}
 		return infoCues
+
+		//----------------
+		/*
+		const infoCues = await test.findUnique({
+			where: { telefono },
+			select: {
+				Puntaje: true,
+				preguntaActual: true,
+				resPreg: true,
+				respuestas: tipoTest === 'dass21' ? true : false,
+			},
+		})		
+		*/
+
 	} catch (error) {
 		console.error('Error obteniendo el estado:', error)
 		throw new Error('Hubo un problema obteniendo el estado.')
@@ -289,7 +311,7 @@ function seleccionarModelo(tipoTest) {
 	} else if (tipoTest === 'dass21') {
 		return prisma.dass21
 	} else {
-		return prisma.test
+		return prisma.tests
 	}
 }
 
