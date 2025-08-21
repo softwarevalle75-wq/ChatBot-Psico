@@ -18,7 +18,7 @@ export async function apiBack(conversationHistory, action) {
 		hist.push({ role: 'system', content: action }) // Agregar acción al final
 
 		const completion = await aiBack.chat.completions.create({
-			model: 'gpt-4o-mini',
+			model: 'text-davinci-003',
 			messages: hist,
 			temperature: 0,
 		})
