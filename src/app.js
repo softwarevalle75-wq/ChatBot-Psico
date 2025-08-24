@@ -1,7 +1,17 @@
 import { createBot, createProvider, createFlow } from "@builderbot/bot";
 import { MysqlAdapter as Database } from "@builderbot/database-mysql";
 import { BaileysProvider as Provider } from "@builderbot/provider-baileys";
-import { welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow } from "./flows/flows.js";
+import { 
+	welcomeFlow, 
+	registerFlow, 
+	menuFlow, 
+	testSelectionFlow, 
+	testFlow, 
+	postTestFlow, 
+	agendFlow, 
+	postAgendFlow, 
+	assistantFlow 
+} from "./flows/flows.js";
 import {
 	getPracticante,
 	getUsuario,
@@ -22,7 +32,17 @@ const PORT = process.env.PORT ?? 3008;
 //---------------------------------------------------------------------------------------------------------
 
 const main = async () => {
-	const adapterFlow = createFlow([welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow]);
+	const adapterFlow = createFlow([
+		welcomeFlow, 
+		registerFlow, 
+		menuFlow, 
+		testSelectionFlow, 
+		testFlow, 
+		postTestFlow, 
+		agendFlow, 
+		postAgendFlow, 
+		assistantFlow  // Para compatibilidad con código existente
+	]);
 
 	const adapterProvider = createProvider(Provider);
 	const adapterDB = new Database({
@@ -84,22 +104,21 @@ const main = async () => {
 	adapterProvider.server.get(
 		"/v1/front/:entity/:searchQuery",
 		handleCtx(async (req, res) => {
-			const { entity, searchQuery } = req.params; // Extrae los parámetros correctamente
+			const { entity, searchQuery } = req.params;
 
 			try {
 				let response;
 				console.log(entity);
 				switch (entity) {
 					case "user":
-						response = await getUsuario(searchQuery); // Lógica para obtener el usuario
+						response = await getUsuario(searchQuery);
 						break;
 
 					case "practicante":
-						response = await getPracticante(searchQuery); // Lógica para obtener el practicante
+						response = await getPracticante(searchQuery);
 						break;
 
 					default:
-						// Si la entidad no es válida, devuelve un error
 						res.writeHead(400, { "Content-Type": "application/json" });
 						return res.end(
 							JSON.stringify({
@@ -112,7 +131,6 @@ const main = async () => {
 				res.writeHead(200, { "Content-Type": "application/json" });
 				return res.end(JSON.stringify(response));
 			} catch (error) {
-				// Manejo de errores
 				console.error(error);
 				res.writeHead(500, { "Content-Type": "application/json" });
 				return res.end(
@@ -355,7 +373,7 @@ const main = async () => {
 	adapterProvider.server.get(
 		"/v1/front/citas",
 		handleCtx(async (req, res) => {
-			const { diaActual } = req.body;
+			const { diaActual } = req.query;
 
 			try {
 				const response = await getWebCitas(diaActual);
@@ -379,7 +397,6 @@ const main = async () => {
 
 	adapterProvider.server.get(
 		"/v1/front/citasPorPaciente",
-
 		handleCtx(async (req, res) => {
 			const { idPaciente } = req.body;
 
@@ -400,31 +417,6 @@ const main = async () => {
 			}
 		})
 	);
-
-	//---------------------------------------------------------------------------------------------------------
-
-	// adapterProvider.server.get(
-	// 	'/v1/front/check',
-	// 	handleCtx(async (req, res) => {
-	// 		const { diaActual } = req.body
-
-	// 		try {
-	// 			const response = await getWebCitas(diaActual)
-
-	// 			res.writeHead(200, { 'Content-Type': 'application/json' })
-	// 			return res.end(JSON.stringify(response))
-	// 		} catch (error) {
-	// 			console.error(error)
-	// 			res.writeHead(500, { 'Content-Type': 'application/json' })
-	// 			return res.end(
-	// 				JSON.stringify({
-	// 					status: 'error',
-	// 					message: 'Error al consultar las citas en la base de datos',
-	// 				})
-	// 			)
-	// 		}
-	// 	})
-	// )
 
 	httpServer(+PORT);
 };

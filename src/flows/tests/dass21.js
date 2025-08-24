@@ -14,6 +14,7 @@ const cuestDass21 = {
 		'2. Me di cuenta que tenía la boca seca\n' + rtasDass21(),
 		'3. No podía sentir ningún sentimiento positivo\n' + rtasDass21(),
 		'4. Se me hizo difícil respirar\n' + rtasDass21(),			
+		
 		'5. Se me hizo difícil tomar la iniciativa para hacer cosas\n' + rtasDass21(),
 		'6. Reaccioné exageradamente en ciertas situaciones\n' + rtasDass21(),
 		'7. Sentí que mis manos temblaban\n' + rtasDass21(),
@@ -58,13 +59,6 @@ const cuestDass21 = {
 		alto: {min: 13, max: 16, mensaje: 'Estrés severo'},
 		muyalto: {min: 17, mensaje: 'Estrés extremadamente severo'},
 	},
-	/*
-	resPreg: { //se almacena por subescalas
-		depresion: [],
-		ansiedad: [],
-		estres: [],
-	},
-	*/
 	resPreg: {
 		0: [],
 		1: [],
@@ -87,15 +81,13 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 		}
 
 		if (!estado.resPreg) {
-			estado ={
-				Puntaje: 0,
+			estado = {
 				preguntaActual: 0,
 				resPreg: { ...cuestDass21.resPreg },
 				respuestasDass21: []
 			}
 			await saveEstadoCuestionario(
 				numeroUsuario,
-				estado.Puntaje,
 				estado.preguntaActual,
 				estado.resPreg,
 				tipoTest,
@@ -105,7 +97,6 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 		}
 
 		const respuestaNum = Number(respuestas)
-		estado.Puntaje += respuestaNum
 
 		if (!estado.resPreg[respuestaNum]) {
 			estado.resPreg[respuestaNum] = []
@@ -116,22 +107,32 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 		estado.respuestasDass21 = estado.respuestasDass21 || []
 		estado.respuestasDass21.push(respuestaNum)
 
-		if (estado.preguntaActual < preguntas.length - 1) {
-					
-			// Guardar estado y puntaje 
+		const siguientePregunta = estado.preguntaActual + 1
+
+		estado.preguntaActual += 1
+		if (siguientePregunta >= preguntas.length) {
+
+			const puntajes = calcularPuntajesSubescalas(estado.respuestasDass21, subescalas)
+			
+			// Guardar estado y puntaje
 			await saveEstadoCuestionario(
 				numeroUsuario,
-				estado.Puntaje,
 				estado.preguntaActual + 1,
 				estado.resPreg,
 				tipoTest,
 				estado.respuestasDass21
 			)
-			await savePuntajeUsuario(numeroUsuario, estado.Puntaje, estado.resPreg, tipoTest)
+			await savePuntajeUsuario(
+				numeroUsuario, 
+				tipoTest,
+				puntajes.depresion,
+				puntajes.ansiedad,
+				puntajes.estres,
+				estado.resPreg, 
+			)
 
 			return await evaluarDASS21(
-				estado.respuestasDass21, 
-				subescalas,
+				puntajes,
 				{
 					depresion: cuestDass21.umbralesDep,
 					ansiedad: cuestDass21.umbralesAns,
@@ -140,10 +141,9 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 			)																											
 		}
 
-		estado.preguntaActual += 1 // ← probando ( sino funciona añadir = estado.preguntaActual = siguientePregunta )
+		estado.preguntaActual = siguientePregunta
 		await saveEstadoCuestionario(
 			numeroUsuario,
-			estado.Puntaje,
 			estado.preguntaActual,
 			estado.resPreg,
 			tipoTest,
@@ -151,40 +151,59 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 		)
 
 		return preguntas[estado.preguntaActual]
+		
 	} catch (error) {
 		console.error('Error al procesar DASS-21:', error)
 		return 'Hubo un error al procesar el cuestionario. Por favor, inténtelo de nuevo más tarde.'
 	}
 }
 
-const evaluarDASS21 = async (respuestas, subescalas, umbrales) => {
-	const resultado = {}
+const calcularPuntajesSubescalas = (respuestas, subescalas) => {
+	const puntajes = {}
 
 	for (const escala in subescalas) {
 		const indices = subescalas[escala]
-		const puntaje = indices.reduce((acc, i) => acc + (Number(respuestas[i - 1]) || 0), 0)
 
-		const umbral = umbrales[escala]
-		let nivel = 'Sin clasificación'
+		const puntajeBase = indices.reduce((acc, i) => acc + (Number(respuestas[i - 1]) || 0), 0)
+		puntajes[escala] = puntajeBase * 2
+	}
 
-		if (puntaje >= umbral.muyalto?.min) nivel = umbral.muyalto.mensaje
-		else if (puntaje >= umbral.alto?.min && puntaje <= umbral.alto?.max) nivel = umbral.alto.mensaje
-		else if (puntaje >= umbral.medio?.min && puntaje <= umbral.medio?.max) nivel = umbral.medio.mensaje
-		else if (puntaje >= umbral.bajo?.min && (!umbral.bajo.max || puntaje <= umbral.bajo.max)) nivel = umbral.bajo.mensaje
+	return puntajes
+}
 
-		resultado[escala] = { puntaje, nivel }
+export const evaluarDASS21 = async (puntajes, umbrales) => {
+	const resultado = {};
+
+	for (const escala in puntajes) {
+	const puntaje = puntajes[escala];
+	const u = umbrales[escala];
+	let nivel = 'Normal';
+
+	// Evaluar desde el más alto al más bajo
+	if (u.muyalto && puntaje >= u.muyalto.min) {
+		nivel = u.muyalto.mensaje;
+	} else if (u.alto && puntaje >= u.alto.min) {
+		nivel = u.alto.mensaje;
+	} else if (u.medio && puntaje >= u.medio.min) {
+		nivel = u.medio.mensaje;
+	} else if (u.bajo && puntaje >= u.bajo.min) {
+		nivel = u.bajo.mensaje;
+	}
+
+	resultado[escala] = { puntaje, nivel };
 	}
 
 	return `--* DASS-21 COMPLETADO *--
-	
-	** Resultados por área: **
-	
-	**Depresion:** ${resultado.depresion.nivel} (${resultado.depresion.puntaje} puntos)
-	**Ansiedad:** ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje} puntos)
-	**Estrés:** ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos)
-	
-	Los resultados indican el nivel de malestar en cada área. Si tiene alguna preocupación, considere consultar a un profesional de la salud mental.`
-}
+
+** Resultados por área: **
+
+**Depresión:** ${resultado.depresion.nivel} (${resultado.depresion.puntaje} puntos)
+**Ansiedad:** ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje} puntos)
+**Estrés:** ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos)
+
+Los resultados indican el nivel de malestar en cada área. Si tiene alguna preocupación, considere consultar a un profesional de la salud mental.`;
+};
+
 
 export const DASS21info = () => {
 	return {

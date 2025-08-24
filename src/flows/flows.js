@@ -8,10 +8,8 @@ import {
 	switchAyudaPsicologica,
 } from '../queries/queries.js'
 import { apiRegister } from './register/aiRegister.js'
-import { apiAssistant1 } from './assist/aiAssistant.js'
-import { apiAssistant2 } from './assist/assistant2.js'
-import { procesarMensaje, resetEstadoUsuario, testValido } from './tests/proccesTest.js'
-import { mostrarMenuTests, parsearSeleccionTest, TIPOS_TEST} from './tests/controlTest.js'
+import { procesarMensaje } from './tests/proccesTest.js'
+import { menuCuestionarios, parsearSeleccionTest} from './tests/controlTest.js'
 import { apiAgend } from './agend/aiAgend.js'
 
 //---------------------------------------------------------------------------------------------------------
@@ -19,115 +17,144 @@ import { apiAgend } from './agend/aiAgend.js'
 export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
 	async (ctx, { gotoFlow, state }) => {
 		const user = await obtenerUsuario(ctx.from)
+
+		// if (!user) {
+		// 	console.log('Usuario no encontrado, dirigiendo a registerFlow')
+		// 	return gotoFlow(registerFlow)
+		// }
+
 		await state.update({ user: user })
 		console.log(user.flujo)
-
-		resetEstadoUsuario(ctx.from)
-
+		
 		switch (user.flujo) {
-			case 'assistantFlow':
-				console.log('assistantFlow')
-				return gotoFlow(assistantFlow)
+			case 'menuFlow':
+				console.log('Dirigiendo a menuFlow')
+				return gotoFlow(menuFlow)
 			case 'testFlow':
-				console.log('testFlow')
+				console.log('Dirigiendo a testFlow')
 				return gotoFlow(testFlow)
 			case 'agendFlow':
-				console.log('agendFlow')
+				console.log('Dirigiendo a agendFlow')
 				return gotoFlow(agendFlow)
-
+			case 'testSelectionFlow':
+				console.log('Dirigiendo a testSelectionFlow')
+				return gotoFlow(testSelectionFlow)
 			default:
-				console.log('registerFlow')
+				console.log('Dirigiendo a registerFlow')
 				return gotoFlow(registerFlow)
 		}
+
+		
 	}
 )
 
 //---------------------------------------------------------------------------------------------------------
 
 export const registerFlow = addKeyword(utils.setEvent('REGISTER_FLOW')).addAction(
-	async (ctx, { flowDynamic }) => {
-		await flowDynamic(await apiRegister(ctx.from, ctx.body))
+	async (ctx, { flowDynamic, gotoFlow }) => {
+		
+		const registerResponse = await apiRegister(ctx.from, ctx.body)
+		await flowDynamic(registerResponse)
+		
+		// Si el registro fue exitoso, mostrar menú
+		if (registerResponse.includes('Registrado')) {
+			// Actualizar flujo del usuario
+			await switchFlujo(ctx.from, 'menuFlow')
+			
+			// Mostrar menú principal
+			await flowDynamic(`¡Perfecto! Ahora puedes elegir qué hacer:
+
+🔹 **1** - Realizar cuestionarios psicológicos
+🔹 **2** - Agendar cita con profesional
+
+Responde con **1** o **2**`)
+			
+			return gotoFlow(menuFlow, { body: '' })
+		}
 	}
+)
+//---------------------------------------------------------------------------------------------------------
+
+const validarRespuestaMenu = (respuesta, opcionesValidas) => {
+    const resp = respuesta?.toString().trim();
+    return opcionesValidas.includes(resp) ? resp : null;
+};
+
+export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
+  .addAnswer('¡Perfecto! Ahora puedes elegir qué hacer: 🔹 **1** - Realizar cuestionarios psicológicos 🔹 **2** - Agendar cita con profesional')
+  .addAction(async (ctx, { flowDynamic, gotoFlow }) => {
+
+	if (!ctx.body || ctx.body.trim() === '') return
+
+    const msg = validarRespuestaMenu(ctx.body, ['1', '2']);
+
+
+        if (msg === '1') {
+            // Hacer cuestionarios
+            await flowDynamic(menuCuestionarios());
+
+			await switchFlujo(ctx.from, 'testSelectionFlow')
+            return gotoFlow(testSelectionFlow, {body: '' });
+        } else if (msg === '2') {
+            // Agendar cita
+            await switchFlujo(ctx.from, 'agendFlow');
+            await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.');
+            return gotoFlow(agendFlow);
+        } else {
+            // Opción inválida
+            await flowDynamic(`❌ Opción no válida. Por favor responde:
+
+🔹 **1** - Para realizar cuestionarios
+🔹 **2** - Para agendar cita`);
+        }
+    }
 )
 
 //---------------------------------------------------------------------------------------------------------
 
+export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW')).addAction(
+  async (ctx, { flowDynamic, gotoFlow, state }) => {
+    const user = state.get('user');
+    const msg = ctx.body.trim();
+
+    const tipoTest = parsearSeleccionTest(msg);
+
+    if (!tipoTest) {
+      await flowDynamic('Por favor, responde con **1** para GHQ-12 o **2** para DASS-21');
+      return;
+    }
+
+    const testName = tipoTest === 'ghq12' ? 'GHQ-12' : 'DASS-21';
+
+    // 🧠 Actualizar test actual
+    await changeTest(ctx.from, tipoTest);
+    user.testActual = tipoTest;
+    await state.update({ user });
+    await switchFlujo(ctx.from, 'testFlow');
+
+    // 🚀 Iniciar el test desde la primera pregunta
+    const primerMensaje = await procesarMensaje(ctx.from, '_start', tipoTest);
+
+    await flowDynamic(`Perfecto, empecemos con el cuestionario ${testName}`);
+    if (typeof primerMensaje === 'string' && primerMensaje.trim() !== '') {
+      await flowDynamic(primerMensaje);
+    } else {
+      await flowDynamic('Ocurrió un error iniciando el test. Intenta nuevamente.');
+      return gotoFlow(menuFlow);
+    }
+
+    return gotoFlow(testFlow);
+  }
+);
+
+
+//---------------------------------------------------------------------------------------------------------
+
 export const assistantFlow = addKeyword(utils.setEvent('ASSISTANT_FLOW')).addAction(
-	async (ctx, { flowDynamic, gotoFlow, state }) => {
-		const user = state.get('user')
-
-		//--------------- Bot reconoce dass21
-		const msg = ctx.body.toLowerCase()
-
-		if(
-			msg.includes('dass21') ||
-			msg.includes('dass-21') ||
-			msg.includes('estado emocional') ||
-			msg.includes('test emocional') ||
-			msg.includes('evaluar emociones') 
-		) {
-			await changeTest(ctx.from, TIPOS_TEST.DASS21)
-			user.testActual = TIPOS_TEST.DASS21
-			await state.update({ user: user })
-			await switchFlujo(ctx.from, 'testFlow')
-			await flowDynamic('Perfecto, empecemos con el cuestionario DASS-21')
-			return gotoFlow(testFlow)
-		}
-
-		//----------------- Bot reconoce ghq12
-
-		if(
-			msg.includes('ghq12') ||
-			msg.includes('ghq-12') ||
-			msg.includes('estado emocional') ||
-			msg.includes('test emocional') ||
-			msg.includes('evaluar emociones')
-		) {
-			await changeTest(ctx.from, TIPOS_TEST.GHQ12)
-			user.testActual = TIPOS_TEST.GHQ12
-			await state.update({ user: user })
-			await switchFlujo(ctx.from, 'testFlow')
-			await flowDynamic('Perfecto, empecemos con el cuestionario GHQ-12')
-			return gotoFlow(testFlow)
-		}
-
-		//----------------- Bot reconoce solicitud de tests 
-		if (
-			msg.includes('test') ||
-			msg.includes('prueba') ||
-			msg.includes('cuestionario') ||
-			msg.includes('evaluación') ||
-			msg.includes('evaluar') 
-		) {
-			await flowDynamic(mostrarMenuTests())
-			return
-		}
-
-		// Se procesa la selección del tests
-		const testSeleccionado = parsearSeleccionTest(msg)
-		if (tipoTestSeleccionado) {
-			await changeTest(ctx.from, testSeleccionado)
-			user.testActual = tipoTestSeleccionado
-			await state.update({ user: user })
-			await switchFlujo(ctx.from, 'testFlow')
-
-			const nombreTest = testSeleccionado === TIPOS_TEST.GHQ12 ? 'GHQ-12' : 'DASS-21'
-			await flowDynamic(`Seleccionaste ${nombreTest}. Comencemos con el cuestionario.`)
-			return gotoFlow(testFlow)
-		}
-
-		// La lógica original
-
-		if (user.ayudaPsicologica == 2) {
-			await switchFlujo(user.telefonoPersonal, 'testFlow')
-			return gotoFlow(testFlow)
-		} else if (user.ayudaPsicologica == 0) {
-			const assist = await apiAssistant2(ctx.from, ctx.body, user.idUsuario)
-			await flowDynamic(assist)
-		} else {
-			const assist = await apiAssistant1(ctx.from, ctx.body)
-			await flowDynamic(assist)
-		}
+	async (ctx, { gotoFlow }) => {
+		console.log('assistantFlow depreciado - redirigiendo a menuFlow')
+		await switchFlujo(ctx.from, 'menuFlow')
+		return gotoFlow(menuFlow)
 	}
 )
 
@@ -135,108 +162,144 @@ export const assistantFlow = addKeyword(utils.setEvent('ASSISTANT_FLOW')).addAct
 
 export const testFlow = addKeyword(utils.setEvent('TEST_FLOW')).addAction(
 	async (ctx, { flowDynamic, gotoFlow, state }) => {
-		const user = state.get('user')
+		let user = state.get('user')
 
-		// Validar el test actual
-		if (!testValido(user.testActual)) {
-			await flowDynamic(
-				'El tipo de test actual no es válido. Por favor, selecciona un test válido.'
-			)
-			await switchFlujo(ctx.from, 'assistantFlow')
-			return gotoFlow(assistantFlow)
-
-		}
+		console.log('=== INICIO TESTFLOW ===')
+		console.log('Mensaje del usuario:', ctx.body)
+		console.log('Test actual:', user.testActual)
 
 		try {
 			// Procesar mensaje del usuario
 			const message = await procesarMensaje(ctx.from, ctx.body, user.testActual)
 	
-			if (!message || typeof message !== 'string') {
-				console.error('Error: procesarMensaje returned an invalid value.', { message })
-				await flowDynamic(
-					'Ocurrió un error procesando el mensaje. Por favor, inténtelo de nuevo.'
-				)
-				return
-			}
+			console.log('Mensaje a enviar:', message)
+			
+			if (!message || typeof message !== 'string' || message.trim() === '') {
+                console.error('Error: procesarMensaje returned an invalid value.', { message });
+                await flowDynamic('Ocurrió un error procesando el mensaje. Por favor, inténtelo de nuevo.');
+                return;
+            }
 			
 			await flowDynamic(message)
 
-			if (message.includes('GHQ-12 COMPLETADO') && user.testActual === TIPOS_TEST.GHQ12) {
-				await flowDynamic('Has completado el cuestionario GHQ-12. Ahora puedes agendar una cita con nuestros profesionales')
-				await switchFlujo(ctx.from, 'agendFlow')
-				return gotoFlow(agendFlow)
-			}
+			// Verificar si el test se completó
+			if (message.includes('COMPLETADO')) {
+				// Limpiar test actual
+				await changeTest(ctx.from, '')
+				user.testActual = ''
+				await state.update({ user })
+				
+				// Cambiar flujo a menú
+				await switchFlujo(ctx.from, 'menuFlow')
+				
+				// Mostrar opciones post-test
+				await flowDynamic(`¡Excelente! Has completado el cuestionario.
 
-			else if (message.includes('DASS-21 COMPLETADO') && user.testActual === TIPOS_TEST.DASS21) {
-				await flowDynamic('Has completado el cuestionario DASS-21. Ahora puedes agendar una cita con nuestros profesionales')
-				await switchFlujo(ctx.from, 'agendFlow')
-				return gotoFlow(agendFlow)
+¿Qué te gustaría hacer ahora?
+
+🔹 **1** - Realizar otro cuestionario
+🔹 **2** - Agendar cita con profesional
+🔹 **3** - Finalizar por ahora
+
+Responde con **1**, **2** o **3**`)
+				
+				return gotoFlow(postTestFlow, { body: '' })
 			}
 
 		} catch (error) {
 			console.error('Error en testFlow:', error)
-			await flowDynamic('Ocurrió un error al procesar la prueba. Porfavor intenta nuevamente')
+			await flowDynamic('Ocurrió un error al procesar la prueba. Por favor intenta nuevamente.')
 		}
+	}
+)
 
+// --------
 
-		// if (message.includes('El cuestionario ha terminado.')) {
-		// 	if (user.testActual == 'ghq12') {
-		// 		const { infoCues, preguntasString } = await getInfoCuestionario(
-		// 			ctx.from,
-		// 			user.testActual
-		// 		)
-		// 		const historialContent = `De las preguntas ${preguntasString}, el usuario respondio asi: ${JSON.stringify(
-		// 			infoCues
-		// 		)}`
+export const postTestFlow = addKeyword(utils.setEvent('POST_TEST_FLOW')).addAction(
+	async (ctx, { flowDynamic, gotoFlow }) => {
+		const msg = ctx.body.trim()
 
-		// 		const accion = `Debes analizar las respuestas del usuario y asignarle en lo que más grave está
-		// 			Entre las siguientes opciones:
-		// 			"dep"(depresión)
-		// 			"ans"(ansiedad)
-		// 			"estr"(estrés)
-		// 			"suic"(ideacion suicida)
-		// 			"calVida"(Calidad de vida)
-		// 			Responde unicamente con "dep", "ans", "estr", "suic" o "calVida"
-		// 		`
-		// 		const hist = user.historial
-		// 		hist.push({ role: 'system', content: historialContent })
-		// 		let test = await apiBack1(hist, accion)
-		// 		test = test.replace(/"/g, '') // Elimina todas las comillas
+		if (msg === '1') {
+			// Hacer otro cuestionario
+			await flowDynamic(menuCuestionarios())
+			return gotoFlow(testSelectionFlow, { body: '' })
+		} else if (msg === '2') {
+			// Agendar cita
+			await switchFlujo(ctx.from, 'agendFlow')
+			await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.')
+			return gotoFlow(agendFlow, { body: '' })
+		} else if (msg === '3') {
+			// Finalizar
+			await switchFlujo(ctx.from, 'menuFlow')
+			await flowDynamic('¡Gracias por usar nuestros servicios! Puedes regresar cuando gustes escribiendo cualquier mensaje.')
+			return gotoFlow(menuFlow, { body: '' })
+		} else {
+			// Opción inválida
+			await flowDynamic(`Por favor responde:
 
-		// 		const nuevoTest = await changeTest(ctx.from, test)
-		// 		await flowDynamic(await procesarMensaje(ctx.from, ctx.body, nuevoTest))
-		// 	} else {
-		// 		await switchFlujo(ctx.from, 'agendFlow')
-		// 		return gotoFlow(agendFlow)
-		// 	}
-		// }
+🔹 **1** - Realizar otro cuestionario
+🔹 **2** - Agendar cita
+🔹 **3** - Finalizar`)
+		}
 	}
 )
 
 //---------------------------------------------------------------------------------------------------------
 
 export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW')).addAction(
-	async (ctx, { flowDynamic, state }) => {
+	async (ctx, { flowDynamic, gotoFlow, state }) => {
 		const user = state.get('user')
 
-		try{
+		try {
 			const msgAgend = await apiAgend(ctx.from, ctx.body, user)
 
 			if (msgAgend.includes('Se ha registrado su cita para el día')) {
 				await switchAyudaPsicologica(ctx.from, 0)
 				user.ayudaPsicologica = 0
 				await state.update({ user: user })
-				await switchFlujo(ctx.from, 'assistantFlow')
-
-				resetEstadoUsuario(ctx.from)
+				await switchFlujo(ctx.from, 'menuFlow')
 
 				await flowDynamic(msgAgend)
-			} else{
+				await flowDynamic(`¡Cita agendada exitosamente!
+
+¿Qué te gustaría hacer ahora?
+
+🔹 **1** - Realizar cuestionarios psicológicos
+🔹 **2** - Finalizar por ahora
+
+Responde con **1** o **2**`)
+				
+				return gotoFlow(postAgendFlow)
+			} else {
 				await flowDynamic(msgAgend)
 			}
 		} catch (error) {
 			console.error('Error en agendFlow:', error)
-			await flowDynamic('Ocurrió un error al procesar la agenda. Intenta nuevamente')
+			await flowDynamic('Ocurrió un error al procesar la agenda. Intenta nuevamente.')
+		}
+	}
+)
+
+//---------------------------------------------------------------------------------------------------------
+
+export const postAgendFlow = addKeyword(utils.setEvent('POST_AGEND_FLOW')).addAction(
+	async (ctx, { flowDynamic, gotoFlow }) => {
+		const msg = ctx.body.trim()
+
+		if (msg === '1') {
+			// Hacer cuestionarios
+			await flowDynamic(menuCuestionarios())
+			return gotoFlow(testSelectionFlow)
+		} else if (msg === '2') {
+			// Finalizar
+			await switchFlujo(ctx.from, 'menuFlow')
+			await flowDynamic('¡Gracias por usar nuestros servicios! Puedes regresar cuando gustes.')
+			return gotoFlow(menuFlow)
+		} else {
+			await flowDynamic(`Por favor responde:
+
+🔹 **1** - Realizar cuestionarios
+🔹 **2** - Finalizar`)
 		}
 	}
 )

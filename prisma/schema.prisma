@@ -12,10 +12,7 @@ model informacionUsuario {
   idUsuario           String   @id @unique @default(uuid())
   nombre              String?
   apellido            String?
-  correo              String?  @unique
   telefonoPersonal    String   @unique
-  documento           String?  @unique
-  tipoDocumento       String   @default("CC")
   testActual          String   @default("ghq12")
   motivo              String?
   ayudaPsicologica    Int      @default(1)
@@ -55,7 +52,9 @@ model dass21 {
   idDass21       String @id @unique @default(uuid())
   telefono       String @unique
   historial      Json?
-  Puntaje        Int    @default(0)
+  puntajeDep Int    @default(0)
+  puntajeAns Int    @default(0)
+  puntajeEstr Int    @default(0)
   preguntaActual Int    @default(0)
   resPreg        Json?
   respuestas     Json?

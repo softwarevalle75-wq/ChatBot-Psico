@@ -2,8 +2,8 @@
 Aqui se maneja el flujo de los cuestionarios
 */
 
-import { procesarDass21, DASS21info } from "./dass21";
-import { procesarGHQ12, GHQ12info } from "./ghq12";
+import { procesarDass21, DASS21info } from "./dass21.js";
+import { procesarGHQ12, GHQ12info } from "./ghq12.js";
 
 export const TIPOS_TEST = {
     GHQ12: 'ghq12',
@@ -11,14 +11,19 @@ export const TIPOS_TEST = {
 }
 
 export const procesarCuestionario = async (numeroUsuario, tipoTest, respuestas) => {
-    console.log(`Procesando cuestionario ${tipoTest} para el usuario:`, numeroUsuario)
+    //console.log(`Procesando cuestionario ${tipoTest} para el usuario:`, numeroUsuario)
+    console.log(`=== DEBUG PROCESAR CUESTIONARIO ===`)
+    console.log(`numeroUsuario: ${numeroUsuario}`)
+    console.log(`respuestas: ${respuestas}`)  
+    console.log(`tipoTest: ${tipoTest}`)
+    console.log(`===============================`)
 
     try {
         switch (tipoTest) {
-            case TIPOS_TEST.GHQ12:
+            case 'ghq12':
                 return await procesarGHQ12(numeroUsuario, respuestas);
 
-            case TIPOS_TEST.DASS21:
+            case 'dass21':
                 return await procesarDass21(numeroUsuario, respuestas);
 
             default:
@@ -35,21 +40,24 @@ export const menuCuestionarios = () => {
     const ghqInfo = GHQ12info();
     const dassInfo = DASS21info();
 
-    return ` --* CUESTIONARIOS PSICOLÓGICOS DISPONIBLES *--
-    
-    Seleccionar el test a realizar:
-    1. **${ghqInfo.nombre}**
-    ${ghqInfo.descripcion}
-    - Tiempo estimado: ${ghqInfo.tiempoEstimado}
-    - Preguntas: ${ghqInfo.preguntas.length}
+    return ` 
+    ═════════════════════════
+     🧠 *CUESTIONARIOS DISPONIBLES*  
+    ═════════════════════════
 
-    2. **${dassInfo.nombre}**
-    ${dassInfo.descripcion}
-    Tiempo estimado: ${dassInfo.tiempoEstimado}
-    Preguntas: ${dassInfo.preguntas.length}
-    Evalúa: ${dassInfo.subescalas.map(s => s.nombre).join(', ')}	
+1️⃣  *${ghqInfo.nombre}*
+   ${ghqInfo.descripcion}
+   • Tiempo estimado: ${ghqInfo.tiempoEstimado}
+   • Nº de preguntas: ${ghqInfo.numPreguntas}
 
-    ** Responde con el número 1 o 2 para realizar el cuestionario de tpu elección **`	
+2️⃣  *${dassInfo.nombre}*
+   ${dassInfo.descripcion}
+   • Tiempo estimado: ${dassInfo.tiempoEstimado}
+   • Nº de preguntas: ${dassInfo.numPreguntas}
+   • Evalúa: ${dassInfo.subescalas.map(s => s.nombre).join(', ')}
+
+───────────────────────────────
+👉 *Responde con 1 o 2* para seleccionar el test que deseas realizar.`
 }
 
 export const iniciarTest = async (numeroUsuario, tipoTest) => {
@@ -63,9 +71,9 @@ export const validarTipoTest = (tipoTest) => {
 
 export const getTestInfo = (tipoTest) => {
     switch (tipoTest) {
-        case TIPOS_TEST.GHQ12:
+        case 'ghq12':
             return GHQ12info();
-        case TIPOS_TEST.DASS21:
+        case 'dass21':
             return DASS21info();
         default:
             return null
@@ -75,9 +83,9 @@ export const getTestInfo = (tipoTest) => {
 export const parsearSeleccionTest = (seleccion) => {
     switch (seleccion) {
         case '1':
-            return TIPOS_TEST.GHQ12;	
+            return 'ghq12';	
         case '2':
-            return TIPOS_TEST.DASS21;
+            return 'dass21';
         default:
             return null;
     }

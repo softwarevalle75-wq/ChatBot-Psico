@@ -1,29 +1,11 @@
 import Prisma from '@prisma/client'
 export const prisma = new Prisma.PrismaClient()
 
-const preguntas = [
-	'1. ¿Ha podido concentrarse bien en lo que hace?\n    0) Mejor que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
-	'2. ¿Sus preocupaciones le han hecho perder mucho el sueño?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
-	'3. ¿Ha sentido que está desempeñando un papel útil en la vida?\n    0) Más que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
-	'4. ¿Se ha sentido capaz de tomar decisiones?\n    0) Más capaz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos capaz que lo habitual.\n    3) Mucho menos capaz que lo habitual.',
-	'5. ¿Se ha sentido constantemente agobiado y en tensión?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
-	'6. ¿Ha sentido que no puede superar sus dificultades?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
-	'7. ¿Ha sido capaz de disfrutar de sus actividades normales de cada día?\n    0) Más que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
-	'8. ¿Ha sido capaz de hacer frente adecuadamente a sus problemas?\n    0) Más capaz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos capaz que lo habitual.\n    3) Mucho menos capaz que lo habitual.',
-	'9. ¿Se ha sentido poco feliz o deprimido/a?\n    0) No, en absoluto.\n    1) No más que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
-	'10. ¿Ha perdido confianza en sí mismo/a?\n    0) No, en absoluto.\n    1) No más que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
-	'11. ¿Ha pensado que usted es una persona que no vale para nada?\n    0) No, en absoluto.\n    1) No más que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
-	'12. ¿Se siente razonablemente feliz considerando todas las circunstancias?\n    0) Más feliz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos feliz que lo habitual.\n    3) Mucho menos feliz que lo habitual.',
-]
-
 //---------------------------------------------------------------------------------------------------------
 
 export const registrarUsuario = async (
 	nombre,
 	apellido,
-	correo,
-	tipoDocumento,
-	documento,
 	numero
 ) => {
 	try {
@@ -33,10 +15,7 @@ export const registrarUsuario = async (
 			},
 			data: {
 				nombre: nombre,
-				apellido: apellido,
-				correo: correo,
-				tipoDocumento: tipoDocumento,
-				documento: documento,
+				apellido: apellido
 			},
 		})
 		return user
@@ -160,63 +139,42 @@ export const switchFlujo = async (numero, flujo) => {
 
 //---------------------------------------------------------------------------------------------------------
 
-//Guardar puntaje en usuario
-
-export const savePuntajeUsuario = async (telefono, puntaje, jsonPreg, tipoTest) => {
-	return await seleccionarModelo(tipoTest).update({
-		where: { telefono },
-		data: {
-			Puntaje: puntaje,
-			resPreg: jsonPreg,
-		},
-	})
-}
-
-//---------------------------------------------------------------------------------------------------------
-
-// Obtener el puntaje y pregunta actual.
-export const getEstadoCuestionario = async (telefono, tipoTest) => {
+export const getEstadoCuestionario = async(telefono, tipoTest) => {
 	try {
-		const test = seleccionarModelo(tipoTest)
-		//---------------- select para diferentes modelos
+		const modelo = seleccionarModelo(tipoTest)
 
-		const selectFields = {
-		Puntaje: true,
-		preguntaActual: true,
-		resPreg: true,
-		}
-
-		if (tipoTest === 'dass21') {
-			selectFields.respuestas = true
-		}
-
-		const infoCues = await test.findUnique({
-			where: { telefono },
-			select: selectFields,
+		// Si el registro existe
+		let infoCues = await modelo.findUnique ({
+			where: { telefono }
 		})
-
+		
+		// Si no hay registro, se crea
 		if (!infoCues) {
-			const infoCues = await test.create({
-				data: {
-					telefono: telefono,
-				},
-			})
-			return infoCues
-		}
-		return infoCues
+			const defaultData = { telefono: telefono }
 
-		//----------------
-		/*
-		const infoCues = await test.findUnique({
-			where: { telefono },
-			select: {
-				Puntaje: true,
-				preguntaActual: true,
-				resPreg: true,
-				respuestas: tipoTest === 'dass21' ? true : false,
-			},
-		})		
-		*/
+			if (tipoTest === 'ghq12') {
+				defaultData.Puntaje = 0
+				defaultData.preguntaActual = 0
+				defaultData.resPreg = {}
+			} else if (tipoTest === 'dass21') {
+				defaultData.puntajeDep = 0
+				defaultData.puntajeAns = 0
+				defaultData.puntajeEstr = 0
+				defaultData.preguntaActual = 0
+				defaultData.resPreg = {}
+				defaultData.respuestas= []
+			} else {
+				defaultData.Puntaje = 0
+				defaultData.preguntaActual = 0
+				defaultData.resPreg = {}
+			}
+
+			infoCues = await modelo.create ({
+				data: defaultData,
+			})
+		}
+
+		return infoCues
 
 	} catch (error) {
 		console.error('Error obteniendo el estado:', error)
@@ -225,19 +183,127 @@ export const getEstadoCuestionario = async (telefono, tipoTest) => {
 }
 //---------------------------------------------------------------------------------------------------------
 
+export const saveEstadoCuestionario = async (
+	telefono, 
+	preguntaActual,
+	resPreg,
+	tipoTest,
+	...extraParams // guardar paramentros adicionales
+) => {
+	const modelo = seleccionarModelo(tipoTest)
+
+	const data = {
+		preguntaActual: preguntaActual,
+		resPreg: resPreg,
+	}
+
+	if (tipoTest === 'ghq12') {
+		const [puntaje] = extraParams
+		if (puntaje !== undefined) {
+			data.Puntaje = puntaje
+		}
+	} else if (tipoTest === 'dass21') {
+		const [respuestas] = extraParams
+		if (respuestas !== undefined) {
+			data.respuestas = respuestas
+		}
+	} else {
+		const [puntaje] = extraParams
+		if (puntaje !== undefined) {
+			data.Puntaje = puntaje
+		}
+	}
+
+	return await modelo.update({
+		where: { telefono },
+		data: data,
+	})
+}
+//---------------------------------------------------------------------------------------------------------
+
+export const savePuntajeUsuario = async (telefono, tipoTest, ...puntajeParams) => {
+	const modelo = seleccionarModelo(tipoTest)
+
+	console.log(`Tipo de test: ${tipoTest}`)
+	
+	if (tipoTest === 'ghq12') {
+		const [puntaje, jsonPreg] = puntajeParams
+		return await modelo.update ({
+			where: { telefono },
+			data: {
+				Puntaje: puntaje,
+				resPreg: jsonPreg,
+			},
+		})
+	} else if (tipoTest === 'dass21') {
+		const [puntajeDep, puntajeAns, puntajeEstr, jsonPreg] = puntajeParams
+		
+		return await modelo.update ({
+			where: { telefono },
+			data: {
+				puntajeDep,
+				puntajeAns,
+				puntajeEstr,
+				resPreg: jsonPreg,
+			},
+		})
+	} else {
+		const [puntaje, jsonPreg] = puntajeParams
+		return await modelo.update ({
+			where: { telefono },
+			data: {
+				Puntaje: puntaje,
+				resPreg: jsonPreg,
+			},
+		})
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------
+
 // Obtener el puntaje y pregunta actual.
 export const getInfoCuestionario = async (telefono, tipoTest) => {
 	try {
 		const test = seleccionarModelo(tipoTest)
-		const infoCues = await test.findUnique({
-			where: { telefono },
-			select: {
-				Puntaje: true,
-				preguntaActual: true,
-				resPreg: true,
-			},
-		})
-		if (infoCues) {
+
+		if (tipoTest === 'dass21') {
+			const infoCues = await test.findUnique ({
+				where: { telefono },
+				select: {
+					puntajeDep: true,
+					puntajeAns: true,
+					puntajeEstr: true,
+					preguntaActual: true,
+					resPreg: true,
+					respuestas: true,
+				},
+			})
+			return { infoCues }
+		} else if (tipoTest === 'ghq12') {
+			const infoCues = await test.findUnique({
+				where: { telefono },
+				select: {
+					Puntaje: true,
+					preguntaActual: true,
+					resPreg: true,
+				},
+			})
+
+			if (infoCues) {
+			const preguntas = [
+				'1. ¿Ha podido concentrarse bien en lo que hace?\n    0) Mejor que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
+				'2. ¿Sus preocupaciones le han hecho perder mucho el sueño?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
+				'3. ¿Ha sentido que está desempeñando un papel útil en la vida?\n    0) Más que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
+				'4. ¿Se ha sentido capaz de tomar decisiones?\n    0) Más capaz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos capaz que lo habitual.\n    3) Mucho menos capaz que lo habitual.',
+				'5. ¿Se ha sentido constantemente agobiado y en tensión?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
+				'6. ¿Ha sentido que no puede superar sus dificultades?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
+				'7. ¿Ha sido capaz de disfrutar de sus actividades normales de cada día?\n    0) Más que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
+				'8. ¿Ha sido capaz de hacer frente adecuadamente a sus problemas?\n    0) Más capaz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos capaz que lo habitual.\n    3) Mucho menos capaz que lo habitual.',
+				'9. ¿Se ha sentido poco feliz o deprimido/a?\n    0) No, en absoluto.\n    1) No más que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
+				'10. ¿Ha perdido confianza en sí mismo/a?\n    0) No, en absoluto.\n    1) No más que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
+				'11. ¿Ha pensado que usted es una persona que no vale para nada?\n    0) No, en absoluto.\n    1) No más que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
+				'12. ¿Se siente razonablemente feliz considerando todas las circunstancias?\n    0) Más feliz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos feliz que lo habitual.\n    3) Mucho menos feliz que lo habitual.',
+			]
 			const preguntasString = preguntas.join('\n')
 			const objetct = { infoCues, preguntasString }
 			return objetct
@@ -249,6 +315,9 @@ export const getInfoCuestionario = async (telefono, tipoTest) => {
 			})
 			return
 		}
+		}
+
+		
 	} catch (error) {
 		console.error('Error obteniendo el estado:', error)
 		throw new Error('Hubo un problema obteniendo el estado.')
@@ -276,34 +345,6 @@ export const changeTest = async (numero, tipoTest) => {
 
 //---------------------------------------------------------------------------------------------------------
 
-// Guardar el puntaje y pregunta actual.
-export const saveEstadoCuestionario = async (
-	telefono,
-	puntaje,
-	preguntaActual,
-	resPreg,
-	tipoTest,
-	respuestas
-) => {
-	const modelo = seleccionarModelo(tipoTest)
-
-	const data = {
-		Puntaje: puntaje,
-		preguntaActual: preguntaActual,
-		resPreg: resPreg,
-	}
-
-	if (tipoTest === 'dass21') {
-		data.respuestas = respuestas
-	}
-
-	return await modelo.update({
-		where: { telefono },
-		data: data,
-	})
-}
-
-//---------------------------------------------------------------------------------------------------------
 // Función para seleccionar el modelo adecuado basado en el tipo de test
 function seleccionarModelo(tipoTest) {
 	if (tipoTest === 'ghq12') {
@@ -350,10 +391,7 @@ export const getUsuario = async (documento) => {
 				idUsuario: true,
 				nombre: true,
 				apellido: true,
-				correo: true,
 				telefonoPersonal: true,
-				documento: true,
-				tipoDocumento: true,
 				testActual: true,
 				motivo: true,
 				ayudaPsicologica: true,
@@ -410,9 +448,6 @@ export const getCita = async (id) => {
 export const addWebUser = async (
 	nombre,
 	apellido,
-	correo,
-	tipoDocumento,
-	documento,
 	telefonoPersonal
 ) => {
 	try {
@@ -420,9 +455,6 @@ export const addWebUser = async (
 			data: {
 				nombre: nombre,
 				apellido: apellido,
-				correo: correo,
-				tipoDocumento: tipoDocumento,
-				documento: documento,
 				telefonoPersonal: telefonoPersonal,
 			},
 		})
@@ -470,29 +502,14 @@ export const addWebPracticante = async (
 export const editWebUser = async (
 	nombre,
 	apellido,
-	correo,
-	tipoDocumento,
-	documento,
 	telefonoPersonal
 ) => {
 	try {
-		// Buscar al usuario por correo
 		let user = await prisma.informacionUsuario.findFirst({
 			where: {
-				correo: correo,
+				nombre: nombre,
 			},
 		})
-
-		// Si no se encuentra por correo, buscar por documento
-		if (!user) {
-			console.log('No se encontró usuario por correo, buscando por documento:', documento)
-			user = await prisma.informacionUsuario.findFirst({
-				where: {
-					documento: documento,
-				},
-			})
-		}
-
 		// Si no se encuentra por documento, buscar por teléfono
 		if (!user) {
 			user = await prisma.informacionUsuario.findFirst({
@@ -521,27 +538,6 @@ export const editWebUser = async (
 			const updatedUser = await prisma.informacionUsuario.update({
 				where: { idUsuario: user.idUsuario },
 				data: { apellido: apellido },
-			})
-			return updatedUser
-		}
-		if (user.correo !== correo) {
-			const updatedUser = await prisma.informacionUsuario.update({
-				where: { idUsuario: user.idUsuario },
-				data: { correo: correo },
-			})
-			return updatedUser
-		}
-		if (user.tipoDocumento !== tipoDocumento) {
-			const updatedUser = await prisma.informacionUsuario.update({
-				where: { idUsuario: user.idUsuario },
-				data: { tipoDocumento: tipoDocumento },
-			})
-			return updatedUser
-		}
-		if (user.documento !== documento) {
-			const updatedUser = await prisma.informacionUsuario.update({
-				where: { idUsuario: user.idUsuario },
-				data: { documento: documento },
 			})
 			return updatedUser
 		}

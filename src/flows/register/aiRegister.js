@@ -27,9 +27,6 @@ async function register(conversationHistory, number) {
 		{
 		"nombre":"",
 		"apellido":"",
-		"correo":"",
-		"tipoDocumento":"",
-		"documento":"",
 		}`,
 	})
 	const jsonRegister = await aiRegister.chat.completions.create({
@@ -39,15 +36,15 @@ async function register(conversationHistory, number) {
 	})
 	const responseJson = JSON.parse(jsonRegister.choices[0].message.content)
 
-	const { nombre, apellido, correo, tipoDocumento, documento } = responseJson
+	const { nombre, apellido } = responseJson
 
-	await registrarUsuario(nombre, apellido, correo, tipoDocumento, documento, number)
+	await registrarUsuario(nombre, apellido, number)
 	await switchFlujo(number, 'assistantFlow')
 
 	return {
 		success: true,
 		result: responseJson,
-		message: 'Usuario Registrado',
+		message: 'Usuario registrado',
 	}
 }
 
@@ -62,10 +59,6 @@ const tools = [
 			description: `Cuando los siguientes campos esten llenos y el usuario haya confirmado, se debe registrar el usuario:
 			1. Nombres
 			2. Apellidos
-			3. Correo
-			4. Tipo de documento (CC, TI, Pasaporte)
-			5. Numero de documento
-
 
 	`,
 			parameters: {
@@ -98,7 +91,7 @@ export async function apiRegister(numero, msg) {
 					await register(conversationHistory, numero)
 
 					const answ =
-						'Gracias por realizar tu registro.  Bienvenido! Estoy aquí para apoyarte en lo que necesites. Si en algún momento sientes que quieres hablar de algo o que te gustaría recibir ayuda psicológica, sólo dímelo. Mi prioridad es que te sientas bien y escuchado. '
+						'Registrado con éxito'
 					conversationHistory.push({ role: 'assistant', content: answ })
 					conversationHistory.shift()
 					await saveHist(numero, conversationHistory)

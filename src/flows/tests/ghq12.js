@@ -8,10 +8,10 @@ const cuestGhq12 = {
     preguntas: [
         '1. ¿Ha podido concentrarse bien en lo que hace?\n    0) Mejor que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
         '2. ¿Sus preocupaciones le han hecho perder mucho el sueño?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
-        /*
         '3. ¿Ha sentido que está desempeñando un papel útil en la vida?\n    0) Más que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
         '4. ¿Se ha sentido capaz de tomar decisiones?\n    0) Más capaz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos capaz que lo habitual.\n    3) Mucho menos capaz que lo habitual.',
         '5. ¿Se ha sentido constantemente agobiado y en tensión?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
+        /*
         '6. ¿Ha sentido que no puede superar sus dificultades?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
         '7. ¿Ha sido capaz de disfrutar de sus actividades normales de cada día?\n    0) Más que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
         '8. ¿Ha sido capaz de hacer frente adecuadamente a sus problemas?\n    0) Más capaz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos capaz que lo habitual.\n    3) Mucho menos capaz que lo habitual.',
@@ -69,10 +69,10 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
             }
             await saveEstadoCuestionario(
                 numeroUsuario,
-                estado.Puntaje,
                 estado.preguntaActual,
                 estado.resPreg,
-                tipoTest
+                tipoTest,
+                estado.Puntaje,
             )
             return preguntas[0]
         }
@@ -87,37 +87,38 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
         estado.resPreg[respuestaNum].push(estado.preguntaActual + 1)
 
         // Verificar si hay más preguntas
-        if (estado.preguntaActual < preguntas.length - 1) {
+        const siguientePregunta = estado.preguntaActual + 1 
+        if (siguientePregunta >= preguntas.length) {
             
             // Guardar estado y puntaje 
             await saveEstadoCuestionario(
                 numeroUsuario,
-                estado.Puntaje,
-                estado.preguntaActual + 1,
+                estado.preguntaActual,
                 estado.resPreg,
-                tipoTest
+                tipoTest,
+                estado.Puntaje,
             )
-            await savePuntajeUsuario(numeroUsuario, estado.Puntaje, estado.resPreg, tipoTest)
+            await savePuntajeUsuario(numeroUsuario, tipoTest, estado.Puntaje, estado.resPreg )
 
-            return evaluarGHQ12(estado.Puntaje, umbrales) + '\n\n' + preguntas[estado.preguntaActual + 1] // + '\n\n' + preguntas[estado.preguntaActual + 1] 
-                                                                                                          // 👆 probando ( eliminar cualquier cosa )
+            return evaluarGHQ12(estado.Puntaje, umbrales) 
         }
 
         // Siguiente pregunta
-        estado.preguntaActual += 1 // ← probando ( sino funciona añadir = estado.preguntaActual = siguientePregunta )
+        estado.preguntaActual = siguientePregunta
         await saveEstadoCuestionario(
             numeroUsuario,
-            estado.Puntaje,
             estado.preguntaActual,
             estado.resPreg,
-            tipoTest
+            tipoTest,
+            estado.Puntaje,
         )
 
         return preguntas[estado.preguntaActual]
 
     } catch (error) {
         console.error('Error al procesar GHQ-12:', error)
-        return { error: 'Error interno del servidor.' }
+        return 'Hubo un error al procesar la prueba. Por favor, inténtelo de nuevo más tarde.'
+
     }
 }
 
