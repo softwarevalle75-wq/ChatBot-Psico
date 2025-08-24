@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   try {
-    await import('./practicantes.js');
+    await import('./roles.js');
   } finally {
     await prisma.$disconnect();
   }

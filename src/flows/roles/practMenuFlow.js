@@ -16,7 +16,7 @@ export const practConsejosFlow = addKeyword(['2'])
   );
 
 // --- Opción 1 (parte 1): pedir teléfono del paciente
-export const practOfrecerTestFlow__PedirTelefono = addKeyword(['1'])
+export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
   .addAnswer(
     '📱 *Opción 1: Ofrecer test a un usuario*\n' +
     'Envíame el *teléfono del paciente* (solo números).',
@@ -33,7 +33,7 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['1'])
   );
 
 // --- Opción 1 (parte 2): elegir test a asignar
-export const practOfrecerTestFlow__ElegirTest = addKeyword(['__elige_test__'])
+export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
   .addAnswer(
     'Elige el *test* para asignar:\n' +
     '1️⃣ GHQ-12 (tamizaje general)\n' +
@@ -53,11 +53,7 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword(['__elige_test__'])
       }
 
       const tel = await state.get('pacienteTelefono');
-
-      // Asegura que el usuario exista (obtenerUsuario en tu proyecto autocrea si no existe)
       await obtenerUsuario(tel);
-
-      // Marca test y envía al flujo "tests"
       await changeTest(tel, tipoTest);
       await switchFlujo(tel, 'tests');
 
@@ -66,9 +62,13 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword(['__elige_test__'])
         `Cuando el paciente escriba al bot, iniciará el cuestionario.`
       );
 
-      return gotoFlow(practMenuFlow); // volver al menú
+      await new Promise(res => setTimeout(res, 500));
+      return gotoFlow(practMenuFlow);
     }
   );
+
+
+
 
 // --- Menú principal del practicante (cerrado)
 export const practMenuFlow = addKeyword(['menu', 'practicante'])

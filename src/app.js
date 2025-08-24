@@ -1,7 +1,7 @@
 import { createBot, createProvider, createFlow } from "@builderbot/bot";
 import { MysqlAdapter as Database } from "@builderbot/database-mysql";
 import { BaileysProvider as Provider } from "@builderbot/provider-baileys";
-import { practMenuFlow } from './flows/practicantes/practMenuFlow.js'
+import { practMenuFlow, practOfrecerTestFlow__ElegirTest, practOfrecerTestFlow__PedirTelefono } from './flows/roles/practMenuFlow.js'
 import { welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow, roleFlow} from "./flows/flows.js";
 import {
 	getPracticante,
@@ -25,7 +25,7 @@ const PORT = process.env.PORT ?? 3008;
 //---------------------------------------------------------------------------------------------------------
 
 const main = async () => {
-	const adapterFlow = createFlow([roleFlow, practMenuFlow, welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow]);
+	const adapterFlow = createFlow([roleFlow, practMenuFlow, welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow, practOfrecerTestFlow__ElegirTest, practOfrecerTestFlow__PedirTelefono]);
 
 	const adapterProvider = createProvider(Provider);
 	const adapterDB = new Database({
@@ -46,7 +46,7 @@ const main = async () => {
 	adapterProvider.server.post(
 		"/v1/messages",
 		handleCtx(async (bot, req, res) => {
-			const { number, message, urlMedia } = req.body;
+			let { number, message, urlMedia } = req.body;
 			await bot.sendMessage(number, message, { media: urlMedia ?? null });
 			return res.end("sended");
 		})

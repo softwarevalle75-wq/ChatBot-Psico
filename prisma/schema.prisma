@@ -107,12 +107,17 @@ model practicante {
   registroCitas registroCitas[]
 }
 
-model admin {
-  idPracticante    String   @id @unique @default(uuid())
-  numero_documento String   @unique
-  tipo_documento   String   @default("CC")
-  nombre           String
-  telefono         String   @unique
+enum Rol {
+  usuario
+  practicante
+  admin
+}
+
+model rolChat {
+  telefono   String   @id @unique
+  rol        Rol      @default(usuario)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model cita {

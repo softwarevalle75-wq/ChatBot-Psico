@@ -20,13 +20,28 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '573184241647',
+            telefono: '573153340800',
         }
     ]
     await prisma.practicante.createMany({
     data: practicantes,
     skipDuplicates: true
   });
+
+//-------------------------------------------------------------------------------------------------------------------------------------------
+  const admins = [
+    {
+      telefono: '573183644600',
+      rol: 'admin',
+      updatedAt: new Date(),
+    }
+  ]
+    await prisma.rolChat.createMany({
+      data: admins,
+      skipDuplicates: true
+    });
+
+
 }
 
 main()

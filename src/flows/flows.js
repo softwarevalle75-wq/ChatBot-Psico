@@ -14,7 +14,8 @@ import { apiAssistant2 } from './assist/assistant2.js'
 import { procesarMensaje } from './tests/proccesTest.js'
 import { apiBack1 } from '../openAi/aiBack.js'
 import { apiAgend } from './agend/aiAgend.js'
-import { practMenuFlow } from './practicantes/practMenuFlow.js'
+import { practMenuFlow } from './roles/practMenuFlow.js'
+import { adminMenuFlow } from './roles/adminMenuFlow.js';
 
 // NUEVO: resolver remitente
 import { resolverRemitentePorTelefono } from '../queries/queries.js';
@@ -25,25 +26,16 @@ export const roleFlow = addKeyword(EVENTS.WELCOME).addAction(
   async (ctx, { gotoFlow }) => {
     try {
       const remitente = await resolverRemitentePorTelefono(ctx.from);
+      if (!remitente) return gotoFlow(registerFlow);
 
-      if (!remitente) {
-        // desconocido → mándalo a registrarse
-        return gotoFlow(registerFlow);
-      }
+      if (remitente.tipo === 'admin')       return gotoFlow(adminMenuFlow);
+      if (remitente.tipo === 'practicante') return gotoFlow(practMenuFlow);
+      if (remitente.tipo === 'usuario')     return gotoFlow(welcomeFlow);
 
-      if (remitente.tipo === 'practicante') {
-        return gotoFlow(practMenuFlow);
-      }
-
-      if (remitente.tipo === 'usuario') {
-        return gotoFlow(welcomeFlow); // o assistantFlow
-      }
-
-      // fallback
       return gotoFlow(registerFlow);
-    } catch (err) {
-      console.error("Error resolviendo remitente:", err);
-      return gotoFlow(registerFlow); 
+    } catch (e) {
+      console.error('roleFlow error:', e);
+      return gotoFlow(registerFlow);
     }
   }
 );
