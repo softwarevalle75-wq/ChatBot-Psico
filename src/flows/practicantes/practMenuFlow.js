@@ -1,0 +1,90 @@
+// src/flows/pract/practMenuFlow.js
+import { addKeyword } from '@builderbot/bot';
+import { changeTest, switchFlujo, obtenerUsuario } from '../../queries/queries.js';
+
+// --- Opción 2: Consejos a la IA (puedes redirigir a tu assistantFlow si prefieres)
+export const practConsejosFlow = addKeyword(['2'])
+  .addAnswer(
+    '🤖 Escribe tu consulta y te respondo como IA de apoyo para practicantes.\n' +
+    'Cuando quieras volver al menú, envía *menu*.', 
+    { capture: true },
+    async (ctx, { flowDynamic }) => {
+      // Aquí puedes reutilizar tu lógica de IA (aiAssistant) pero con prompt distinto
+      // o simplemente redirigir a assistantFlow desde el roleFlow.
+      await flowDynamic('… (aquí invocas tu IA y devuelves la respuesta) …');
+    }
+  );
+
+// --- Opción 1 (parte 1): pedir teléfono del paciente
+export const practOfrecerTestFlow__PedirTelefono = addKeyword(['1'])
+  .addAnswer(
+    '📱 *Opción 1: Ofrecer test a un usuario*\n' +
+    'Envíame el *teléfono del paciente* (solo números).',
+    { capture: true },
+    async (ctx, { state, fallBack, gotoFlow, flowDynamic }) => {
+      const tel = (ctx.body || '').replace(/\D/g, '');
+      if (tel.length < 8) {
+        await flowDynamic('❌ Teléfono inválido. Escribe solo números, al menos 8 dígitos.');
+        return fallBack();
+      }
+      await state.update({ pacienteTelefono: tel });
+      return gotoFlow(practOfrecerTestFlow__ElegirTest);
+    }
+  );
+
+// --- Opción 1 (parte 2): elegir test a asignar
+export const practOfrecerTestFlow__ElegirTest = addKeyword(['__elige_test__'])
+  .addAnswer(
+    'Elige el *test* para asignar:\n' +
+    '1️⃣ GHQ-12 (tamizaje general)\n' +
+    '2️⃣ Beck Depresión (BDI)\n' +
+    '3️⃣ Beck Ansiedad (BAI)\n' +
+    '4️⃣ Riesgo suicida\n\n' +
+    'Responde con *1*, *2*, *3* o *4*.',
+    { capture: true },
+    async (ctx, { state, flowDynamic, gotoFlow }) => {
+      const mapa = { '1': 'ghq12', '2': 'dep', '3': 'ans', '4': 'suic' };
+      const opt = (ctx.body || '').trim();
+      const tipoTest = mapa[opt];
+
+      if (!tipoTest) {
+        await flowDynamic('❌ Opción inválida. Responde 1, 2, 3 o 4.');
+        return;
+      }
+
+      const tel = await state.get('pacienteTelefono');
+
+      // Asegura que el usuario exista (obtenerUsuario en tu proyecto autocrea si no existe)
+      await obtenerUsuario(tel);
+
+      // Marca test y envía al flujo "tests"
+      await changeTest(tel, tipoTest);
+      await switchFlujo(tel, 'tests');
+
+      await flowDynamic(
+        `✅ Listo. Asigné el test *${tipoTest.toUpperCase()}* al paciente *${tel}*.\n` +
+        `Cuando el paciente escriba al bot, iniciará el cuestionario.`
+      );
+
+      return gotoFlow(practMenuFlow); // volver al menú
+    }
+  );
+
+// --- Menú principal del practicante (cerrado)
+export const practMenuFlow = addKeyword(['menu', 'practicante'])
+  .addAnswer(
+    '👋 *Menú del practicante*\n' +
+    'Elige una opción:\n\n' +
+    '1️⃣ Ofrecer test a un usuario\n' +
+    '2️⃣ Pedir consejos a la IA\n\n' +
+    'Responde con *1* o *2*.',
+    { capture: true },
+    async (ctx, { gotoFlow, flowDynamic }) => {
+      const opt = (ctx.body || '').trim();
+      if (opt === '1') return gotoFlow(practOfrecerTestFlow__PedirTelefono);
+      if (opt === '2') return gotoFlow(practConsejosFlow);
+
+      await flowDynamic('❌ Opción no válida. Escribe *1* o *2*.');
+      return gotoFlow(practMenuFlow);
+    }
+  );

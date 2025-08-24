@@ -27,7 +27,7 @@ export const registrarUsuario = async (
 	numero
 ) => {
 	try {
-		const user = await prisma.informacionUsuario.update({
+		const user = await prisma.informacionUsuario.upsert({
 			where: {
 				telefonoPersonal: numero,
 			},
@@ -45,16 +45,73 @@ export const registrarUsuario = async (
 		throw new Error('Hubo un problema al crear el usuario.')
 	}
 }
+//---------------------------------------------------------------------------------------------------------
+
+export const obtenerPracticantePorTelefono = async (numero) => {
+  try {
+    return await prisma.practicante.findFirst({
+      where: { telefono: numero },
+    });
+  } catch (e) {
+    console.error('obtenerPracticantePorTelefono error:', e);
+    return null;
+  }
+};
+
+// --- NUEVO: NO crea usuario; solo mira si existe por telefonoPersonal
+export const buscarUsuarioPorTelefono = async (numero) => {
+  try {
+    return await prisma.informacionUsuario.findUnique({
+      where: { telefonoPersonal: numero },
+    });
+  } catch (e) {
+    console.error('buscarUsuarioPorTelefono error:', e);
+    return null;
+  }
+};
+
+// --- NUEVO: resuelve remitente por teléfono (prioriza practicante)
+export const resolverRemitentePorTelefono = async (numero) => {
+  const practicante = await obtenerPracticantePorTelefono(numero);
+  if (practicante) return { tipo: 'practicante', data: practicante };
+
+  const usuario = await buscarUsuarioPorTelefono(numero);
+  if (usuario) return { tipo: 'usuario', data: usuario };
+
+  return { tipo: 'desconocido', data: null };
+};
+
+
 
 //---------------------------------------------------------------------------------------------------------
 
 export const obtenerUsuario = async (numero) => {
 	try {
-		let user = await prisma.informacionUsuario.findUnique({
-			where: {
-				telefonoPersonal: numero,
-			},
-		})
+
+		const getUser = async (numero) => {
+			let user = await prisma.informacionUsuario.findUnique({
+				where: {
+					telefonoPersonal: numero,
+				}
+			})
+
+			if(user){
+				return { tipo: 'usuario', data: user}
+			}
+
+			const pract = await prisma.practicante.findUnique({
+				where: {
+					telefono: numero
+				}
+			})
+
+			if(pract)
+				return { tipo: 'practicante', data: pract};
+			
+			return null;
+		}
+
+		let user = await getUser(numero);
 
 		// Si el usuario no existe, crearlo con un historial inicial
 		if (!user) {
@@ -93,7 +150,7 @@ export const obtenerHist = async (numero) => {
 		// Verificar si no se encontró el usuario
 		if (!user) {
 			console.error(`Usuario no encontrado con el número: ${numero}`)
-			throw new Error('Usuario no encontrado.')
+			return null
 		}
 
 		// Retornar el historial del usuario encontrado
@@ -106,20 +163,24 @@ export const obtenerHist = async (numero) => {
 
 //---------------------------------------------------------------------------------------------------------
 
-export const saveHist = async (numero, historial) => {
-	try {
-		await prisma.informacionUsuario.update({
-			where: {
-				telefonoPersonal: numero,
-			},
-			data: {
-				historial: historial,
-			},
-		})
-	} catch (error) {
-		console.error('Error al guardar el historial:', error)
-		throw new Error('Hubo un problema al guardar el historial.')
-	}
+export async function saveHist(numero, conversationHistory) {
+  try {
+    console.log("Guardando historial para:", numero);
+
+    await prisma.informacionUsuario.upsert({
+      where: { telefonoPersonal: numero },
+      update: { historial: conversationHistory },
+      create: {
+        telefonoPersonal: numero,
+        historial: conversationHistory
+      }
+    });
+
+    console.log("Historial guardado correctamente.");
+  } catch (error) {
+    console.error("Error al guardar el historial:", error);
+    throw new Error("Hubo un problema al guardar el historial.");
+  }
 }
 
 //---------------------------------------------------------------------------------------------------------

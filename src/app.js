@@ -1,7 +1,8 @@
 import { createBot, createProvider, createFlow } from "@builderbot/bot";
 import { MysqlAdapter as Database } from "@builderbot/database-mysql";
 import { BaileysProvider as Provider } from "@builderbot/provider-baileys";
-import { welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow } from "./flows/flows.js";
+import { practMenuFlow } from './flows/practicantes/practMenuFlow.js'
+import { welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow, roleFlow} from "./flows/flows.js";
 import {
 	getPracticante,
 	getUsuario,
@@ -15,6 +16,8 @@ import {
 	getWebCitas,
 	citasPorPaciente,
 } from "./queries/queries.js";
+
+
 import "dotenv/config";
 
 const PORT = process.env.PORT ?? 3008;
@@ -22,7 +25,7 @@ const PORT = process.env.PORT ?? 3008;
 //---------------------------------------------------------------------------------------------------------
 
 const main = async () => {
-	const adapterFlow = createFlow([welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow]);
+	const adapterFlow = createFlow([roleFlow, practMenuFlow, welcomeFlow, registerFlow, assistantFlow, testFlow, agendFlow]);
 
 	const adapterProvider = createProvider(Provider);
 	const adapterDB = new Database({

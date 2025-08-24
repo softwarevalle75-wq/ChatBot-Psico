@@ -101,9 +101,18 @@ model practicante {
   horario          Json
   sesiones         Int      @default(0)
   fechaCreacion    DateTime @default(now())
+  telefono         String  @unique
 
   citas         cita[] // Relación con cita
   registroCitas registroCitas[]
+}
+
+model admin {
+  idPracticante    String   @id @unique @default(uuid())
+  numero_documento String   @unique
+  tipo_documento   String   @default("CC")
+  nombre           String
+  telefono         String   @unique
 }
 
 model cita {
