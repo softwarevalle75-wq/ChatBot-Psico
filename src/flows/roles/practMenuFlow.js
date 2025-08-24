@@ -1,6 +1,7 @@
 // src/flows/pract/practMenuFlow.js
 import { addKeyword } from '@builderbot/bot';
 import { changeTest, switchFlujo, obtenerUsuario } from '../../queries/queries.js';
+import { apiAssistant2 } from '../../flows/assist/assistant2.js';
 
 // --- Opción 2: Consejos a la IA (puedes redirigir a tu assistantFlow si prefieres)
 export const practConsejosFlow = addKeyword(['2'])
@@ -8,10 +9,21 @@ export const practConsejosFlow = addKeyword(['2'])
     '🤖 Escribe tu consulta y te respondo como IA de apoyo para practicantes.\n' +
     'Cuando quieras volver al menú, envía *menu*.', 
     { capture: true },
-    async (ctx, { flowDynamic }) => {
+    async (ctx, { flowDynamic, state }) => {
       // Aquí puedes reutilizar tu lógica de IA (aiAssistant) pero con prompt distinto
       // o simplemente redirigir a assistantFlow desde el roleFlow.
-      await flowDynamic('… (aquí invocas tu IA y devuelves la respuesta) …');
+      try{
+        let user = state.get('user');
+        console.log(user)
+        if(!user)
+          user = await obtenerUsuario(ctx.from);
+        console.log(ctx.from)
+        console.log(user);
+        const response = await apiAssistant2(ctx.from, ctx.body, user.data.idPracticante)
+        await flowDynamic(response);
+      }catch(err){
+        console.log(err);
+      }
     }
   );
 
@@ -22,7 +34,7 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
     'Envíame el *teléfono del paciente* (solo números).',
     { capture: true },
     async (ctx, { state, fallBack, gotoFlow, flowDynamic }) => {
-      const tel = (ctx.body || '').replace(/\D/g, '');
+      const tel = (ctx.body || '').replace(/\D/g, '');  
       if (tel.length < 8) {
         await flowDynamic('❌ Teléfono inválido. Escribe solo números, al menos 8 dígitos.');
         return fallBack();

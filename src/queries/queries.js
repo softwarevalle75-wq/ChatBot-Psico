@@ -241,7 +241,7 @@ export const obtenerHist = async (numero) => {
 		// Verificar si no se encontró el usuario
 		if (!user) {
 			console.error(`Usuario no encontrado con el número: ${numero}`)
-			return null
+			return []
 		}
 
 		// Retornar el historial del usuario encontrado
