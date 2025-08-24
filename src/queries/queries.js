@@ -6,6 +6,9 @@ export const prisma = new Prisma.PrismaClient()
 export const registrarUsuario = async (
 	nombre,
 	apellido,
+	correo,
+	tipoDocumento,
+	documento,
 	numero
 ) => {
 	try {
@@ -15,7 +18,10 @@ export const registrarUsuario = async (
 			},
 			data: {
 				nombre: nombre,
-				apellido: apellido
+				apellido: apellido,
+				correo: correo,
+				tipoDocumento: tipoDocumento,
+				documento: documento,
 			},
 		})
 		return user
@@ -391,7 +397,10 @@ export const getUsuario = async (documento) => {
 				idUsuario: true,
 				nombre: true,
 				apellido: true,
+				correo: true,
 				telefonoPersonal: true,
+				documento: true,
+				tipoDocumento: true,
 				testActual: true,
 				motivo: true,
 				ayudaPsicologica: true,
@@ -448,6 +457,9 @@ export const getCita = async (id) => {
 export const addWebUser = async (
 	nombre,
 	apellido,
+	correo,
+	tipoDocumento,
+	documento,
 	telefonoPersonal
 ) => {
 	try {
@@ -455,6 +467,9 @@ export const addWebUser = async (
 			data: {
 				nombre: nombre,
 				apellido: apellido,
+				correo: correo,
+				tipoDocumento: tipoDocumento,
+				documento: documento,
 				telefonoPersonal: telefonoPersonal,
 			},
 		})
@@ -502,14 +517,29 @@ export const addWebPracticante = async (
 export const editWebUser = async (
 	nombre,
 	apellido,
+	correo,
+	tipoDocumento,
+	documento,
 	telefonoPersonal
 ) => {
 	try {
+		// Buscar al usuario por correo
 		let user = await prisma.informacionUsuario.findFirst({
 			where: {
-				nombre: nombre,
+				correo: correo,
 			},
 		})
+
+		// Si no se encuentra por correo, buscar por documento
+		if (!user) {
+			console.log('No se encontró usuario por correo, buscando por documento:', documento)
+			user = await prisma.informacionUsuario.findFirst({
+				where: {
+					documento: documento,
+				},
+			})
+		}
+
 		// Si no se encuentra por documento, buscar por teléfono
 		if (!user) {
 			user = await prisma.informacionUsuario.findFirst({
@@ -538,6 +568,27 @@ export const editWebUser = async (
 			const updatedUser = await prisma.informacionUsuario.update({
 				where: { idUsuario: user.idUsuario },
 				data: { apellido: apellido },
+			})
+			return updatedUser
+		}
+		if (user.correo !== correo) {
+			const updatedUser = await prisma.informacionUsuario.update({
+				where: { idUsuario: user.idUsuario },
+				data: { correo: correo },
+			})
+			return updatedUser
+		}
+		if (user.tipoDocumento !== tipoDocumento) {
+			const updatedUser = await prisma.informacionUsuario.update({
+				where: { idUsuario: user.idUsuario },
+				data: { tipoDocumento: tipoDocumento },
+			})
+			return updatedUser
+		}
+		if (user.documento !== documento) {
+			const updatedUser = await prisma.informacionUsuario.update({
+				where: { idUsuario: user.idUsuario },
+				data: { documento: documento },
 			})
 			return updatedUser
 		}

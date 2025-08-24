@@ -13,6 +13,9 @@ export const registerPrompt = `
 	Informacion a Recopilar:
 	1. Nombres
 	2. Apellidos
+	3. Correo
+	4. Tipo de documento (CC, TI, Pasaporte)
+	5. Numero de documento
 
     Reglas:
     - No responder nada que no este en este documento

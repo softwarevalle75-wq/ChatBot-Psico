@@ -12,7 +12,10 @@ model informacionUsuario {
   idUsuario           String   @id @unique @default(uuid())
   nombre              String?
   apellido            String?
+  correo              String?  @unique
   telefonoPersonal    String   @unique
+  documento           String?  @unique
+  tipoDocumento       String   @default("CC")
   testActual          String   @default("ghq12")
   motivo              String?
   ayudaPsicologica    Int      @default(1)
