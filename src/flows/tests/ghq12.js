@@ -123,11 +123,14 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
 
 const evaluarGHQ12 = async (puntaje, umbrales) => {
 	if (puntaje <= umbrales.bajo.max) {
-		return `El cuestionario ha terminado. Su puntaje final es: ${puntaje} \n${umbrales.bajo.mensaje}`
+		return `--* GHQ-12 COMPLETADO *--. 
+        Su puntaje final es: ${puntaje} \n${umbrales.bajo.mensaje}`
 	} else if (puntaje >= umbrales.medio.min && puntaje <= umbrales.medio.max) {
-		return `El cuestionario ha terminado. Su puntaje final es: ${puntaje} \n${umbrales.medio.mensaje}`
+		return `--* GHQ-12 COMPLETADO *--. 
+        Su puntaje final es: ${puntaje} \n${umbrales.medio.mensaje}`
 	} else if (puntaje >= umbrales.alto.min) {
-		return `El cuestionario ha terminado. Su puntaje final es: ${puntaje} \n${umbrales.alto.mensaje}`
+		return `--* GHQ-12 COMPLETADO *--. 
+        Su puntaje final es: ${puntaje} \n${umbrales.alto.mensaje}`
 	} else {
 		return 'Error al evaluar su puntaje'
 	}
