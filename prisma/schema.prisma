@@ -103,9 +103,23 @@ model practicante {
   horario          Json
   sesiones         Int      @default(0)
   fechaCreacion    DateTime @default(now())
+  telefono         String  @unique
 
   citas         cita[] // Relación con cita
   registroCitas registroCitas[]
+}
+
+enum Rol {
+  usuario
+  practicante
+  admin
+}
+
+model rolChat {
+  telefono   String   @id @unique
+  rol        Rol      @default(usuario)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model cita {

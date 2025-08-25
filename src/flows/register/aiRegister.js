@@ -79,8 +79,14 @@ const tools = [
 //---------------------------------------------------------------------------------------------------------
 
 export async function apiRegister(numero, msg) {
-	const conversationHistory = await obtenerHist(numero)
-	conversationHistory.unshift({ role: 'system', content: registerPrompt })
+	let conversationHistory = await obtenerHist(numero)
+
+	// Si no existe historial, inicializa un array vacío
+	if (!conversationHistory) {
+	conversationHistory = [];
+	}
+
+	conversationHistory.unshift({ role: 'system', content: registerPrompt });
 	conversationHistory.push({ role: 'user', content: msg })
 	try {
 		const response = await aiRegister.chat.completions.create({

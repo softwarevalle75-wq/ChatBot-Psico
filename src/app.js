@@ -10,8 +10,21 @@ import {
 	postTestFlow, 
 	agendFlow, 
 	postAgendFlow, 
-	assistantFlow 
+	assistantFlow, 
+	roleFlow 
 } from "./flows/flows.js";
+
+import { 
+	adminMenuFlow 
+} from './flows/roles/adminMenuFlow.js'
+
+import { 
+	practMenuFlow, 
+	practOfrecerTestFlow__ElegirTest, 
+	practOfrecerTestFlow__PedirTelefono, 
+	practConsejosFlow 
+} from './flows/roles/practMenuFlow.js'
+
 import {
 	getPracticante,
 	getUsuario,
@@ -25,24 +38,42 @@ import {
 	getWebCitas,
 	citasPorPaciente,
 } from "./queries/queries.js";
+
+
+
 import "dotenv/config";
+
 
 const PORT = process.env.PORT ?? 3008;
 
 //---------------------------------------------------------------------------------------------------------
 
 const main = async () => {
-	const adapterFlow = createFlow([
-		welcomeFlow, 
-		registerFlow, 
-		menuFlow, 
-		testSelectionFlow, 
-		testFlow, 
-		postTestFlow, 
-		agendFlow, 
-		postAgendFlow, 
-		assistantFlow  // Para compatibilidad con código existente
-	]);
+const adapterFlow = createFlow([
+	// Flujos de roles
+	roleFlow,
+	adminMenuFlow,
+	practMenuFlow,
+
+	// Flujos generales
+	welcomeFlow,
+	registerFlow,
+	menuFlow,
+	testSelectionFlow,
+	assistantFlow,
+
+	// Flujos de tests
+	testFlow,
+	postTestFlow,
+	practOfrecerTestFlow__ElegirTest,
+	practOfrecerTestFlow__PedirTelefono,
+	practConsejosFlow,
+
+	// Flujos de agendamiento
+	agendFlow,
+	postAgendFlow
+]);
+
 
 	const adapterProvider = createProvider(Provider);
 	const adapterDB = new Database({
@@ -63,7 +94,7 @@ const main = async () => {
 	adapterProvider.server.post(
 		"/v1/messages",
 		handleCtx(async (bot, req, res) => {
-			const { number, message, urlMedia } = req.body;
+			let { number, message, urlMedia } = req.body;
 			await bot.sendMessage(number, message, { media: urlMedia ?? null });
 			return res.end("sended");
 		})

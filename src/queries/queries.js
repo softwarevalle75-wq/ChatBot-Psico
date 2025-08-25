@@ -4,42 +4,107 @@ export const prisma = new Prisma.PrismaClient()
 //---------------------------------------------------------------------------------------------------------
 
 export const registrarUsuario = async (
-	nombre,
-	apellido,
-	correo,
-	tipoDocumento,
-	documento,
-	numero
+  nombre,
+  apellido,
+  correo,
+  tipoDocumento,
+  documento,
+  numero
 ) => {
-	try {
-		const user = await prisma.informacionUsuario.update({
-			where: {
-				telefonoPersonal: numero,
-			},
-			data: {
-				nombre: nombre,
-				apellido: apellido,
-				correo: correo,
-				tipoDocumento: tipoDocumento,
-				documento: documento,
-			},
-		})
-		return user
-	} catch (error) {
-		console.error('Error al crear el usuario:', error)
-		throw new Error('Hubo un problema al crear el usuario.')
-	}
-}
+  try {
+    const user = await prisma.informacionUsuario.upsert({
+      where: {
+        telefonoPersonal: numero,
+      },
+      update: {
+        nombre,
+        apellido,
+        correo,
+        tipoDocumento,
+        documento,
+      },
+      create: {
+        telefonoPersonal: numero,
+        nombre,
+        apellido,
+        correo,
+        tipoDocumento,
+        documento,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error("Error al crear el usuario:", error);
+    throw new Error("Hubo un problema al crear el usuario.");
+  }
+};
+//---------------------------------------------------------------------------------------------------------
+
+export const obtenerPracticantePorTelefono = async (numero) => {
+  try {
+    return await prisma.practicante.findFirst({
+      where: { telefono: numero },
+    });
+  } catch (e) {
+    console.error('obtenerPracticantePorTelefono error:', e);
+    return null;
+  }
+};
+
+// --- NUEVO: NO crea usuario; solo mira si existe por telefonoPersonal
+export const buscarUsuarioPorTelefono = async (numero) => {
+  try {
+    return await prisma.informacionUsuario.findUnique({
+      where: { telefonoPersonal: numero },
+    });
+  } catch (e) {
+    console.error('buscarUsuarioPorTelefono error:', e);
+    return null;
+  }
+};
+
+// --- NUEVO: resuelve remitente por teléfono (prioriza practicante)
+// export const resolverRemitentePorTelefono = async (numero) => {
+//   const practicante = await obtenerPracticantePorTelefono(numero);
+//   if (practicante) return { tipo: 'practicante', data: practicante };
+
+//   const usuario = await buscarUsuarioPorTelefono(numero);
+//   if (usuario) return { tipo: 'usuario', data: usuario };
+
+//   return { tipo: 'desconocido', data: null };
+// };
+
+
 
 //---------------------------------------------------------------------------------------------------------
 
 export const obtenerUsuario = async (numero) => {
 	try {
-		let user = await prisma.informacionUsuario.findUnique({
-			where: {
-				telefonoPersonal: numero,
-			},
-		})
+
+		const getUser = async (numero) => {
+			let user = await prisma.informacionUsuario.findUnique({
+				where: {
+					telefonoPersonal: numero,
+				}
+			})
+
+			if(user){
+				return { tipo: 'usuario', data: user}
+			}
+
+			const pract = await prisma.practicante.findUnique({
+				where: {
+					telefono: numero
+				}
+			})
+
+			if(pract)
+				return { tipo: 'practicante', data: pract};
+			
+			return null;
+		}
+
+		let user = await getUser(numero);
 
 		// Si el usuario no existe, crearlo con un historial inicial
 		if (!user) {
@@ -60,6 +125,89 @@ export const obtenerUsuario = async (numero) => {
 		throw new Error('Hubo un problema al obtener el usuario.')
 	}
 }
+//---------------------------------------------------------------------------------------------------------
+
+// Normaliza el número (solo dígitos)
+const normalizePhone = (raw) => (raw || '').replace(/\D/g, '');
+
+export async function setRolTelefono(telefono, rol) {
+  const phone = normalizePhone(telefono);
+  return prisma.rolChat.upsert({
+    where: { telefono: phone },
+    update: { rol },
+    create: { telefono: phone, rol },
+  });
+}
+
+export async function getRolTelefono(telefono) {
+  const phone = normalizePhone(telefono);
+  return prisma.rolChat.findUnique({ where: { telefono: phone } });
+}
+
+export async function createUsuarioBasico(telefono, data = {}) {
+  const phone = normalizePhone(telefono);
+  // Crea (o asegura) un usuario mínimo en informacionUsuario
+  const user = await prisma.informacionUsuario.upsert({
+    where: { telefonoPersonal: phone },
+    update: {
+      nombre: data.nombre ?? undefined,
+      apellido: data.apellido ?? undefined,
+      correo: data.correo ?? undefined,
+    },
+    create: {
+      telefonoPersonal: phone,
+      nombre: data.nombre ?? null,
+      apellido: data.apellido ?? null,
+      correo: data.correo ?? null,
+      historial: [],
+      // los demás campos de tu modelo ya tienen defaults
+    },
+  });
+  // Marca el rol en el mapa
+  await setRolTelefono(phone, 'usuario');
+  return user;
+}
+
+/**
+ * Crea un “cascarón” para rol practicante/admin:
+ * - Para 'practicante' NO creamos registro en la tabla practicante aquí porque tu modelo exige muchos campos obligatorios.
+ *   Sugerencia: crea el perfil completo en su flujo propio.
+ * - Para 'admin' normalmente basta con el mapeo (o si tienes tabla admin, haz upsert ahí).
+ */
+export async function ensureRolMapping(telefono, rol) {
+  const phone = normalizePhone(telefono);
+  await setRolTelefono(phone, rol);
+  return { telefono: phone, rol };
+}
+
+export async function resolverRemitentePorTelefono(rawPhone) {
+  const telefono = normalizePhone(rawPhone);
+
+  // 1) Si existe mapeo, úsalo
+  const mapping = await getRolTelefono(telefono);
+  if (mapping) {
+    return { tipo: mapping.rol, data: null };
+  }
+
+  // 2) Fallback a tus tablas (ajusta los campos según tu schema real)
+  const user = await prisma.informacionUsuario.findUnique({
+    where: { telefonoPersonal: telefono },
+  });
+  if (user) return { tipo: 'usuario', data: user };
+
+  // Si tu modelo practicante tiene campo 'telefono', úsalo; si no, quita esto.
+  try {
+    const pract = await prisma.practicante.findUnique({
+      where: { telefono: telefono },
+    });
+    if (pract) return { tipo: 'practicante', data: pract };
+  } catch (_) {
+    // si no existe la columna 'telefono' en practicante, ignora
+  }
+
+  // 3) Desconocido
+  return null;
+}
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -78,7 +226,7 @@ export const obtenerHist = async (numero) => {
 		// Verificar si no se encontró el usuario
 		if (!user) {
 			console.error(`Usuario no encontrado con el número: ${numero}`)
-			throw new Error('Usuario no encontrado.')
+			return []
 		}
 
 		// Retornar el historial del usuario encontrado
@@ -91,20 +239,24 @@ export const obtenerHist = async (numero) => {
 
 //---------------------------------------------------------------------------------------------------------
 
-export const saveHist = async (numero, historial) => {
-	try {
-		await prisma.informacionUsuario.update({
-			where: {
-				telefonoPersonal: numero,
-			},
-			data: {
-				historial: historial,
-			},
-		})
-	} catch (error) {
-		console.error('Error al guardar el historial:', error)
-		throw new Error('Hubo un problema al guardar el historial.')
-	}
+export async function saveHist(numero, conversationHistory) {
+  try {
+    console.log("Guardando historial para:", numero);
+
+    await prisma.informacionUsuario.upsert({
+      where: { telefonoPersonal: numero },
+      update: { historial: conversationHistory },
+      create: {
+        telefonoPersonal: numero,
+        historial: conversationHistory
+      }
+    });
+
+    console.log("Historial guardado correctamente.");
+  } catch (error) {
+    console.error("Error al guardar el historial:", error);
+    throw new Error("Hubo un problema al guardar el historial.");
+  }
 }
 
 //---------------------------------------------------------------------------------------------------------
@@ -361,6 +513,22 @@ function seleccionarModelo(tipoTest) {
 		return prisma.tests
 	}
 }
+
+//---------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //---------------------------------------------------------------------------------------------------------
 
