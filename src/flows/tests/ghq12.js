@@ -11,7 +11,7 @@ const cuestGhq12 = {
         '3. ¿Ha sentido que está desempeñando un papel útil en la vida?\n    0) Más que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
         '4. ¿Se ha sentido capaz de tomar decisiones?\n    0) Más capaz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos capaz que lo habitual.\n    3) Mucho menos capaz que lo habitual.',
         '5. ¿Se ha sentido constantemente agobiado y en tensión?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
-        /*
+        
         '6. ¿Ha sentido que no puede superar sus dificultades?\n    0) No, en absoluto.\n    1) Igual que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
         '7. ¿Ha sido capaz de disfrutar de sus actividades normales de cada día?\n    0) Más que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos que lo habitual.\n    3) Mucho menos que lo habitual.',
         '8. ¿Ha sido capaz de hacer frente adecuadamente a sus problemas?\n    0) Más capaz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos capaz que lo habitual.\n    3) Mucho menos capaz que lo habitual.',
@@ -19,7 +19,7 @@ const cuestGhq12 = {
         '10. ¿Ha perdido confianza en sí mismo/a?\n    0) No, en absoluto.\n    1) No más que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
         '11. ¿Ha pensado que usted es una persona que no vale para nada?\n    0) No, en absoluto.\n    1) No más que lo habitual.\n    2) Más que lo habitual.\n    3) Mucho más que lo habitual.',
         '12. ¿Se siente razonablemente feliz considerando todas las circunstancias?\n    0) Más feliz que lo habitual.\n    1) Igual que lo habitual.\n    2) Menos feliz que lo habitual.\n    3) Mucho menos feliz que lo habitual.',
-        */
+        
     ],
     umbrales: {
         bajo: {
@@ -60,8 +60,8 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
             }
         }
 
-        // Iniciar estado si no existe
-        if (!estado.resPreg) {
+        // permite que el cuestionario inicie desde la pregunta 1
+        if (!estado.resPreg || Object.keys(estado.resPreg).length === 0) {
             estado = {
                 Puntaje: 0,
                 preguntaActual: 0,
@@ -76,6 +76,10 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
             )
             return preguntas[0]
         }
+
+        if (respuestas === null) {
+			return preguntas[estado.preguntaActual]
+		}
 
         const respuestaNum = Number(respuestas)
         estado.Puntaje += respuestaNum

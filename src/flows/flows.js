@@ -11,17 +11,14 @@ import { apiRegister } from './register/aiRegister.js'
 import { procesarMensaje } from './tests/proccesTest.js'
 import { menuCuestionarios, parsearSeleccionTest} from './tests/controlTest.js'
 import { apiAgend } from './agend/aiAgend.js'
+import { procesarDass21 } from './tests/dass21.js'
+import { procesarGHQ12 } from './tests/ghq12.js'
 
 //---------------------------------------------------------------------------------------------------------
 
 export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
 	async (ctx, { gotoFlow, state }) => {
 		const user = await obtenerUsuario(ctx.from)
-
-		// if (!user) {
-		// 	console.log('Usuario no encontrado, dirigiendo a registerFlow')
-		// 	return gotoFlow(registerFlow)
-		// }
 
 		await state.update({ user: user })
 		console.log(user.flujo)
@@ -126,26 +123,37 @@ export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'
 
     const testName = tipoTest === 'ghq12' ? 'GHQ-12' : 'DASS-21';
 
-    // 🧠 Actualizar test actual
+    // Actualizar test actual
     await changeTest(ctx.from, tipoTest);
     user.testActual = tipoTest;
     await state.update({ user });
     await switchFlujo(ctx.from, 'testFlow');
 
-    // 🚀 Iniciar el test desde la primera pregunta
-    const primerMensaje = await procesarMensaje(ctx.from, '_start', tipoTest);
-
     await flowDynamic(`Perfecto, empecemos con el cuestionario ${testName}`);
-    if (typeof primerMensaje === 'string' && primerMensaje.trim() !== '') {
-      await flowDynamic(primerMensaje);
-    } else {
-      await flowDynamic('Ocurrió un error iniciando el test. Intenta nuevamente.');
-      return gotoFlow(menuFlow);
+    
+	if (tipoTest === 'dass21') {
+      const primeraPregunta = await procesarDass21(ctx.from, null);
+      
+      if (typeof primeraPregunta === 'string' && primeraPregunta.trim() !== '') {
+        await flowDynamic(primeraPregunta);
+      } else {
+        await flowDynamic('Ocurrió un error iniciando el test. Intenta nuevamente.');
+        return gotoFlow(menuFlow);
+      }
+    } else if (tipoTest === 'ghq12') {
+      const primeraPregunta = await procesarGHQ12(ctx.from, null);
+      
+      if (typeof primeraPregunta === 'string' && primeraPregunta.trim() !== '') {
+        await flowDynamic(primeraPregunta);
+      } else {
+        await flowDynamic('Ocurrió un error iniciando el test. Intenta nuevamente.');
+        return gotoFlow(menuFlow);
+      }
     }
 
-    return gotoFlow(testFlow);
+    return gotoFlow(testFlow, {body: ''});
   }
-);
+)
 
 
 //---------------------------------------------------------------------------------------------------------

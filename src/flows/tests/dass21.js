@@ -14,7 +14,6 @@ const cuestDass21 = {
 		'2. Me di cuenta que tenía la boca seca\n' + rtasDass21(),
 		'3. No podía sentir ningún sentimiento positivo\n' + rtasDass21(),
 		'4. Se me hizo difícil respirar\n' + rtasDass21(),			
-		
 		'5. Se me hizo difícil tomar la iniciativa para hacer cosas\n' + rtasDass21(),
 		'6. Reaccioné exageradamente en ciertas situaciones\n' + rtasDass21(),
 		'7. Sentí que mis manos temblaban\n' + rtasDass21(),
@@ -32,7 +31,6 @@ const cuestDass21 = {
 		'19. Sentí los latidos de mi corazón a pesar de no haber hecho ningún esfuerzo físico\n' + rtasDass21(),
 		'20. Tuve miedo sin razón\n' + rtasDass21(),
 		'21. Sentí que la vida no tenía ningún sentido\n' + rtasDass21(),
-		
 	],
 
 	subescalas: {
@@ -48,7 +46,7 @@ const cuestDass21 = {
 		muyalto: {min: 14, mensaje: 'Depresión extremadamente severa'},
 	},
 	umbralesAns: {
-		bajo: {min: 4, mensaje: 'Ansiedad leve'},
+		bajo: {min: 4, max: 4, mensaje: 'Ansiedad leve'},
 		medio: {min: 5, max: 7, mensaje: 'Ansiedad moderada'},
 		alto: {min: 8, max: 9, mensaje: 'Ansiedad severa'},
 		muyalto: {min: 10, mensaje: 'Ansiedad extremadamente severa'},
@@ -75,52 +73,76 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 
 	try {
 		let estado = await getEstadoCuestionario(numeroUsuario, tipoTest)
+		//console.log('🔍 Estado recuperado de BD:', JSON.stringify(estado, null, 2))
 
 		if (estado.resPreg && ![0,1,2,3].includes(Number(respuestas))) {
 			return 'Respuesta inválida. Debe ser un número entre 0 y 3.'
 		}
 
-		if (!estado.resPreg) {
+		// permite que el cuestionario inicie desde la pregunta 1
+		if (!estado.resPreg || Object.keys(estado.resPreg).length === 0) {
 			estado = {
 				preguntaActual: 0,
 				resPreg: { ...cuestDass21.resPreg },
-				respuestasDass21: []
+				respuestas: []
 			}
+			//console.log('🔍 Estado inicial creado:', JSON.stringify(estado, null, 2))
+
 			await saveEstadoCuestionario(
 				numeroUsuario,
 				estado.preguntaActual,
 				estado.resPreg,
 				tipoTest,
-				estado.respuestasDass21
+				estado.respuestas
 			)
+			console.log('📝 Iniciando cuestionario, mostrando pregunta 1')
 			return preguntas[0]
 		}
 
-		const respuestaNum = Number(respuestas)
+		// if (respuestas === null) {
+		// 	return preguntas[estado.preguntaActual]
+		// }
 
+		if (![0,1,2,3].includes(Number(respuestas))) {
+			return 'Respuesta inválida. Debe ser un número entre 0 y 3'
+		}
+
+		const respuestaNum = Number(respuestas)
+		console.log(`Procesando respuesta ${respuestaNum} para pregunta ${estado.preguntaActual + 1}`)
+
+		console.log('🔍 Estado ANTES de agregar respuesta:', JSON.stringify(estado, null, 2))
 		if (!estado.resPreg[respuestaNum]) {
 			estado.resPreg[respuestaNum] = []
 		}
 		estado.resPreg[respuestaNum].push(estado.preguntaActual + 1)
 
-		// Guarda respuesta individual para las subescalas
-		estado.respuestasDass21 = estado.respuestasDass21 || []
-		estado.respuestasDass21.push(respuestaNum)
+		if (!estado.respuestas) {
+			console.log('⚠️  ARRAY respuestas NO EXISTE, creándolo...')
+			estado.respuestas = []
+		}
 
-		const siguientePregunta = estado.preguntaActual + 1
+		estado.respuestas.push(respuestaNum)
+		
+		console.log(`📊 Respuestas guardadas hasta ahora: [${estado.respuestas.join(', ')}]`)
+		console.log(`📊 Total respuestas: ${estado.respuestas.length}/21`)
+
+		//console.log('🔍 Estado DESPUÉS de agregar respuesta:', JSON.stringify(estado, null, 2))
 
 		estado.preguntaActual += 1
-		if (siguientePregunta >= preguntas.length) {
 
-			const puntajes = calcularPuntajesSubescalas(estado.respuestasDass21, subescalas)
+		// Verificar si terminamos
+		if (estado.preguntaActual >= preguntas.length) {
+			console.log('🎉 Cuestionario completado, calculando puntajes...')	
+
+			const puntajes = calcularPuntajesSubescalas(estado.respuestas, subescalas)
 			
 			// Guardar estado y puntaje
 			await saveEstadoCuestionario(
 				numeroUsuario,
-				estado.preguntaActual + 1,
+				estado.preguntaActual,
 				estado.resPreg,
 				tipoTest,
-				estado.respuestasDass21
+				estado.respuestas
 			)
 			await savePuntajeUsuario(
 				numeroUsuario, 
@@ -141,15 +163,17 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 			)																											
 		}
 
-		estado.preguntaActual = siguientePregunta
+		console.log('🔍 Guardando estado en BD:', JSON.stringify(estado, null, 2))
+
 		await saveEstadoCuestionario(
 			numeroUsuario,
 			estado.preguntaActual,
 			estado.resPreg,
 			tipoTest,
-			estado.respuestasDass21
+			estado.respuestas
 		)
 
+		console.log(`➡️  Mostrando pregunta ${estado.preguntaActual + 1}`)
 		return preguntas[estado.preguntaActual]
 		
 	} catch (error) {
@@ -161,37 +185,76 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 const calcularPuntajesSubescalas = (respuestas, subescalas) => {
 	const puntajes = {}
 
+	console.log('Respuestas recibidas:', respuestas)
+	console.log('Subescalas:', subescalas)
+
 	for (const escala in subescalas) {
 		const indices = subescalas[escala]
-
-		const puntajeBase = indices.reduce((acc, i) => acc + (Number(respuestas[i - 1]) || 0), 0)
-		puntajes[escala] = puntajeBase * 2
+		console.log(`\n=== Procesando ${escala} ===`)
+		console.log('Índices de preguntas:', indices)
+		
+		let puntajeBase = 0
+		
+		indices.forEach(preguntaNum => {
+			const respuesta = Number(respuestas[preguntaNum - 1]) || 0
+			puntajeBase += respuesta
+			console.log(`Pregunta ${preguntaNum}: respuesta = ${respuesta}`)
+		})
+		
+		// Multiplicar por 2 según estándar DASS-21
+		puntajes[escala] = puntajeBase * 1
+		
+		console.log(`${escala}: suma=${puntajeBase}, puntajeFinal=${puntajes[escala]}`)
 	}
 
+	console.log('Puntajes finales calculados:', puntajes)
 	return puntajes
 }
 
 export const evaluarDASS21 = async (puntajes, umbrales) => {
-	const resultado = {};
+	const resultado = {}
 
-	for (const escala in puntajes) {
-	const puntaje = puntajes[escala];
-	const u = umbrales[escala];
-	let nivel = 'Normal';
+	console.log('=== EVALUANDO DASS-21 ===')
+	console.log('Puntajes recibidos:', puntajes)
+	console.log('Umbrales recibidos:', umbrales)
 
-	// Evaluar desde el más alto al más bajo
-	if (u.muyalto && puntaje >= u.muyalto.min) {
-		nivel = u.muyalto.mensaje;
-	} else if (u.alto && puntaje >= u.alto.min) {
-		nivel = u.alto.mensaje;
-	} else if (u.medio && puntaje >= u.medio.min) {
-		nivel = u.medio.mensaje;
-	} else if (u.bajo && puntaje >= u.bajo.min) {
-		nivel = u.bajo.mensaje;
+	// Verificar que todas las escalas existan
+	const escalasEsperadas = ['depresion', 'ansiedad', 'estres']
+	
+	for (const escala of escalasEsperadas) {
+		if (puntajes[escala] === undefined) {
+			console.error(`❌ FALTA PUNTAJE PARA: ${escala}`)
+			resultado[escala] = { puntaje: 0, nivel: 'Error - datos incompletos' }
+			continue
+		}
+
+		const puntaje = puntajes[escala];
+		const u = umbrales[escala];
+		let nivel = 'Normal';
+
+		console.log(`\nEvaluando ${escala}: puntaje=${puntaje}`)
+
+		// Evaluar desde el más alto al más bajo
+		if (u.muyalto && puntaje >= u.muyalto.min) {
+			nivel = u.muyalto.mensaje;
+			console.log(`-> ${nivel} (>= ${u.muyalto.min})`)
+		} else if (u.alto && puntaje >= u.alto.min && (u.alto.max === undefined || puntaje <= u.alto.max)) {
+			nivel = u.alto.mensaje;
+			console.log(`-> ${nivel} (${u.alto.min}-${u.alto.max || '∞'})`)
+		} else if (u.medio && puntaje >= u.medio.min && (u.medio.max === undefined || puntaje <= u.medio.max)) {
+			nivel = u.medio.mensaje;
+			console.log(`-> ${nivel} (${u.medio.min}-${u.medio.max || '∞'})`)
+		} else if (u.bajo && puntaje >= u.bajo.min && (u.bajo.max === undefined || puntaje <= u.bajo.max)) {
+			nivel = u.bajo.mensaje;
+			console.log(`-> ${nivel} (${u.bajo.min}-${u.bajo.max || '∞'})`)
+		} else {
+			console.log(`-> ${nivel} (< ${u.bajo.min})`)
+		}
+
+		resultado[escala] = { puntaje, nivel };
 	}
 
-	resultado[escala] = { puntaje, nivel };
-	}
+	console.log('Resultado final:', resultado)
 
 	return `--* DASS-21 COMPLETADO *--
 
@@ -202,7 +265,7 @@ export const evaluarDASS21 = async (puntajes, umbrales) => {
 **Estrés:** ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos)
 
 Los resultados indican el nivel de malestar en cada área. Si tiene alguna preocupación, considere consultar a un profesional de la salud mental.`;
-};
+}
 
 
 export const DASS21info = () => {

@@ -54,7 +54,6 @@ export const menuCuestionarios = () => {
    ${dassInfo.descripcion}
    • Tiempo estimado: ${dassInfo.tiempoEstimado}
    • Nº de preguntas: ${dassInfo.numPreguntas}
-   • Evalúa: ${dassInfo.subescalas.map(s => s.nombre).join(', ')}
 
 ───────────────────────────────
 👉 *Responde con 1 o 2* para seleccionar el test que deseas realizar.`
