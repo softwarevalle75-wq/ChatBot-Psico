@@ -469,6 +469,22 @@ function seleccionarModelo(tipoTest) {
 
 //---------------------------------------------------------------------------------------------------------
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------------------
+
 export const actualizarDisp = async (numero, disp) => {
 	try {
 		const change = await prisma.informacionUsuario.update({

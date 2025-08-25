@@ -46,6 +46,9 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
 
 // --- Opción 1 (parte 2): elegir test a asignar
 export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
+  .addAction(async (_, { state }) => {
+    await state.update({ currentFlow: 'practicante' });
+  })
   .addAnswer(
     'Elige el *test* para asignar:\n' +
     '1️⃣ GHQ-12 (tamizaje general)\n' +
@@ -64,8 +67,11 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
         return;
       }
 
-      const tel = await state.get('pacienteTelefono');
-      await obtenerUsuario(tel);
+      let tel = await state.get('pacienteTelefono');
+      tel = 57 + tel;
+      console.log(tel);
+      await obtenerUsuario(tel);  
+      console.log(await obtenerUsuario(tel));  
       await changeTest(tel, tipoTest);
       await switchFlujo(tel, 'tests');
 
@@ -73,6 +79,7 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
         `✅ Listo. Asigné el test *${tipoTest.toUpperCase()}* al paciente *${tel}*.\n` +
         `Cuando el paciente escriba al bot, iniciará el cuestionario.`
       );
+      
 
       await new Promise(res => setTimeout(res, 500));
       return gotoFlow(practMenuFlow);

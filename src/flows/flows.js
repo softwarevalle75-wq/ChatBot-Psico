@@ -23,8 +23,17 @@ import { resolverRemitentePorTelefono } from '../queries/queries.js';
 //---------------------------------------------------------------------------------------------------------
 
 export const roleFlow = addKeyword(EVENTS.WELCOME).addAction(
-  async (ctx, { gotoFlow }) => {
+  async (ctx, { gotoFlow, state }) => {
     try {
+      // 🔥 NUEVO: Verificar si ya estamos en un flujo específico
+      const currentFlow = await state.get('currentFlow');
+      const currentMenu = await state.get('currentMenu');
+      
+      // Si ya estamos en un flujo específico, NO redirigir
+      if (currentFlow || currentMenu === 'admin') {
+        return;
+      }
+
       const remitente = await resolverRemitentePorTelefono(ctx.from);
       if (!remitente) return gotoFlow(registerFlow);
 

@@ -10,6 +10,22 @@ async function main() {
             idPracticante: uuidv4(),
             numero_documento: '1031651700',
             tipo_documento: 'CC',
+            nombre: 'Crisferxxo',
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Suba',
+            localidad: 'Suba', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573183644600',
+        },
+        {
+         idPracticante: uuidv4(),
+            numero_documento: '1031651701',
+            tipo_documento: 'CC',
             nombre: 'Mercho',
             genero: 'M',
             estrato: '3', 
@@ -20,25 +36,34 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '573153340800',
+            telefono: '573184241647', 
         }
     ]
     await prisma.practicante.createMany({
-    data: practicantes,
-    skipDuplicates: true
-  });
+      data: practicantes,
+      skipDuplicates: true,
+    });
 
+    await prisma.rolChat.createMany({
+      data: practicantes.map(p => ({
+        telefono: p.telefono,
+        rol: 'practicante',
+        updatedAt: new Date(),
+      })),
+      skipDuplicates: true,
+    });
+  
 //-------------------------------------------------------------------------------------------------------------------------------------------
   const admins = [
     {
-      telefono: '573183644600',
+      telefono: '573138292593',
       rol: 'admin',
       updatedAt: new Date(),
     }
   ]
     await prisma.rolChat.createMany({
       data: admins,
-      skipDuplicates: true
+      skipDuplicates: true,
     });
 
 

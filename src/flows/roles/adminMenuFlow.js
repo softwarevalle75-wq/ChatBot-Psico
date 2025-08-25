@@ -1,42 +1,58 @@
 import { addKeyword } from '@builderbot/bot';
 import { setRolTelefono, getRolTelefono, createUsuarioBasico, ensureRolMapping } from '../../queries/queries.js';
 
-const MENU =
-  '*Menú Admin*\n' +
-  '1) Asignar / cambiar rol a un número\n' +
-  '2) Crear usuario con rol\n' +
-  '3) Ver rol actual de un número\n' +
-  '9) Salir\n\n' +
-  'Responde con el número de la opción.';
+const MENU = `
+*Menú Admin*
+1️⃣ Asignar / cambiar rol a un número
+2️⃣ Crear usuario con rol
+3️⃣ Ver rol actual de un número
+9️⃣ Salir
+
+Responde con el número de la opción.
+`;
 
 const askPhone = '📱 Envíame el *número* (con o sin +57).';
 const askRole  = '🎭 ¿Qué rol quieres asignar? Escribe: *usuario*, *practicante* o *admin*.';
 
-const normalizePhone = (raw) => (raw || '').replace(/\D/g, '');
 const validRoles = new Set(['usuario', 'practicante', 'admin']);
+const normalizePhone = (raw) => (raw || '').replace(/\D/g, '');
 
 export const adminMenuFlow = addKeyword(['ADMIN_MENU', 'admin'])
-  .addAnswer(MENU, { capture: true }, async (ctx, { state, flowDynamic, fallBack }) => {
+  .addAction(async (_, { state }) => {
+    // 🔥 Marcar que estamos en el flujo de admin
+    await state.update({ currentMenu: 'admin' });
+  })
+  // Paso 1: mostrar menú y capturar opción
+  .addAnswer(MENU, { capture: true }, async (ctx, { state, flowDynamic, fallBack }) => { // <- Añadir gotoFlow aquí
     const opt = (ctx.body || '').trim();
-
     if (!['1','2','3','9'].includes(opt)) {
-      return fallBack('Opción inválida. Intenta de nuevo.\n\n' + MENU);
-    }
-    if (opt === '9') {
-      return await flowDynamic([{ body: 'Saliendo del menú admin. 👋' }]);
+      return fallBack('❌ Opción inválida.\n\n' + MENU);
     }
 
-    await state.update({ admin_opt: opt });
-    return await flowDynamic([{ body: askPhone }]);
+    if (opt === '9') {
+      await state.clear();
+      return await flowDynamic('👋 Saliendo del menú admin.');
+    }
+
+    await state.update({ currentMenu: 'admin', admin_opt: opt });
+    return await flowDynamic(askPhone);
   })
 
   // Paso 2: capturar teléfono
-  .addAnswer(null, { capture: true }, async (ctx, { state, flowDynamic, fallBack }) => {
+  .addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, fallBack, gotoFlow }) => { // <- Añadir gotoFlow aquí
+    const currentMenu = await state.get('currentMenu');
     const stepOpt = await state.get('admin_opt');
-    if (!stepOpt) return fallBack('Volvamos a empezar.\n\n' + MENU);
+    if (currentMenu !== 'admin') return; // bloquea si no es admin
+
+    if (!stepOpt) return fallBack('⚠️ Reiniciemos.\n\n' + MENU);
+
+    // Evitar que se envíe otra opción de menú
+    if (['1','2','3','9'].includes(ctx.body.trim())) {
+      return fallBack('Ya escogiste una opción, ahora envíame el número.\n' + askPhone);
+    }
 
     const phone = normalizePhone(ctx.body);
-    if (!phone)  return fallBack('Número inválido. ' + askPhone);
+    if (!phone) return fallBack('❌ Número inválido. ' + askPhone);
 
     await state.update({ admin_phone: phone });
 
@@ -44,49 +60,51 @@ export const adminMenuFlow = addKeyword(['ADMIN_MENU', 'admin'])
       const mapping = await getRolTelefono(phone);
       const rol = mapping?.rol ?? 'no asignado';
       await state.clear();
-      return await flowDynamic([{ body: `📌 Rol actual de ${phone}: *${rol}*` }, { body: '\n' + MENU }]);
+      await flowDynamic(`📌 Rol actual de ${phone}: *${rol}*\n\n${MENU}`);
+      return gotoFlow(adminMenuFlow); // <- Aquí la clave: volver al flujo admin
     }
 
-    return await flowDynamic([{ body: askRole }]); // opciones 1 y 2 piden rol
+    return await flowDynamic(askRole);
   })
 
-  // Paso 3: capturar rol y ejecutar
-  .addAnswer(null, { capture: true }, async (ctx, { state, flowDynamic, fallBack }) => {
+  // Paso 3: capturar rol y ejecutar acción
+  .addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, fallBack, gotoFlow }) => { // <- Añadir gotoFlow aquí
+    const currentMenu = await state.get('currentMenu');
     const stepOpt = await state.get('admin_opt');
     const phone   = await state.get('admin_phone');
+    if (currentMenu !== 'admin') return; // bloquea si no es admin
 
     if (!stepOpt || !phone) {
       await state.clear();
-      return fallBack('Se perdió el estado. Reiniciemos.\n\n' + MENU);
+      return fallBack('⚠️ Se perdió el estado. Reiniciemos.\n\n' + MENU);
     }
 
     const rol = (ctx.body || '').trim().toLowerCase();
     if (!validRoles.has(rol)) {
-      return fallBack('Rol inválido. Responde con: usuario / practicante / admin.');
+      return fallBack('❌ Rol inválido. Escribe: usuario / practicante / admin.');
     }
 
     try {
       if (stepOpt === '1') {
         await setRolTelefono(phone, rol);
-        await state.clear();
-        return await flowDynamic([{ body: `✅ Rol de ${phone} actualizado a *${rol}*.` }, { body: '\n' + MENU }]);
+        await flowDynamic(`✅ Rol de ${phone} actualizado a *${rol}*.`);
       }
 
       if (stepOpt === '2') {
         if (rol === 'usuario') {
-          await createUsuarioBasico(phone, {}); // Si quieres pedir nombre/correo, añádelo en pasos extra
+          await createUsuarioBasico(phone, {});
         } else {
-          await ensureRolMapping(phone, rol); // practicante/admin: mapeo y luego completas su perfil en su flujo
+          await ensureRolMapping(phone, rol);
         }
-        await state.clear();
-        return await flowDynamic([{ body: `✅ Creado/asignado ${phone} con rol *${rol}*.` }, { body: '\n' + MENU }]);
+        await flowDynamic(`✅ Creado/asignado ${phone} con rol *${rol}*.`);
       }
-
-      await state.clear();
-      return await flowDynamic([{ body: 'Opción no reconocida. Reiniciemos.' }, { body: '\n' + MENU }]);
     } catch (err) {
       console.error('ADMIN_MENU error:', err);
+      await flowDynamic('❌ Error realizando la operación.');
+    } finally {
       await state.clear();
-      return await flowDynamic([{ body: '❌ Ocurrió un error realizando la operación.' }, { body: '\n' + MENU }]);
     }
+
+    await flowDynamic(MENU);
+    return gotoFlow(adminMenuFlow); // <- Aquí la clave: volver al flujo admin
   });
