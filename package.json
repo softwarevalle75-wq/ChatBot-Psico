@@ -19,7 +19,7 @@
     "@builderbot/database-mysql": "1.2.9",
     "@builderbot/provider-baileys": "^1.2.9",
     "@formkit/tempo": "^0.1.2",
-    "@prisma/client": "6.14.0",
+    "@prisma/client": "6.15.0",
     "dotenv": "^17.2.1",
     "openai": "^5.11.0",
     "uuid": "^11.1.0"
@@ -28,7 +28,7 @@
     "eslint": "^8.57.0",
     "eslint-plugin-builderbot": "latest",
     "nodemon": "^3.1.0",
-    "prisma": "6.14.0"
+    "prisma": "6.15.0"
   },
   "author": "",
   "license": "ISC",

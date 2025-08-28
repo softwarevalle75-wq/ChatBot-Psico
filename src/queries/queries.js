@@ -79,51 +79,89 @@ export const buscarUsuarioPorTelefono = async (numero) => {
 //---------------------------------------------------------------------------------------------------------
 
 export const obtenerUsuario = async (numero) => {
-	try {
+  try {
+    const getUser = async (numero) => {
+      // ✅ Para usuarios normales
+      let user = await prisma.informacionUsuario.findUnique({
+        where: {
+          telefonoPersonal: numero,
+        },
+        select: {
+          idUsuario: true,
+          nombre: true,
+          apellido: true,
+          correo: true,
+          telefonoPersonal: true,
+          documento: true,
+          tipoDocumento: true,
+          flujo: true, // ← AGREGAR ESTO
+          historial: true,
+          estado: true
+        }
+      })
 
-		const getUser = async (numero) => {
-			let user = await prisma.informacionUsuario.findUnique({
-				where: {
-					telefonoPersonal: numero,
-				}
-			})
+      if(user){
+        return { 
+          tipo: 'usuario', 
+          data: user,
+          flujo: user.flujo // ← EXPONER EL FLUJO
+        }
+      }
 
-			if(user){
-				return { tipo: 'usuario', data: user}
-			}
+      // ✅ Para practicantes
+      const pract = await prisma.practicante.findUnique({
+        where: {
+          telefono: numero
+        },
+        select: {
+          idPracticante: true,
+          nombre: true,
+          telefono: true,
+          // Los practicantes no tienen campo flujo, siempre van a practMenuFlow
+        }
+      })
 
-			const pract = await prisma.practicante.findUnique({
-				where: {
-					telefono: numero
-				}
-			})
+      if(pract) {
+        return { 
+          tipo: 'practicante', 
+          data: pract,
+          flujo: 'practMenuFlow' // ← Flujo fijo para practicantes
+        };
+      }
+      
+      return null;
+    }
 
-			if(pract)
-				return { tipo: 'practicante', data: pract};
-			
-			return null;
-		}
+    let user = await getUser(numero);
 
-		let user = await getUser(numero);
-
-		// Si el usuario no existe, crearlo con un historial inicial
-		if (!user) {
-			user = await prisma.informacionUsuario.create({
-				data: {
-					telefonoPersonal: numero,
-					historial: [],
-				},
-				select: {
-					historial: true,
-				},
-			})
-			return ''
-		}
-		return user
-	} catch (error) {
-		console.error('Error al obtener el usuario:', error)
-		throw new Error('Hubo un problema al obtener el usuario.')
-	}
+    // Si el usuario no existe, crearlo con valores por defecto
+    if (!user) {
+      const newUser = await prisma.informacionUsuario.create({
+        data: {
+          telefonoPersonal: numero,
+          historial: [],
+          flujo: 'register' // ← BD ya tiene este default
+        },
+        select: {
+          idUsuario: true,
+          telefonoPersonal: true,
+          historial: true,
+          flujo: true, // ← IMPORTANTE: Seleccionar flujo
+        },
+      })
+      
+      return { 
+        tipo: 'usuario', 
+        data: newUser, 
+        flujo: newUser.flujo // ← Será 'register'
+      }
+    }
+    
+    return user
+  } catch (error) {
+    console.error('Error al obtener el usuario:', error)
+    throw new Error('Hubo un problema al obtener el usuario.')
+  }
 }
 //---------------------------------------------------------------------------------------------------------
 

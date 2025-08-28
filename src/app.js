@@ -11,7 +11,7 @@ import {
 	agendFlow, 
 	postAgendFlow, 
 	assistantFlow, 
-	roleFlow 
+	// roleFlow 
 } from "./flows/flows.js";
 
 import { 
@@ -50,28 +50,34 @@ export const adapterProvider = createProvider(Provider);
 
 const main = async () => {
 const adapterFlow = createFlow([
-	// Flujos de roles
-	roleFlow,
-	adminMenuFlow,
-	practMenuFlow,
-
-	// Flujos generales
-	welcomeFlow,
-	registerFlow,
-	menuFlow,
-	testSelectionFlow,
-	assistantFlow,
-
-	// Flujos de tests
-	testFlow,
-	postTestFlow,
-	practOfrecerTestFlow__ElegirTest,
-	practOfrecerTestFlow__PedirTelefono,
-	practConsejosFlow,
-
-	// Flujos de agendamiento
-	agendFlow,
-	postAgendFlow
+    // roleFlow,
+	// Flujos de entrada y bienvenida
+    welcomeFlow,
+    
+    
+    // Flujos de registro
+    registerFlow,
+    
+    // Flujos de menús (agrupados)
+    menuFlow,
+    // Flujos de roles (después de welcome)
+    practMenuFlow,
+    adminMenuFlow,
+    
+    // Flujos de tests (en orden lógico)
+    testSelectionFlow,
+    practOfrecerTestFlow__ElegirTest,
+    practOfrecerTestFlow__PedirTelefono,
+    testFlow,
+    postTestFlow,
+    practConsejosFlow,
+    
+    // Flujos de agendamiento
+    agendFlow,
+    postAgendFlow,
+    
+    // Flujo asistente (al final, como fallback)
+    assistantFlow
 ]);
 
 
@@ -97,7 +103,6 @@ const adapterFlow = createFlow([
 		"/v1/messages",
 		handleCtx(async (bot, req, res) => {
 			let { number, message, urlMedia } = req.body;
-			console.log(sendMessage)
 			await bot.sendMessage(number, message, { media: urlMedia ?? null });
 			return res.end("sended");
 		})
