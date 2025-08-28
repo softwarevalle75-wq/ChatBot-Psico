@@ -78,7 +78,7 @@ const validarRespuestaMenu = (respuesta, opcionesValidas) => {
 };
 
 export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
-  .addAnswer('¡Perfecto! Ahora puedes elegir qué hacer: 🔹 **1** - Realizar cuestionarios psicológicos 🔹 **2** - Agendar cita con profesional')
+  .addAnswer()
   .addAction(async (ctx, { flowDynamic, gotoFlow }) => {
 
 	if (!ctx.body || ctx.body.trim() === '') return
