@@ -253,11 +253,26 @@ export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'
         await state.update({ user });
         await switchFlujo(ctx.from, 'testFlow');
 
-        // Solo mensaje de confirmación
+        // Confirmar inicio
         await flowDynamic(`✅ Iniciando cuestionario ${testName}...`);
 
-        // NO envíes la primera pregunta aquí, deja que testFlow lo haga
-        return gotoFlow(testFlow);
+        // 🔥 AQUÍ ESTÁ EL CAMBIO CLAVE: Enviar primera pregunta usando las funciones específicas
+        let primeraPregunta;
+        
+        if (tipoTest === 'dass21') {
+          primeraPregunta = await procesarDass21(ctx.from, null);
+        } else if (tipoTest === 'ghq12') {
+          primeraPregunta = await procesarGHQ12(ctx.from, null);
+        }
+        
+        if (typeof primeraPregunta === 'string' && primeraPregunta.trim() !== '') {
+          await flowDynamic(primeraPregunta);
+        } else {
+          await flowDynamic('❌ Error iniciando el test.');
+          return gotoFlow(menuFlow);
+        }
+
+        return gotoFlow(testFlow, { body: '' });
         
       } catch (error) {
         console.error('❌ Error en testSelectionFlow:', error);
@@ -266,8 +281,6 @@ export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'
       }
     }
   );
-
-
 //---------------------------------------------------------------------------------------------------------
 
 export const assistantFlow = addKeyword(utils.setEvent('ASSISTANT_FLOW')).addAction(
@@ -280,62 +293,51 @@ export const assistantFlow = addKeyword(utils.setEvent('ASSISTANT_FLOW')).addAct
 
 //---------------------------------------------------------------------------------------------------------
 
-export const testFlow = addKeyword(utils.setEvent('TEST_FLOW'))
-  .addAction(async (ctx, { flowDynamic, state }) => {
-    // Solo inicialización - enviar primera pregunta
-    const user = state.get('user');
-    console.log('🟢 TESTFLOW: Iniciando test', user.testActual);
-    
+export const testFlow = addKeyword(utils.setEvent('TEST_FLOW')).addAction(
+  async (ctx, { flowDynamic, gotoFlow, state }) => {
+    let user = state.get('user');
+
+    console.log('=== INICIO TESTFLOW ===');
+    console.log('Mensaje del usuario:', ctx.body);
+    console.log('Test actual:', user.testActual);
+
+    // Si no hay mensaje (primer ingreso), no hacer nada
+    if (!ctx.body || ctx.body.trim() === '') return;
+
     try {
-      // Obtener primera pregunta con procesarMensaje usando '_start'
-      const firstQuestion = await procesarMensaje(ctx.from, '_start', user.testActual);
+      let message;
       
-      if (firstQuestion && typeof firstQuestion === 'string' && firstQuestion.trim() !== '') {
-        await flowDynamic(firstQuestion);
+      // USAR LAS FUNCIONES ESPECÍFICAS
+      if (user.testActual === 'dass21') {
+        message = await procesarDass21(ctx.from, ctx.body);
+      } else if (user.testActual === 'ghq12') {
+        message = await procesarGHQ12(ctx.from, ctx.body);
       } else {
-        await flowDynamic('❌ Error iniciando el test.');
+        message = await procesarMensaje(ctx.from, ctx.body, user.testActual);
       }
-    } catch (error) {
-      console.error('❌ Error iniciando testFlow:', error);
-      await flowDynamic('❌ Error iniciando el test.');
-    }
-  })
-  .addAnswer(
-    '', // Sin mensaje porque ya se envió en addAction
-    { capture: true }, // ← CLAVE: Esto captura las respuestas del usuario
-    async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
-      const user = state.get('user');
 
-      console.log('=== PROCESANDO RESPUESTA TESTFLOW ===');
-      console.log('Mensaje del usuario:', ctx.body);
-      console.log('Test actual:', user.testActual);
+      console.log('Mensaje a enviar:', message);
+      
+      if (!message || typeof message !== 'string' || message.trim() === '') {
+        console.error('Error: procesarMensaje returned invalid value.', { message });
+        await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
+        return;
+      }
+      
+      await flowDynamic(message);
 
-      try {
-        // Procesar respuesta del usuario
-        const message = await procesarMensaje(ctx.from, ctx.body, user.testActual);
-
-        console.log('Mensaje a enviar:', message);
+      // Verificar si el test se completó
+      if (message.includes('COMPLETADO')) {
+        // Limpiar test actual
+        await changeTest(ctx.from, '');
+        user.testActual = '';
+        await state.update({ user });
         
-        if (!message || typeof message !== 'string' || message.trim() === '') {
-          console.error('Error: procesarMensaje returned invalid value.', { message });
-          await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
-          return fallBack(); // Volver a pedir respuesta
-        }
+        // Cambiar flujo a menú
+        await switchFlujo(ctx.from, 'menuFlow');
         
-        await flowDynamic(message);
-
-        // Verificar si el test se completó
-        if (message.includes('COMPLETADO')) {
-          // Limpiar test actual
-          await changeTest(ctx.from, '');
-          user.testActual = '';
-          await state.update({ user });
-          
-          // Cambiar flujo a menú
-          await switchFlujo(ctx.from, 'menuFlow');
-          
-          // Mostrar opciones post-test
-          await flowDynamic(`🎉 ¡Excelente! Has completado el cuestionario.
+        // Mostrar opciones post-test
+        await flowDynamic(`🎉 ¡Excelente! Has completado el cuestionario.
 
 ¿Qué te gustaría hacer ahora?
 
@@ -344,21 +346,16 @@ export const testFlow = addKeyword(utils.setEvent('TEST_FLOW'))
 🔹 **3** - Finalizar por ahora
 
 Responde con **1**, **2** o **3**`);
-          
-          return gotoFlow(postTestFlow);
-        }
-
-        // Si no se completó, mantener el flujo para la siguiente pregunta
-        return fallBack(); // ← CLAVE: Esto mantiene el flujo activo
-
-      } catch (error) {
-        console.error('❌ Error en testFlow:', error);
-        await flowDynamic('❌ Error procesando la prueba. Intenta nuevamente.');
-        return fallBack();
+        
+        return gotoFlow(postTestFlow, { body: '' });
       }
-    }
-  );
 
+    } catch (error) {
+      console.error('❌ Error en testFlow:', error);
+      await flowDynamic('❌ Error procesando la prueba. Intenta nuevamente.');
+    }
+  }
+)
 // --------
 
 export const postTestFlow = addKeyword(utils.setEvent('POST_TEST_FLOW')).addAction(
