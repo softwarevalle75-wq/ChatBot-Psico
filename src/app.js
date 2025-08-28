@@ -45,7 +45,7 @@ import "dotenv/config";
 
 
 const PORT = process.env.PORT ?? 3008;
-
+export const adapterProvider = createProvider(Provider);
 //---------------------------------------------------------------------------------------------------------
 
 const main = async () => {
@@ -75,7 +75,7 @@ const adapterFlow = createFlow([
 ]);
 
 
-	const adapterProvider = createProvider(Provider);
+	// const adapterProvider = createProvider(Provider);
 	const adapterDB = new Database({
 		host: process.env.MYSQL_DB_HOST,
 		user: process.env.MYSQL_DB_USER,
@@ -83,6 +83,8 @@ const adapterFlow = createFlow([
 		password: process.env.MYSQL_DB_PASSWORD,
 	});
 
+
+	
 	const { handleCtx, httpServer } = await createBot({
 		flow: adapterFlow,
 		provider: adapterProvider,
@@ -90,11 +92,12 @@ const adapterFlow = createFlow([
 	});
 
 	//---------------------------------------------------------------------------------------------------------
-
+	
 	adapterProvider.server.post(
 		"/v1/messages",
 		handleCtx(async (bot, req, res) => {
 			let { number, message, urlMedia } = req.body;
+			console.log(sendMessage)
 			await bot.sendMessage(number, message, { media: urlMedia ?? null });
 			return res.end("sended");
 		})
@@ -108,7 +111,7 @@ const adapterFlow = createFlow([
 			return res.end("trigger");
 		})
 	);
-
+	
 	adapterProvider.server.post(
 		"/v1/samples",
 		handleCtx(async (bot, req, res) => {
@@ -124,7 +127,7 @@ const adapterFlow = createFlow([
 			const { number, intent } = req.body;
 			if (intent === "remove") bot.blacklist.remove(number);
 			if (intent === "add") bot.blacklist.add(number);
-
+			
 			res.writeHead(200, { "Content-Type": "application/json" });
 			return res.end(JSON.stringify({ status: "ok", number, intent }));
 		})
@@ -136,7 +139,7 @@ const adapterFlow = createFlow([
 		"/v1/front/:entity/:searchQuery",
 		handleCtx(async (req, res) => {
 			const { entity, searchQuery } = req.params;
-
+			
 			try {
 				let response;
 				console.log(entity);
@@ -145,10 +148,10 @@ const adapterFlow = createFlow([
 						response = await getUsuario(searchQuery);
 						break;
 
-					case "practicante":
+						case "practicante":
 						response = await getPracticante(searchQuery);
 						break;
-
+						
 					default:
 						res.writeHead(400, { "Content-Type": "application/json" });
 						return res.end(
@@ -173,14 +176,14 @@ const adapterFlow = createFlow([
 			}
 		})
 	);
-
+	
 	//---------------------------------------------------------------------------------------------------------
 
 	adapterProvider.server.post(
 		"/v1/front/addUser",
 		handleCtx(async (req, res) => {
 			const { nombre, apellido, correo, tipoDocumento, documento, telefonoPersonal } =
-				req.body;
+			req.body;
 
 			try {
 				const response = await addWebUser(
@@ -191,7 +194,7 @@ const adapterFlow = createFlow([
 					documento,
 					telefonoPersonal
 				);
-
+				
 				res.writeHead(200, { "Content-Type": "application/json" });
 				return res.end(JSON.stringify(response));
 			} catch (error) {
@@ -206,9 +209,9 @@ const adapterFlow = createFlow([
 			}
 		})
 	);
-
+	
 	//---------------------------------------------------------------------------------------------------------
-
+	
 	adapterProvider.server.post(
 		"/v1/front/addPracticante",
 		handleCtx(async (req, res) => {
@@ -222,7 +225,7 @@ const adapterFlow = createFlow([
 				localidad,
 				horario,
 			} = req.body;
-
+			
 			try {
 				const response = await addWebPracticante(
 					nombre,
@@ -257,7 +260,7 @@ const adapterFlow = createFlow([
 		handleCtx(async (req, res) => {
 			const { nombre, apellido, correo, tipoDocumento, documento, telefonoPersonal } =
 				req.body;
-
+				
 			try {
 				const response = await editWebUser(
 					nombre,
@@ -267,7 +270,7 @@ const adapterFlow = createFlow([
 					documento,
 					telefonoPersonal
 				);
-
+				
 				res.writeHead(200, { "Content-Type": "application/json" });
 				return res.end(JSON.stringify(response));
 			} catch (error) {
@@ -282,9 +285,9 @@ const adapterFlow = createFlow([
 			}
 		})
 	);
-
+	
 	//---------------------------------------------------------------------------------------------------------
-
+	
 	adapterProvider.server.post(
 		"/v1/front/editPracticante",
 		handleCtx(async (req, res) => {
@@ -298,7 +301,7 @@ const adapterFlow = createFlow([
 				localidad,
 				horario,
 			} = req.body;
-
+			
 			try {
 				const response = await editWebPracticante(
 					nombre,
@@ -310,7 +313,7 @@ const adapterFlow = createFlow([
 					localidad,
 					horario
 				);
-
+				
 				res.writeHead(200, { "Content-Type": "application/json" });
 				return res.end(JSON.stringify(response));
 			} catch (error) {
@@ -325,14 +328,14 @@ const adapterFlow = createFlow([
 			}
 		})
 	);
-
+	
 	//---------------------------------------------------------------------------------------------------------
 
 	adapterProvider.server.post(
 		"/v1/front/citaCheckout",
 		handleCtx(async (req, res) => {
 			const { idCita } = req.body;
-
+			
 			try {
 				const response = await citaWebCheckout(idCita);
 
@@ -350,7 +353,7 @@ const adapterFlow = createFlow([
 			}
 		})
 	);
-
+	
 	//---------------------------------------------------------------------------------------------------------
 
 	adapterProvider.server.get(
@@ -373,14 +376,14 @@ const adapterFlow = createFlow([
 			}
 		})
 	);
-
+	
 	//---------------------------------------------------------------------------------------------------------
 
 	adapterProvider.server.post(
 		"/v1/front/changeConsultorio",
 		handleCtx(async (req, res) => {
 			const { idConsultorio } = req.body;
-
+			
 			try {
 				const response = await ChangeWebConsultorio(idConsultorio);
 
@@ -398,14 +401,14 @@ const adapterFlow = createFlow([
 			}
 		})
 	);
-
+	
 	//---------------------------------------------------------------------------------------------------------
-
+	
 	adapterProvider.server.get(
 		"/v1/front/citas",
 		handleCtx(async (req, res) => {
 			const { diaActual } = req.query;
-
+			
 			try {
 				const response = await getWebCitas(diaActual);
 
@@ -425,7 +428,7 @@ const adapterFlow = createFlow([
 	);
 
 	//---------------------------------------------------------------------------------------------------------
-
+	
 	adapterProvider.server.get(
 		"/v1/front/citasPorPaciente",
 		handleCtx(async (req, res) => {
@@ -448,8 +451,7 @@ const adapterFlow = createFlow([
 			}
 		})
 	);
-
+	
 	httpServer(+PORT);
 };
-
 main();

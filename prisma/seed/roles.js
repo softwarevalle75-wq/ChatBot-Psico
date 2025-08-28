@@ -8,6 +8,22 @@ async function main() {
     const practicantes = [
         {
             idPracticante: uuidv4(),
+            numero_documento: '00000000',
+            tipo_documento: 'CC',
+            nombre: 'Mercho',
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573184241647',
+        },
+        {
+            idPracticante: uuidv4(),
             numero_documento: '1111111',
             tipo_documento: 'CC',
             nombre: 'Astrid Rincon',

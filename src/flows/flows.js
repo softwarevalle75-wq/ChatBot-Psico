@@ -241,13 +241,13 @@ export const testFlow = addKeyword(utils.setEvent('TEST_FLOW')).addAction(
 				// Mostrar opciones post-test
 				await flowDynamic(`¡Excelente! Has completado el cuestionario.
 
-¿Qué te gustaría hacer ahora?
+				¿Qué te gustaría hacer ahora?
 
-🔹 **1** - Realizar otro cuestionario
-🔹 **2** - Agendar cita con profesional
-🔹 **3** - Finalizar por ahora
+				🔹 **1** - Realizar otro cuestionario
+				🔹 **2** - Agendar cita con profesional
+				🔹 **3** - Finalizar por ahora
 
-Responde con **1**, **2** o **3**`)
+				Responde con **1**, **2** o **3**`)
 				
 				return gotoFlow(postTestFlow, { body: '' })
 			}
@@ -331,7 +331,7 @@ Responde con **1** o **2**`)
 export const postAgendFlow = addKeyword(utils.setEvent('POST_AGEND_FLOW')).addAction(
 	async (ctx, { flowDynamic, gotoFlow }) => {
 		const msg = ctx.body.trim()
-
+		
 		if (msg === '1') {
 			// Hacer cuestionarios
 			await flowDynamic(menuCuestionarios())
@@ -343,9 +343,14 @@ export const postAgendFlow = addKeyword(utils.setEvent('POST_AGEND_FLOW')).addAc
 			return gotoFlow(menuFlow)
 		} else {
 			await flowDynamic(`Por favor responde:
-
-🔹 **1** - Realizar cuestionarios
-🔹 **2** - Finalizar`)
+				
+				🔹 **1** - Realizar cuestionarios
+				🔹 **2** - Finalizar`)
+			}
 		}
-	}
-)
+	)
+
+
+	//---------------------------------------------------------------------------------------------------------
+
+	

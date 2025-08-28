@@ -1,6 +1,6 @@
 import Prisma from '@prisma/client'
 export const prisma = new Prisma.PrismaClient()
-
+import { adapterProvider } from '../app.js'
 //---------------------------------------------------------------------------------------------------------
 
 export const registrarUsuario = async (
@@ -131,18 +131,21 @@ export const obtenerUsuario = async (numero) => {
 const normalizePhone = (raw) => (raw || '').replace(/\D/g, '');
 
 export async function setRolTelefono(telefono, rol) {
-  const phone = normalizePhone(telefono);
+	const phone = normalizePhone(telefono);
   return prisma.rolChat.upsert({
-    where: { telefono: phone },
+	where: { telefono: phone },
     update: { rol },
     create: { telefono: phone, rol },
   });
 }
+//---------------------------------------------------------------------------------------------------------
 
 export async function getRolTelefono(telefono) {
-  const phone = normalizePhone(telefono);
-  return prisma.rolChat.findUnique({ where: { telefono: phone } });
+	const phone = normalizePhone(telefono);
+	return prisma.rolChat.findUnique({ where: { telefono: phone } });
 }
+//---------------------------------------------------------------------------------------------------------
+
 
 export async function createUsuarioBasico(telefono, data = {}) {
   const phone = normalizePhone(telefono);
@@ -297,6 +300,24 @@ export const switchFlujo = async (numero, flujo) => {
 
 //---------------------------------------------------------------------------------------------------------
 
+export const sendAutonomousMessage = async (numero, mensaje) => {
+	try {
+		// Asegurate de que el número esté limpio
+		const numeroLimpio = numero.replace(/\D/g, '');
+		const numeroCompleto = `${numeroLimpio}@s.whatsapp.net`;
+		
+		await adapterProvider.sendText(numeroCompleto, mensaje);
+		
+		console.log(`Mensaje autónomo enviado a ${numero}: ${mensaje}`);
+		return true;
+	} catch (error) {
+		console.error('Error enviando mensaje autónomo:', error);
+		throw new Error('Hubo un problema enviando el mensaje autónomo.');
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------
+
 export const getEstadoCuestionario = async(telefono, tipoTest) => {
 	try {
 		const modelo = seleccionarModelo(tipoTest)
@@ -417,7 +438,9 @@ export const savePuntajeUsuario = async (telefono, tipoTest, ...puntajeParams) =
 	}
 }
 
+
 //---------------------------------------------------------------------------------------------------------
+
 
 // Obtener el puntaje y pregunta actual.
 export const getInfoCuestionario = async (telefono, tipoTest) => {
