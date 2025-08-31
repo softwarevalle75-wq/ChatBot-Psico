@@ -20,7 +20,7 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '573212671263',
+            telefono: '573183644600',
         },
         {
             idPracticante: uuidv4(),

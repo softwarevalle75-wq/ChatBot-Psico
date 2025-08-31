@@ -8,7 +8,7 @@ import {
 	switchAyudaPsicologica,
 } from '../queries/queries.js'
 import { apiRegister } from './register/aiRegister.js'
-import { procesarMensaje } from './tests/proccesTest.js'
+//import { procesarMensaje } from './tests/proccesTest.js'
 import { menuCuestionarios, parsearSeleccionTest} from './tests/controlTest.js'
 import { apiAgend } from './agend/aiAgend.js'
 import { procesarDass21 } from './tests/dass21.js'
@@ -61,17 +61,23 @@ import { practMenuFlow } from './roles/practMenuFlow.js'
 export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
   async (ctx, { gotoFlow, state }) => {
     try {
-      console.log('🟡 WELCOME ejecutándose para:', ctx.from);
+      console.log('🟡 WELCOME ejecutándose para:', ctx.from, 'mensaje:', ctx.body);
       
-      // 1. Verificar estado activo
+      // 🔥 VERIFICAR SI HAY UN FLUJO ACTIVO CRÍTICO
       const currentFlow = await state.get('currentFlow');
-      const currentMenu = await state.get('currentMenu');
+      const justInitializedTest = await state.get('justInitializedTest');
       
-      if (currentFlow || currentMenu) {
-        console.log('🚫 Ya en flujo activo:', currentFlow, currentMenu);
+      // 🚨 SI ESTAMOS EN TEST, REDIRIGIR AL TESTFLOW DIRECTAMENTE
+      if (currentFlow === 'test') {
+        console.log('🔀 Redirigiendo mensaje de test a testFlow');
+        return gotoFlow(testFlow);
+      }
+      
+      if (currentFlow === 'testSelection') {
+        console.log('🚫 Selección de test activa, no interferir');
         return;
       }
-
+      
       // 2. Obtener usuario de BD
       const user = await obtenerUsuario(ctx.from);
       console.log('👤 Usuario obtenido:', {
@@ -84,8 +90,22 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         console.log('❌ Error obteniendo usuario -> registerFlow');
         return gotoFlow(registerFlow);
       }
-      
-      await state.update({ user: user });
+
+      // ✅ PERMITIR welcomeFlow durante el registro
+      if (user.flujo === 'register') {
+        console.log('📝 Usuario en registro, permitir welcomeFlow');
+        await state.update({ user: user, currentFlow: 'register' });
+        return gotoFlow(registerFlow);
+      }
+
+      // ✅ Verificar si ya está inicializado para flujos estables
+      const isFirstMessage = !await state.get('initialized');
+      if (!isFirstMessage && user.flujo === 'menuFlow' && currentFlow === 'menu') {
+        console.log('🔄 Usuario ya inicializado en menú, no hacer nada');
+        return;
+      }
+
+      await state.update({ initialized: true, user: user });
 
       // 3. Manejar por tipo de usuario
       if (user.tipo === 'practicante') {
@@ -97,20 +117,22 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
       // 4. Para usuarios normales, usar el flujo de la BD
       console.log('📋 Flujo BD:', user.flujo);
       
-      switch (user.flujo) {
-        case 'register':
-          console.log('📝 -> registerFlow (usuario nuevo o incompleto)');
-          return gotoFlow(registerFlow);
-          
+      switch (user.flujo) {          
         case 'menuFlow':
           console.log('📋 -> menuFlow');
           await state.update({ currentFlow: 'menu' });
           return gotoFlow(menuFlow);
           
         case 'testFlow':
-          console.log('📝 -> testFlow');
-          await state.update({ currentFlow: 'test' });
-          return gotoFlow(testFlow);
+          // 🔥 SOLO SI NO ESTAMOS YA EN TEST
+          if (currentFlow !== 'test') {
+            console.log('📝 -> testFlow (desde welcomeFlow)');
+            await state.update({ currentFlow: 'test' });
+            return gotoFlow(testFlow);
+          } else {
+            console.log('🔄 Ya estamos en testFlow, no redirigir');
+            return;
+          }
           
         case 'agendFlow':
           console.log('📅 -> agendFlow');
@@ -118,13 +140,21 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
           return gotoFlow(agendFlow);
           
         case 'testSelectionFlow':
-          console.log('🎯 -> testSelectionFlow');
-          await state.update({ currentFlow: 'testSelection' });
-          return gotoFlow(testSelectionFlow);
+          // 🔥 SOLO SI NO ESTAMOS YA EN SELECCIÓN
+          if (currentFlow !== 'testSelection') {
+            console.log('🎯 -> testSelectionFlow');
+            await state.update({ currentFlow: 'testSelection' });
+            return gotoFlow(testSelectionFlow);
+          } else {
+            console.log('🔄 Ya estamos en testSelectionFlow, no redirigir');
+            return;
+          }
           
         default:
-          console.log('❓ Flujo desconocido:', user.flujo, '-> registerFlow');
-          return gotoFlow(registerFlow);
+          console.log('❓ Flujo por defecto -> menuFlow');
+          await switchFlujo(ctx.from, 'menuFlow');
+          await state.update({ currentFlow: 'menu' });
+          return gotoFlow(menuFlow);
       }
       
     } catch (e) {
@@ -133,6 +163,220 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
     }
   }
 );
+
+// ========================================
+// TESTFLOW CORREGIDO - CON KEYWORD ESPECÍFICO
+// ========================================
+
+export const testFlow = addKeyword(EVENTS.ACTION)
+  .addAction(async (ctx, { flowDynamic, gotoFlow, state, provider }) => {
+    // 🔥 CONFIGURACIÓN INICIAL DEL TEST
+    let user = state.get('user');
+    const justInitialized = state.get('justInitializedTest');
+    const testActualFromState = state.get('testActual');
+    const currentFlow = state.get('currentFlow');
+    
+    console.log('🔥 TESTFLOW INIT - Current flow:', currentFlow);
+    console.log('🔥 TESTFLOW INIT - Just initialized:', justInitialized);
+
+    if (currentFlow !== 'test') {
+      console.log('🚫 testFlow ejecutado fuera de contexto');
+      return;
+    }
+
+    // Obtener test actual
+    let testActual = user?.testActual || testActualFromState;
+    if (!testActual) {
+      const userFromDB = await obtenerUsuario(ctx.from);
+      testActual = userFromDB?.testActual;
+    }
+
+    if (!testActual) {
+      console.log('❌ No hay test seleccionado');
+      await flowDynamic('❌ No hay un test seleccionado. Volviendo al menú.');
+      await state.update({ currentFlow: 'menu', justInitializedTest: false });
+      await switchFlujo(ctx.from, 'menuFlow');
+      return gotoFlow(menuFlow);
+    }
+
+    // Actualizar estado
+    if (!user?.testActual) {
+      user = user || {};
+      user.testActual = testActual;
+      await state.update({ user: user });
+    }
+
+    // 🔥 ENVIAR PRIMERA PREGUNTA SOLO SI ES NECESARIO
+    if (justInitialized) {
+      console.log('🚀 Enviando primera pregunta del test');
+      await state.update({ justInitializedTest: false });
+      
+      let primeraPregunta;
+      if (testActual === 'dass21') {
+        primeraPregunta = await procesarDass21(ctx.from, null);
+      } else if (testActual === 'ghq12') {
+        primeraPregunta = await procesarGHQ12(ctx.from, null);
+      }
+      
+      if (primeraPregunta?.trim()) {
+        console.log('📤 Primera pregunta enviada');
+        await flowDynamic(primeraPregunta);
+        
+        // 🔥 CONFIGURAR LISTENER PARA CUALQUIER MENSAJE
+        await state.update({ waitingForTestResponse: true });
+      }
+      return;
+    }
+
+    // 🔥 PROCESAR RESPUESTAS SI LLEGAMOS AQUÍ DIRECTAMENTE
+    const waitingForResponse = await state.get('waitingForTestResponse');
+    if (waitingForResponse) {
+      console.log('🔄 Procesando respuesta directa:', ctx.body);
+      await procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state });
+    }
+  });
+
+// ========================================
+// TESTFLOW CON CAPTURA UNIVERSAL
+// ========================================
+
+export const testResponseFlow = addKeyword(['0', '1', '2', '3'])
+  .addAction(async (ctx, { flowDynamic, gotoFlow, state }) => {
+    const currentFlow = await state.get('currentFlow');
+    const waitingForResponse = await state.get('waitingForTestResponse');
+    
+    console.log('🔥 TESTRESPONSE - Flow:', currentFlow, 'Waiting:', waitingForResponse);
+    
+    if (currentFlow === 'test' && waitingForResponse) {
+      console.log('🔄 Procesando respuesta de test:', ctx.body);
+      await procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state });
+    }
+  });
+
+// ========================================
+// FUNCIÓN HELPER PARA PROCESAR RESPUESTAS
+// ========================================
+
+async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
+  const user = state.get('user');
+  const testActual = user?.testActual || state.get('testActual');
+  
+  if (!testActual) {
+    console.log('❌ No hay test en curso');
+    await flowDynamic('❌ Error: no hay test activo.');
+    await state.update({ currentFlow: 'menu', waitingForTestResponse: false });
+    return gotoFlow(menuFlow);
+  }
+
+  try {
+    console.log('🔄 Procesando respuesta:', ctx.body, 'para test:', testActual);
+    
+    let message;
+    if (testActual === 'dass21') {
+      message = await procesarDass21(ctx.from, ctx.body);
+    } else if (testActual === 'ghq12') {
+      message = await procesarGHQ12(ctx.from, ctx.body);
+    }
+
+    if (!message?.trim()) {
+      console.error('❌ Respuesta inválida del procesador');
+      await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
+      return;
+    }
+    
+    console.log('📤 Enviando:', message.substring(0, 50) + '...');
+    await flowDynamic(message);
+
+    // ✅ Verificar si terminó
+    if (message.includes('COMPLETADO') || 
+        message.includes('terminado') || 
+        message.includes('finalizado') ||
+        message.includes('Puntaje total') ||
+        message.includes('🎉')) {
+      
+      console.log('🎉 Test completado, regresando al menú');
+      
+      // Limpiar estado
+      user.testActual = null;
+      await state.update({ 
+        user: user, 
+        currentFlow: 'menu',
+        justInitializedTest: false,
+        testActual: null,
+        waitingForTestResponse: false
+      });
+      await switchFlujo(ctx.from, 'menuFlow');
+      
+      setTimeout(() => {
+        gotoFlow(menuFlow);
+      }, 1000);
+    }
+    // Si no terminó, seguimos esperando más respuestas
+
+  } catch (error) {
+    console.error('❌ Error procesando respuesta:', error);
+    await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
+  }
+}
+
+// ========================================
+// TESTSELECTIONFLOW MEJORADO
+// ========================================
+
+export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'))
+  .addAction(async (ctx, { state }) => {
+    await state.update({ currentFlow: 'testSelection' });
+    console.log('🟢 TEST_SELECTION_FLOW: Inicializado para:', ctx.from);
+  })
+  .addAnswer(
+    'Selecciona el cuestionario que deseas realizar:\n\n' +
+    '🔹 **1** - GHQ-12 (Cuestionario de Salud General)\n' +
+    '🔹 **2** - DASS-21 (Depresión, Ansiedad y Estrés)\n\n' +
+    'Responde con **1** o **2**:',
+    { capture: true },
+    async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
+      const user = state.get('user') || {};
+      const msg = ctx.body.trim();
+      const tipoTest = parsearSeleccionTest(msg);
+
+      if (!tipoTest) {
+        await flowDynamic('❌ Por favor, responde con **1** para GHQ-12 o **2** para DASS-21');
+        return fallBack();
+      }
+
+      const testName = tipoTest === 'ghq12' ? 'GHQ-12' : 'DASS-21';
+
+      try {
+        console.log('🔧 Configurando test:', tipoTest);
+        
+        // Configurar test en BD
+        await changeTest(ctx.from, tipoTest);
+        
+        // Actualizar estados
+        user.testActual = tipoTest;
+        await state.update({ 
+          user: user,
+          currentFlow: 'test',
+          testActual: tipoTest,
+          justInitializedTest: true // 🔥 BANDERA CRÍTICA
+        });
+        
+        // Cambiar flujo en BD
+        await switchFlujo(ctx.from, 'testFlow');
+
+        await flowDynamic(`✅ Iniciando cuestionario ${testName}...`);
+        console.log('🚀 Redirigiendo a testFlow con bandera activa');
+        
+        return gotoFlow(testFlow);
+        
+      } catch (error) {
+        console.error('❌ Error en testSelectionFlow:', error);
+        await flowDynamic('❌ Error. Regresando al menú...');
+        await state.update({ currentFlow: 'menu' });
+        return gotoFlow(menuFlow);
+      }
+    }
+  );
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -220,67 +464,7 @@ export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
       }
     }
   );
-//---------------------------------------------------------------------------------------------------------
 
-export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'))
-  .addAction(async (ctx, { state }) => {
-    await switchFlujo(ctx.from, 'testSelectionFlow');
-    await state.update({ currentFlow: 'testSelection' });
-    console.log('🟢 TEST_SELECTION_FLOW: Inicializado para:', ctx.from);
-  })
-  .addAnswer(
-    'Selecciona el cuestionario que deseas realizar:\n\n' +
-    '🔹 **1** - GHQ-12 (Cuestionario de Salud General)\n' +
-    '🔹 **2** - DASS-21 (Depresión, Ansiedad y Estrés)\n\n' +
-    'Responde con **1** o **2**:',
-    { capture: true },
-    async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
-      const user = state.get('user') || {};
-      const msg = ctx.body.trim();
-      const tipoTest = parsearSeleccionTest(msg);
-
-      if (!tipoTest) {
-        await flowDynamic('❌ Por favor, responde con **1** para GHQ-12 o **2** para DASS-21');
-        return fallBack();
-      }
-
-      const testName = tipoTest === 'ghq12' ? 'GHQ-12' : 'DASS-21';
-
-      try {
-        // Configura el test
-        await changeTest(ctx.from, tipoTest);
-        user.testActual = tipoTest;
-        await state.update({ user });
-        await switchFlujo(ctx.from, 'testFlow');
-
-        // Confirmar inicio
-        await flowDynamic(`✅ Iniciando cuestionario ${testName}...`);
-
-        // 🔥 AQUÍ ESTÁ EL CAMBIO CLAVE: Enviar primera pregunta usando las funciones específicas
-        let primeraPregunta;
-        
-        if (tipoTest === 'dass21') {
-          primeraPregunta = await procesarDass21(ctx.from, null);
-        } else if (tipoTest === 'ghq12') {
-          primeraPregunta = await procesarGHQ12(ctx.from, null);
-        }
-        
-        if (typeof primeraPregunta === 'string' && primeraPregunta.trim() !== '') {
-          await flowDynamic(primeraPregunta);
-        } else {
-          await flowDynamic('❌ Error iniciando el test.');
-          return gotoFlow(menuFlow);
-        }
-
-        return gotoFlow(testFlow, { body: '' });
-        
-      } catch (error) {
-        console.error('❌ Error en testSelectionFlow:', error);
-        await flowDynamic('❌ Error. Regresando al menú...');
-        return gotoFlow(menuFlow);
-      }
-    }
-  );
 //---------------------------------------------------------------------------------------------------------
 
 export const assistantFlow = addKeyword(utils.setEvent('ASSISTANT_FLOW')).addAction(
@@ -291,72 +475,8 @@ export const assistantFlow = addKeyword(utils.setEvent('ASSISTANT_FLOW')).addAct
 	}
 )
 
-//---------------------------------------------------------------------------------------------------------
 
-export const testFlow = addKeyword(utils.setEvent('TEST_FLOW')).addAction(
-  async (ctx, { flowDynamic, gotoFlow, state }) => {
-    let user = state.get('user');
-
-    console.log('=== INICIO TESTFLOW ===');
-    console.log('Mensaje del usuario:', ctx.body);
-    console.log('Test actual:', user.testActual);
-
-    // Si no hay mensaje (primer ingreso), no hacer nada
-    if (!ctx.body || ctx.body.trim() === '') return;
-
-    try {
-      let message;
-      
-      // USAR LAS FUNCIONES ESPECÍFICAS
-      if (user.testActual === 'dass21') {
-        message = await procesarDass21(ctx.from, ctx.body);
-      } else if (user.testActual === 'ghq12') {
-        message = await procesarGHQ12(ctx.from, ctx.body);
-      } else {
-        message = await procesarMensaje(ctx.from, ctx.body, user.testActual);
-      }
-
-      console.log('Mensaje a enviar:', message);
-      
-      if (!message || typeof message !== 'string' || message.trim() === '') {
-        console.error('Error: procesarMensaje returned invalid value.', { message });
-        await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
-        return;
-      }
-      
-      await flowDynamic(message);
-
-      // Verificar si el test se completó
-      if (message.includes('COMPLETADO')) {
-        // Limpiar test actual
-        await changeTest(ctx.from, '');
-        user.testActual = '';
-        await state.update({ user });
-        
-        // Cambiar flujo a menú
-        await switchFlujo(ctx.from, 'menuFlow');
-        
-        // Mostrar opciones post-test
-        await flowDynamic(`🎉 ¡Excelente! Has completado el cuestionario.
-
-¿Qué te gustaría hacer ahora?
-
-🔹 **1** - Realizar otro cuestionario
-🔹 **2** - Agendar cita con profesional
-🔹 **3** - Finalizar por ahora
-
-Responde con **1**, **2** o **3**`);
-        
-        return gotoFlow(postTestFlow, { body: '' });
-      }
-
-    } catch (error) {
-      console.error('❌ Error en testFlow:', error);
-      await flowDynamic('❌ Error procesando la prueba. Intenta nuevamente.');
-    }
-  }
-)
-// --------
+// --------------------------------------------------------------------------------------------------
 
 export const postTestFlow = addKeyword(utils.setEvent('POST_TEST_FLOW')).addAction(
 	async (ctx, { flowDynamic, gotoFlow }) => {

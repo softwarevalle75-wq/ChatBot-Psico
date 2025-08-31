@@ -358,7 +358,8 @@ export const sendAutonomousMessage = async (numero, mensaje) => {
 
 export const getEstadoCuestionario = async(telefono, tipoTest) => {
 	try {
-		const modelo = seleccionarModelo(tipoTest)
+		console.log('[DB] getEstadoCuestionario ->', { telefono, tipoTest });
+		const modelo = seleccionarModelo(tipoTest);
 
 		// Si el registro existe
 		let infoCues = await modelo.findUnique ({
@@ -408,7 +409,7 @@ export const saveEstadoCuestionario = async (
 	...extraParams // guardar paramentros adicionales
 ) => {
 	const modelo = seleccionarModelo(tipoTest)
-
+	console.log('[DB] saveEstadoCuestionario call:', { telefono, preguntaActual, resPreg, tipoTest, extraParams });
 	const data = {
 		preguntaActual: preguntaActual,
 		resPreg: resPreg,

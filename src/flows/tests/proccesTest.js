@@ -37,7 +37,7 @@ function marcarTestVisto(numeroUsuario, tipoTest) {
 
 // Procesar el mensaje del usuario
 export async function procesarMensaje(numeroUsuario, mensaje, tipoTest) {
-  tipoTest = tipoTest.toLowerCase();
+  tipoTest = tipoTest.toLowerCase()
   if (!tipoTest) {
     console.error('❌ tipoTest es undefined en procesarMensaje');
     return 'Error: No se ha seleccionado un tipo de test válido.';
