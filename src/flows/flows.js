@@ -65,7 +65,6 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
       
       // 🔥 VERIFICAR SI HAY UN FLUJO ACTIVO CRÍTICO
       const currentFlow = await state.get('currentFlow');
-      const justInitializedTest = await state.get('justInitializedTest');
       
       // 🚨 SI ESTAMOS EN TEST, REDIRIGIR AL TESTFLOW DIRECTAMENTE
       if (currentFlow === 'test') {
@@ -169,7 +168,7 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
 // ========================================
 
 export const testFlow = addKeyword(EVENTS.ACTION)
-  .addAction(async (ctx, { flowDynamic, gotoFlow, state, provider }) => {
+  .addAction(async (ctx, { flowDynamic, gotoFlow, state }) => {
     // 🔥 CONFIGURACIÓN INICIAL DEL TEST
     let user = state.get('user');
     const justInitialized = state.get('justInitializedTest');
