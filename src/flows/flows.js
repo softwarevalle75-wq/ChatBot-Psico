@@ -116,7 +116,11 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
       // 4. Para usuarios normales, usar el flujo de la BD
       console.log('📋 Flujo BD:', user.flujo);
       
-      switch (user.flujo) {          
+      switch (user.flujo) {
+        case 'consentimiento_rechazado':
+          console.log('❌ Usuario rechazó consentimiento -> reconsentFlow');
+          return gotoFlow(reconsentFlow);
+          
         case 'menuFlow':
           console.log('📋 -> menuFlow');
           await state.update({ currentFlow: 'menu' });
@@ -381,30 +385,107 @@ export const registerFlow = addKeyword(utils.setEvent('REGISTER_FLOW')).addActio
     const registerResponse = await apiRegister(ctx.from, ctx.body)
     await flowDynamic(registerResponse)
     
-    // Si el registro fue exitoso, mostrar menú
+    // Si el registro fue exitoso, ir al flujo de tratamiento de datos
     if (registerResponse.includes('Registrado')) {
 	console.log('🔵 registerResponse:', registerResponse);
-      // ✅ CLAVE: Marcar que estamos en el menú ANTES del gotoFlow
+      
+      // Actualizar estado para tratamiento de datos
       await state.update({ 
-        currentFlow: 'menu',
-        user: { ...await state.get('user'), flujo: 'menuFlow' }
+        currentFlow: 'dataConsent',
+        user: { ...await state.get('user'), flujo: 'dataConsentFlow' }
       });
       
-      // Actualizar flujo del usuario en BD
-      await switchFlujo(ctx.from, 'menuFlow')
-      
-      // Mostrar menú principal
-//       await flowDynamic(`¡Perfecto! Ahora puedes elegir qué hacer:
-
-// 🔹 **1** - Realizar cuestionarios psicológicos
-// 🔹 **2** - Agendar cita con profesional
-
-// Responde con **1** o **2**`)
-      
-      return gotoFlow(menuFlow)
+      return gotoFlow(dataConsentFlow)
     }
   }
 )
+//---------------------------------------------------------------------------------------------------------
+
+// Flujo de consentimiento de tratamiento de datos
+export const dataConsentFlow = addKeyword(utils.setEvent('DATA_CONSENT_FLOW'))
+  .addAction(async (ctx, { state }) => {
+    await state.update({ currentFlow: 'dataConsent' });
+    console.log('🔒 DATA_CONSENT_FLOW: Inicializado para:', ctx.from);
+  })
+  .addAnswer(
+    '📋 **TRATAMIENTO DE DATOS PERSONALES**\n\n' +
+    'Para continuar con nuestros servicios, necesitamos tu consentimiento para el tratamiento de tus datos personales según la Ley de Protección de Datos.\n\n' +
+    '🔹 Tus datos serán utilizados únicamente para brindar servicios psicológicos\n' +
+    '🔹 No compartiremos tu información con terceros\n' +
+    '🔹 Puedes solicitar la eliminación de tus datos en cualquier momento\n\n' +
+    '¿Aceptas el tratamiento de tus datos personales?\n\n' +
+    'Responde **"si"** para aceptar o **"no"** para rechazar:',
+    { capture: true },
+    async (ctx, { flowDynamic, gotoFlow, state, endFlow }) => {
+      const respuesta = ctx.body.trim().toLowerCase();
+      
+      if (respuesta === 'si') {
+        // Usuario acepta el tratamiento de datos
+        await state.update({ 
+          currentFlow: 'menu',
+          user: { ...await state.get('user'), flujo: 'menuFlow' }
+        });
+        
+        // Actualizar flujo del usuario en BD
+        await switchFlujo(ctx.from, 'menuFlow');
+        
+        await flowDynamic('✅ **Consentimiento aceptado**\n\nGracias por aceptar el tratamiento de datos. Ahora puedes acceder a todos nuestros servicios.');
+        
+        return gotoFlow(menuFlow);
+        
+      } else if (respuesta === 'no') {
+        // Usuario rechaza el tratamiento de datos
+        // Marcar en BD que rechazó el consentimiento
+        await switchFlujo(ctx.from, 'consentimiento_rechazado');
+        
+        await flowDynamic('❌ **Lo sentimos, pero no puedes continuar si no aceptas el tratamiento de datos.**\n\nSi cambias de opinión, puedes escribirnos nuevamente en cualquier momento.\n\n¡Que tengas un buen día! 👋');
+        
+        return endFlow();
+        
+      } else {
+        // Respuesta inválida
+        await flowDynamic('❌ Por favor responde únicamente **"si"** para aceptar o **"no"** para rechazar el tratamiento de datos.');
+        return gotoFlow(dataConsentFlow);
+      }
+    }
+)
+//---------------------------------------------------------------------------------------------------------
+
+// Flujo para usuarios que rechazaron consentimiento y quieren reconsiderar
+export const reconsentFlow = addKeyword(utils.setEvent('RECONSENT_FLOW'))
+  .addAction(async (ctx, { state }) => {
+    await state.update({ currentFlow: 'reconsent' });
+    console.log('🔄 RECONSENT_FLOW: Inicializado para:', ctx.from);
+  })
+  .addAnswer(
+    '❌ **No puedes acceder al sistema porque rechazaste el tratamiento de datos.**\n\n' +
+    'Si has cambiado de opinión y deseas aceptar el tratamiento de datos, escribe **"acepto"** para continuar.',
+    { capture: true },
+    async (ctx, { flowDynamic, gotoFlow, state, endFlow }) => {
+      const respuesta = ctx.body.trim().toLowerCase();
+      
+      if (respuesta === 'acepto') {
+        // Usuario acepta ahora
+        await state.update({ 
+          currentFlow: 'menu',
+          user: { ...await state.get('user'), flujo: 'menuFlow' }
+        });
+        
+        await switchFlujo(ctx.from, 'menuFlow');
+        
+        await flowDynamic('✅ **Consentimiento aceptado**\n\nGracias por aceptar el tratamiento de datos. Ahora puedes acceder a todos nuestros servicios.');
+        
+        return gotoFlow(menuFlow);
+        
+      } else {
+        // Cualquier otra respuesta = rechaza de nuevo
+        await flowDynamic('❌ **Debes escribir "acepto" para continuar.**\n\nSi no deseas aceptar el tratamiento de datos, no podrás usar nuestros servicios.\n\n¡Que tengas un buen día! 👋');
+        
+        return endFlow();
+      }
+    }
+  );
+
 //---------------------------------------------------------------------------------------------------------
 
 const validarRespuestaMenu = (respuesta, opcionesValidas) => {

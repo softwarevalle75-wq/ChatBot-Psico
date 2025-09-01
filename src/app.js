@@ -4,6 +4,8 @@ import { BaileysProvider as Provider } from "@builderbot/provider-baileys";
 import { 
 	welcomeFlow, 
 	registerFlow, 
+	dataConsentFlow,
+	reconsentFlow,
 	menuFlow, 
 	testSelectionFlow, 
 	testFlow,
@@ -58,6 +60,8 @@ const adapterFlow = createFlow([
     
     // Flujos de registro
     registerFlow,
+    dataConsentFlow,
+    reconsentFlow,
     
     // Flujos de menús (agrupados)
     menuFlow,
