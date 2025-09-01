@@ -287,9 +287,9 @@ async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
     await flowDynamic(message);
 
     // ✅ Verificar si terminó
-    if (message.includes('COMPLETADO') || 
-        message.includes('terminado') || 
-        message.includes('finalizado') ||
+    if (message.includes('completada') || 
+        message.includes('terminada') || 
+        message.includes('finalizada') ||
         message.includes('Puntaje total') ||
         message.includes('🎉')) {
       
@@ -318,20 +318,16 @@ async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
   }
 }
 
-// ========================================
-// TESTSELECTIONFLOW MEJORADO
-// ========================================
-
 export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'))
   .addAction(async (ctx, { state }) => {
     await state.update({ currentFlow: 'testSelection' });
     console.log('🟢 TEST_SELECTION_FLOW: Inicializado para:', ctx.from);
   })
   .addAnswer(
-    'Selecciona el cuestionario que deseas realizar:\n\n' +
-    '🔹 **1** - GHQ-12 (Cuestionario de Salud General)\n' +
-    '🔹 **2** - DASS-21 (Depresión, Ansiedad y Estrés)\n\n' +
-    'Responde con **1** o **2**:',
+    // 'Selecciona el cuestionario que deseas realizar:\n\n' +
+    // '🔹 **1** - GHQ-12 (Cuestionario de Salud General)\n' +
+    // '🔹 **2** - DASS-21 (Depresión, Ansiedad y Estrés)\n\n' +
+    // 'Responde con **1** o **2**:',
     { capture: true },
     async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
       const user = state.get('user') || {};
@@ -398,14 +394,14 @@ export const registerFlow = addKeyword(utils.setEvent('REGISTER_FLOW')).addActio
       await switchFlujo(ctx.from, 'menuFlow')
       
       // Mostrar menú principal
-      await flowDynamic(`¡Perfecto! Ahora puedes elegir qué hacer:
+//       await flowDynamic(`¡Perfecto! Ahora puedes elegir qué hacer:
 
-🔹 **1** - Realizar cuestionarios psicológicos
-🔹 **2** - Agendar cita con profesional
+// 🔹 **1** - Realizar cuestionarios psicológicos
+// 🔹 **2** - Agendar cita con profesional
 
-Responde con **1** o **2**`)
+// Responde con **1** o **2**`)
       
-      return gotoFlow(menuFlow, { body: '' })
+      return gotoFlow(menuFlow)
     }
   }
 )
@@ -483,7 +479,6 @@ export const postTestFlow = addKeyword(utils.setEvent('POST_TEST_FLOW')).addActi
 
 		if (msg === '1') {
 			// Hacer otro cuestionario
-			await flowDynamic(menuCuestionarios())
 			return gotoFlow(testSelectionFlow, { body: '' })
 		} else if (msg === '2') {
 			// Agendar cita
@@ -550,7 +545,6 @@ export const postAgendFlow = addKeyword(utils.setEvent('POST_AGEND_FLOW')).addAc
 		
 		if (msg === '1') {
 			// Hacer cuestionarios
-			await flowDynamic(menuCuestionarios())
 			return gotoFlow(testSelectionFlow)
 		} else if (msg === '2') {
 			// Finalizar

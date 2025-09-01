@@ -980,3 +980,44 @@ export const obtenerPracticante = async (idPracticante) => {
 		throw new Error('Hubo un problema al obtener el Practicante.')
 	}
 }
+
+//---------------------------------------------------------------------------------------------------------
+
+// Función para obtener el teléfono del practicante asignado a un paciente
+export const obtenerTelefonoPracticante = async (telefonoPaciente) => {
+	try {
+		console.log(`🔍 DEBUG: Buscando practicante para paciente: ${telefonoPaciente}`);
+		
+		const paciente = await prisma.informacionUsuario.findUnique({
+			where: { telefonoPersonal: telefonoPaciente },
+			select: { practicanteAsignado: true, nombre: true, apellido: true }
+		});
+
+		console.log(`🔍 DEBUG: Paciente encontrado:`, paciente);
+
+		if (!paciente?.practicanteAsignado) {
+			console.log(`❌ DEBUG: No hay practicante asignado para ${telefonoPaciente}`);
+			return null;
+		}
+
+		console.log(`🔍 DEBUG: Buscando practicante con ID: ${paciente.practicanteAsignado}`);
+
+		const practicante = await prisma.practicante.findUnique({
+			where: { idPracticante: paciente.practicanteAsignado },
+			select: { telefono: true, nombre: true }
+		});
+
+		console.log(`🔍 DEBUG: Practicante encontrado:`, practicante);
+
+		if (practicante?.telefono) {
+			console.log(`✅ DEBUG: Teléfono del practicante: ${practicante.telefono}`);
+			return practicante.telefono;
+		} else {
+			console.log(`❌ DEBUG: Practicante sin teléfono o no encontrado`);
+			return null;
+		}
+	} catch (error) {
+		console.error('❌ DEBUG: Error obteniendo teléfono del practicante:', error);
+		return null;
+	}
+}

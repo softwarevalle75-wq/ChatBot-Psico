@@ -2,6 +2,8 @@ import {
 	getEstadoCuestionario,
 	saveEstadoCuestionario,
 	savePuntajeUsuario,
+	obtenerTelefonoPracticante,
+	sendAutonomousMessage,
 } from '../../queries/queries.js'
 
 const rtasDass21 = () => {
@@ -13,6 +15,7 @@ const cuestDass21 = {
 		'1. Me ha costado mucho descargar la tensión\n    ' + rtasDass21(),
 		'2. Me di cuenta que tenía la boca seca\n    ' + rtasDass21(),
 		'3. No podía sentir ningún sentimiento positivo\n    ' + rtasDass21(),
+		/*
 		'4. Se me hizo difícil respirar\n    ' + rtasDass21(),			
 		'5. Se me hizo difícil tomar la iniciativa para hacer cosas\n    ' + rtasDass21(),
 		'6. Reaccioné exageradamente en ciertas situaciones\n    ' + rtasDass21(),
@@ -31,7 +34,8 @@ const cuestDass21 = {
 		'19. Sentí los latidos de mi corazón a pesar de no haber hecho ningún esfuerzo físico\n    ' + rtasDass21(),
 		'20. Tuve miedo sin razón\n    ' + rtasDass21(),
 		'21. Sentí que la vida no tenía ningún sentido\n    ' + rtasDass21(),
-	],
+	*/
+		],
 
 	subescalas: {
 		depresion: [3, 5, 10, 13, 16, 17, 21],
@@ -153,14 +157,32 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 				estado.resPreg, 
 			)
 
-			return await evaluarDASS21(
+			const resultados = await evaluarDASS21(
 				puntajes,
 				{
 					depresion: cuestDass21.umbralesDep,
 					ansiedad: cuestDass21.umbralesAns,
 					estres: cuestDass21.umbralesEstr,
 				}
-			)																											
+			);
+
+			// Enviar resultados al practicante
+			try {
+				const telefonoPracticante = await obtenerTelefonoPracticante(numeroUsuario);
+				if (telefonoPracticante) {
+					const mensaje = `🔔 *RESULTADOS DE TEST COMPLETADO*\n\n` +
+						`👤 **Paciente:** ${numeroUsuario}\n` +
+						`📋 **Test:** DASS-21\n\n` +
+						`📊 **Resultados:**\n${resultados}`;
+					
+					await sendAutonomousMessage(telefonoPracticante, mensaje);
+					console.log(`✅ Resultados enviados al practicante: ${telefonoPracticante}`);
+				}
+			} catch (error) {
+				console.error('❌ Error enviando resultados:', error);
+			}
+
+			return "✅ Prueba completada. Los resultados han sido enviados a tu practicante asignado."																											
 		}
 
 		console.log('🔍 Guardando estado en BD:', JSON.stringify(estado, null, 2))
@@ -256,15 +278,13 @@ export const evaluarDASS21 = async (puntajes, umbrales) => {
 
 	console.log('Resultado final:', resultado)
 
-	return `--* DASS-21 COMPLETADO *--
+	return `== DASS-21 COMPLETADO ==
 
-** Resultados por área: **
+  ** Resultados por área: **
 
-**Depresión:** ${resultado.depresion.nivel} (${resultado.depresion.puntaje} puntos)
-**Ansiedad:** ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje} puntos)
-**Estrés:** ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos)
-
-Los resultados indican el nivel de malestar en cada área. Si tiene alguna preocupación, considere consultar a un profesional de la salud mental.`;
+  **Depresión:** ${resultado.depresion.nivel} (${resultado.depresion.puntaje} puntos)
+  **Ansiedad:** ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje} puntos)
+  **Estrés:** ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos)`;
 }
 
 

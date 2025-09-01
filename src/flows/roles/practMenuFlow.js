@@ -1,6 +1,6 @@
 // src/flows/pract/practMenuFlow.js
 import { addKeyword } from '@builderbot/bot';
-import { switchFlujo, obtenerUsuario, sendAutonomousMessage } from '../../queries/queries.js';
+import { switchFlujo, obtenerUsuario, sendAutonomousMessage, prisma } from '../../queries/queries.js';
 import { apiAssistant2 } from '../../flows/assist/assistant2.js';
 
 // --- Opción 2: Consejos a la IA 
@@ -85,7 +85,7 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
   .addAnswer(
     'Elige el *test* para asignar:\n' +
     '1️⃣ GHQ-12 (tamizaje general)\n' +
-    '2️⃣ DAS-21\n' +
+    '2️⃣ DASS-21\n' +
     '3️⃣ Beck Ansiedad (BAI)\n' +
     '4️⃣ Riesgo suicida\n\n' +
     'Responde con *1*, *2*, *3* o *4*.',
@@ -103,8 +103,36 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
       let tel = await state.get('pacienteTelefono');
       tel = 57 + tel;
       console.log(tel);
+      
+      // Obtener info del practicante actual
+      const user = state.get('user');
       await obtenerUsuario(tel);  
       console.log(await obtenerUsuario(tel));  
+      
+      // Asignar el practicante al paciente
+      console.log(`🔍 DEBUG: User completo:`, user);
+      if (user && user.data && user.data.idPracticante) {
+        try {
+          console.log(`🔍 DEBUG: Intentando asignar practicante ${user.data.idPracticante} al paciente ${tel}`);
+          await prisma.informacionUsuario.update({
+            where: { telefonoPersonal: tel },
+            data: { practicanteAsignado: user.data.idPracticante }
+          });
+          console.log(`✅ Practicante ${user.data.idPracticante} asignado al paciente ${tel}`);
+          
+          // Verificar que se guardó correctamente
+          const verificacion = await prisma.informacionUsuario.findUnique({
+            where: { telefonoPersonal: tel },
+            select: { practicanteAsignado: true }
+          });
+          console.log(`🔍 DEBUG: Verificación - practicanteAsignado guardado:`, verificacion);
+        } catch (error) {
+          console.error('❌ Error asignando practicante:', error);
+        }
+      } else {
+        console.log(`❌ DEBUG: No se puede asignar practicante. User:`, user);
+      }
+      
       await cambiarFlujoYNotificar(tel, 'tests', 'Se te ha asignado un test')
       
       await flowDynamic(
