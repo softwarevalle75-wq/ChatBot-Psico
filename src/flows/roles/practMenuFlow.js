@@ -91,7 +91,7 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
     'Responde con *1*, *2*, *3* o *4*.',
     { capture: true },
     async (ctx, { state, flowDynamic, gotoFlow, fallBack }) => {
-      const mapa = { '1': 'ghq12', '2': 'DAS-21', '3': 'ans', '4': 'suic' };
+      const mapa = { '1': 'ghq12', '2': 'dass21', '3': 'ans', '4': 'suic' };
       const opt = (ctx.body || '').trim();
       const tipoTest = mapa[opt];
       

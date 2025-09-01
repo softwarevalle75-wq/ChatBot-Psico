@@ -212,7 +212,7 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '57323 8126123',
+            telefono: '573238126123',
         },
         {
             idPracticante: uuidv4(),
@@ -326,11 +326,29 @@ async function main() {
             sesiones: 0, 
             telefono: '573132329504',
         },
+        //-
         {
             idPracticante: uuidv4(),
-            numero_documento: '11111129',
+            numero_documento: '11111130', 
             tipo_documento: 'CC',
-            nombre: 'Camilo Cortes',
+            nombre: 'KMIANDY', //agregar nombre 
+            genero: 'M', 
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573102308453', 
+        },
+        //---
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111131',
+            tipo_documento: 'CC',
+            nombre: 'Cami', //agregar nombre 
             genero: 'M',
             estrato: '3', 
             barrio: 'Chapinero',
@@ -340,15 +358,14 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '573183644600',
-        },
-        //-
+            telefono: '573217774291',
+        },      
         {
             idPracticante: uuidv4(),
-            numero_documento: '11111129', //sumo 1
+            numero_documento: '11111132',
             tipo_documento: 'CC',
-            nombre: 'Camilo Cortes', // cambio
-            genero: 'M', //cambio
+            nombre: 'Camirtes', //agregar nombre 
+            genero: 'M',
             estrato: '3', 
             barrio: 'Chapinero',
             localidad: 'Chapinero', 
@@ -357,8 +374,105 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '573183644600', //cambio
+            telefono: '573025270160',
         },
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111133',
+            tipo_documento: 'CC',
+            nombre: 'Caes', //agregar nombre 
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573125752213',
+        },
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111134',
+            tipo_documento: 'CC',
+            nombre: 'CHOLA', //agregar nombre 
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573041019813',
+        },
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111135',
+            tipo_documento: 'CC',
+            nombre: 'CNOMBRE',   //agregar nombre 
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573212275109',
+        },
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111136',
+            tipo_documento: 'CC',
+            nombre: 'CUSAS', //agregar nombre   
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573106406637',
+        }, 
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111137',
+            tipo_documento: 'CC',
+            nombre: '',  //agregar nombre
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '57', //agregar telefono
+        },
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111138',
+            tipo_documento: 'CC',
+            nombre: 'pe causa', //agregar nombre
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573177897760',
+        },
+
         
 
     ]
