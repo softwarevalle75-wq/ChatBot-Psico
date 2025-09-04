@@ -1,6 +1,6 @@
 // src/flows/pract/practMenuFlow.js
 import { addKeyword } from '@builderbot/bot';
-import { switchFlujo, obtenerUsuario, sendAutonomousMessage, prisma } from '../../queries/queries.js';
+import { switchFlujo, obtenerUsuario, sendAutonomousMessage, prisma, changeTest } from '../../queries/queries.js';
 import { apiAssistant2 } from '../../flows/assist/assistant2.js';
 
 // --- Opción 2: Consejos a la IA 
@@ -86,17 +86,17 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
     'Elige el *test* para asignar:\n' +
     '1️⃣ GHQ-12 (tamizaje general)\n' +
     '2️⃣ DASS-21\n' +
-    '3️⃣ Beck Ansiedad (BAI)\n' +
-    '4️⃣ Riesgo suicida\n\n' +
-    'Responde con *1*, *2*, *3* o *4*.',
+    // '3️⃣ Beck Ansiedad (BAI)\n' +
+    // '4️⃣ Riesgo suicida\n\n' +
+    'Responde con *1* o *2*.',
     { capture: true },
     async (ctx, { state, flowDynamic, gotoFlow, fallBack }) => {
-      const mapa = { '1': 'ghq12', '2': 'dass21', '3': 'ans', '4': 'suic' };
+      const mapa = { '1': 'ghq12', '2': 'dass21' };
       const opt = (ctx.body || '').trim();
       const tipoTest = mapa[opt];
       
       if (!tipoTest) {
-        await flowDynamic('❌ Opción inválida. Responde 1, 2, 3 o 4.');
+        await flowDynamic('❌ Opción inválida. Responde *1* o *2*');
         return fallBack();
       }
       
@@ -133,7 +133,15 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
         console.log(`❌ DEBUG: No se puede asignar practicante. User:`, user);
       }
       
-      await cambiarFlujoYNotificar(tel, 'tests', 'Se te ha asignado un test')
+      // Asignar el tipo de test específico al paciente
+      try {
+        await changeTest(tel, tipoTest);
+        console.log(`✅ Test ${tipoTest} asignado al paciente ${tel}`);
+      } catch (error) {
+        console.error('❌ Error asignando test:', error);
+      }
+      
+      await cambiarFlujoYNotificar(tel, 'testFlow', `Se te ha asignado una prueba, escribe al bot para iniciar.`)
       
       await flowDynamic(
         `✅ Listo. Asigné el test *${tipoTest.toUpperCase()}* al paciente *${tel}*.\n` +

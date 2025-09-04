@@ -182,7 +182,7 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 				console.error('❌ Error enviando resultados:', error);
 			}
 
-			return "✅ Prueba completada. Los resultados han sido enviados a tu practicante asignado."																											
+			return "✅ *Prueba completada con éxito.*\n\nGracias por completar la evaluación. Los resultados han sido enviados a tu practicante asignado."
 		}
 
 		console.log('🔍 Guardando estado en BD:', JSON.stringify(estado, null, 2))

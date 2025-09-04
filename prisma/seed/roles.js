@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
 
     const practicantes = [
+        // IMPORTANTE: EL TELÉFONO NOOOO DEBE TENER ESPACIOS, O NO LO DETECTA COMO VÁLIDO
         //1
         {
             idPracticante: uuidv4(),
@@ -634,6 +635,7 @@ async function main() {
                 },
             sesiones: 0, 
             telefono: '573132329504',
+
         },
         //-
         //Practicante para pruebas
@@ -651,7 +653,7 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '57 ', //agregar telefono
+            telefono: '573123192484', //agregar telefono
         }
 
         

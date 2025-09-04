@@ -130,7 +130,12 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
           // 🔥 SOLO SI NO ESTAMOS YA EN TEST
           if (currentFlow !== 'test') {
             console.log('📝 -> testFlow (desde welcomeFlow)');
-            await state.update({ currentFlow: 'test' });
+            await state.update({ 
+              currentFlow: 'test',
+              justInitializedTest: true,
+              user: user,
+              testAsignadoPorPracticante: true // 🔥 BANDERA PARA DISTINGUIR ORIGEN
+            });
             return gotoFlow(testFlow);
           } else {
             console.log('🔄 Ya estamos en testFlow, no redirigir');
@@ -152,6 +157,7 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
             console.log('🔄 Ya estamos en testSelectionFlow, no redirigir');
             return;
           }
+
           
         default:
           console.log('❓ Flujo por defecto -> menuFlow');
@@ -297,22 +303,42 @@ async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
         message.includes('Puntaje total') ||
         message.includes('🎉')) {
       
-      console.log('🎉 Test completado, regresando al menú');
+      console.log('🎉 Test completado');
       
-      // Limpiar estado
-      user.testActual = null;
-      await state.update({ 
-        user: user, 
-        currentFlow: 'menu',
-        justInitializedTest: false,
-        testActual: null,
-        waitingForTestResponse: false
-      });
-      await switchFlujo(ctx.from, 'menuFlow');
+      // Verificar si fue asignado por practicante
+      const testAsignadoPorPracticante = await state.get('testAsignadoPorPracticante');
       
-      setTimeout(() => {
-        gotoFlow(menuFlow);
-      }, 1000);
+      if (testAsignadoPorPracticante) {
+        console.log('🔥 Test asignado por practicante - NO ir a menuFlow');
+        // Limpiar estado sin redirigir a menú
+        user.testActual = null;
+        await state.update({ 
+          user: user, 
+          currentFlow: null,
+          justInitializedTest: false,
+          testActual: null,
+          waitingForTestResponse: false,
+          testAsignadoPorPracticante: false
+        });
+        await switchFlujo(ctx.from, 'menuFlow'); // Solo actualizar BD        
+        return; // NO hacer gotoFlow
+      } else {
+        console.log('🎉 Test seleccionado por usuario - ir a menuFlow');
+        // Limpiar estado y redirigir a menú
+        user.testActual = null;
+        await state.update({ 
+          user: user, 
+          currentFlow: 'menu',
+          justInitializedTest: false,
+          testActual: null,
+          waitingForTestResponse: false
+        });
+        await switchFlujo(ctx.from, 'menuFlow');
+        
+        setTimeout(() => {
+          gotoFlow(menuFlow);
+        }, 1000);
+      }
     }
     // Si no terminó, seguimos esperando más respuestas
 

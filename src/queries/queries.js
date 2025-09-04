@@ -95,6 +95,7 @@ export const obtenerUsuario = async (numero) => {
           documento: true,
           tipoDocumento: true,
           flujo: true, // ← AGREGAR ESTO
+          testActual: true, // ← AGREGAR ESTO PARA QUE TESTFLOW PUEDA LEERLO
           historial: true,
           estado: true
         }
@@ -104,7 +105,8 @@ export const obtenerUsuario = async (numero) => {
         return { 
           tipo: 'usuario', 
           data: user,
-          flujo: user.flujo // ← EXPONER EL FLUJO
+          flujo: user.flujo, // ← EXPONER EL FLUJO
+          testActual: user.testActual // ← EXPONER EL TEST ACTUAL
         }
       }
 
