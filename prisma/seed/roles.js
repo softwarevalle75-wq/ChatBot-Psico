@@ -638,6 +638,109 @@ async function main() {
 
         },
         //-
+        //añado nuevos practicantes
+        //38
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111147',
+            tipo_documento: 'CC',
+            nombre: 'Practicante 1',
+            genero: 'F',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573025270160',
+        },
+        //39
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111148',
+            tipo_documento: 'CC',
+            nombre: 'Practicante 2',
+            genero: 'F',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '34641202874',
+        },
+        //40
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111149',
+            tipo_documento: 'CC',
+            nombre: 'Practicante 3',
+            genero: 'F',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573160628098',
+        },
+        //41
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111150',
+            tipo_documento: 'CC',
+            nombre: 'Practicante 4',
+            genero: 'F',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573203698581',
+        },
+        //42
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111151',
+            tipo_documento: 'CC',
+            nombre: 'Practicante 5',
+            genero: 'F',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573217774291',
+        },
+        //43
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '11111152',
+            tipo_documento: 'CC',
+            nombre: 'Practicante 6',
+            genero: 'F',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horario: {
+                lunes: "8-10",
+                martes: "9-11"
+                },
+            sesiones: 0, 
+            telefono: '573160431168',
+        },
         //Practicante para pruebas
         {
             idPracticante: uuidv4(),
@@ -655,9 +758,6 @@ async function main() {
             sesiones: 0, 
             telefono: '573123192484', //agregar telefono
         }
-
-        
-
     ]
     await prisma.practicante.createMany({
       data: practicantes,
