@@ -6,6 +6,7 @@ import {
 	changeTest,
 	switchFlujo,
 	switchAyudaPsicologica,
+	guardarPracticanteAsignado,
 } from '../queries/queries.js'
 import { apiRegister } from './register/aiRegister.js'
 //import { procesarMensaje } from './tests/proccesTest.js'
@@ -320,7 +321,7 @@ async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
           waitingForTestResponse: false,
           testAsignadoPorPracticante: false
         });
-        await switchFlujo(ctx.from, 'menuFlow'); // Solo actualizar BD        
+        await switchFlujo(ctx.from, 'menuFlow'); // Solo actualizar BD      
         return; // NO hacer gotoFlow
       } else {
         console.log('🎉 Test seleccionado por usuario - ir a menuFlow');
@@ -425,6 +426,47 @@ export const registerFlow = addKeyword(utils.setEvent('REGISTER_FLOW')).addActio
     }
   }
 )
+
+//---------------------------------------------------------------------------------------------------------
+
+export const pedirNumeroPracticanteAsignadoFlow = addKeyword(utils.setEvent('PEDIR_NUMERO_PRACTICANTE_ASIGNADO'))
+  .addAction(async (ctx, { state }) => {
+    await state.update({ currentFlow: 'pedirNumeroPracticanteAsignado' });
+    console.log('🟢 PEDIR_NUMERO_PRACTICANTE_ASIGNADO: Inicializado para:', ctx.from);
+  })
+  .addAnswer(
+    'Por favor, proporciona el número de tu practicante asignado:',
+    { capture: true },
+    async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
+      const numeroPracticanteAsignado = (ctx.body || '').replace(/\D/g, '');  
+      
+      console.log('🔵 numeroPracticanteAsignado:', numeroPracticanteAsignado);
+      
+      if (numeroPracticanteAsignado.length < 8){
+        await flowDynamic('El número debe tener al menos *8 dígitos*.');
+        return fallBack();
+      } 
+      
+      try {
+        // Guardar el número del practicante asignado
+        await guardarPracticanteAsignado(ctx.from, numeroPracticanteAsignado);
+        
+        await flowDynamic('✅ Número de practicante asignado guardado correctamente.');
+        
+        await switchFlujo(ctx.from, 'menuFlow');
+        await state.update({ 
+          currentFlow: 'menu',
+          user: { ...await state.get('user'), flujo: 'menuFlow' }
+        });
+        return gotoFlow(menuFlow);
+      } catch (error) {
+        console.error('Error guardando practicante:', error);
+        await flowDynamic('❌ Error guardando el número. Intenta de nuevo.');
+        return fallBack();
+      }
+    }
+  )
+
 //---------------------------------------------------------------------------------------------------------
 
 // Flujo de consentimiento de tratamiento de datos
@@ -448,16 +490,16 @@ export const dataConsentFlow = addKeyword(utils.setEvent('DATA_CONSENT_FLOW'))
       if (respuesta === 'si') {
         // Usuario acepta el tratamiento de datos
         await state.update({ 
-          currentFlow: 'menu',
-          user: { ...await state.get('user'), flujo: 'menuFlow' }
+          currentFlow: 'numeroPracticanteAsignado',
+          user: { ...await state.get('user'), flujo: 'pedirNumeroPracticanteAsignadoFlow' }
         });
         
         // Actualizar flujo del usuario en BD
-        await switchFlujo(ctx.from, 'menuFlow');
+        await switchFlujo(ctx.from, 'pedirNumeroPracticanteAsignadoFlow');
         
         await flowDynamic('✅ **Consentimiento aceptado**\n\nGracias por aceptar el tratamiento de datos. Ahora puedes acceder a todos nuestros servicios.');
         
-        return gotoFlow(menuFlow);
+        return gotoFlow(pedirNumeroPracticanteAsignadoFlow);
         
       } else if (respuesta === 'no') {
         // Usuario rechaza el tratamiento de datos
@@ -493,15 +535,15 @@ export const reconsentFlow = addKeyword(utils.setEvent('RECONSENT_FLOW'))
       if (respuesta === 'acepto') {
         // Usuario acepta ahora
         await state.update({ 
-          currentFlow: 'menu',
-          user: { ...await state.get('user'), flujo: 'menuFlow' }
+          currentFlow: 'numeroPracticanteAsignado',
+          user: { ...await state.get('user'), flujo: 'pedirNumeroPracticanteAsignadoFlow' }
         });
         
-        await switchFlujo(ctx.from, 'menuFlow');
+        await switchFlujo(ctx.from, 'pedirNumeroPracticanteAsignadoFlow');
         
         await flowDynamic('✅ **Consentimiento aceptado**\n\nGracias por aceptar el tratamiento de datos. Ahora puedes acceder a todos nuestros servicios.');
         
-        return gotoFlow(menuFlow);
+        return gotoFlow(pedirNumeroPracticanteAsignadoFlow);
         
       } else {
         // Cualquier otra respuesta = rechaza de nuevo

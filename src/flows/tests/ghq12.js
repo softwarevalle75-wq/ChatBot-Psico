@@ -112,10 +112,10 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
             try {
                 const telefonoPracticante = await obtenerTelefonoPracticante(numeroUsuario);
                 if (telefonoPracticante) {
-                    const mensaje = `🔔 *RESULTADOS DE TEST COMPLETADO*\n\n` +
-                        `👤 **Paciente:** ${numeroUsuario}\n` +
-                        `📋 **Test:** GHQ-12\n\n` +
-                        `📊 **Resultados:**\n${await resultados}`;
+                    const mensaje = `🔔 *🧠 RESULTADOS DEL TEST COMPLETADO*\n\n` +
+`👤 **Paciente:** ${numeroUsuario}\n` +
+`📄 **Test aplicado:** *GHQ-12*\n\n` +
+`📊 **Resultados obtenidos:**\n${await resultados}`;
                     
                     await sendAutonomousMessage(telefonoPracticante, mensaje);
                     console.log(`✅ Resultados enviados al practicante: ${telefonoPracticante}`);
@@ -150,14 +150,14 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
 
 const evaluarGHQ12 = async (puntaje, umbrales) => {
 	if (puntaje <= umbrales.bajo.max) {
-		return `== GHQ-12 COMPLETADO ==. 
-        Su puntaje final es: ${puntaje} \n${umbrales.bajo.mensaje}`
+		return `GHQ-12 COMPLETADO. 
+        El puntaje del paciente fue de: ${puntaje} \n${umbrales.bajo.mensaje}`
 	} else if (puntaje >= umbrales.medio.min && puntaje <= umbrales.medio.max) {
-		return `== GHQ-12 COMPLETADO ==. 
-        Su puntaje final es: ${puntaje} \n${umbrales.medio.mensaje}`
+		return `GHQ-12 COMPLETADO. 
+        El puntaje del paciente fue de: ${puntaje} \n${umbrales.medio.mensaje}`
 	} else if (puntaje >= umbrales.alto.min) {
-		return `== GHQ-12 COMPLETADO ==. 
-        Su puntaje final es: ${puntaje} \n${umbrales.alto.mensaje}`
+		return `GHQ-12 COMPLETADO. 
+        El puntaje del paciente fue de: ${puntaje} \n${umbrales.alto.mensaje}`
 	} else {
 		return 'Error al evaluar su puntaje'
 	}

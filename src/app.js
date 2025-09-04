@@ -14,6 +14,7 @@ import {
 	agendFlow, 
 	postAgendFlow, 
 	assistantFlow, 
+	pedirNumeroPracticanteAsignadoFlow,
 	// roleFlow 
 } from "./flows/flows.js";
 
@@ -62,6 +63,7 @@ const adapterFlow = createFlow([
     registerFlow,
     dataConsentFlow,
     reconsentFlow,
+	pedirNumeroPracticanteAsignadoFlow,
     
     // Flujos de menús (agrupados)
     menuFlow,

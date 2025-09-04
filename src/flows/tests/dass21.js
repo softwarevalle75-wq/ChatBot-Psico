@@ -170,10 +170,10 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 			try {
 				const telefonoPracticante = await obtenerTelefonoPracticante(numeroUsuario);
 				if (telefonoPracticante) {
-					const mensaje = `🔔 *RESULTADOS DE TEST COMPLETADO*\n\n` +
-						`👤 **Paciente:** ${numeroUsuario}\n` +
-						`📋 **Test:** DASS-21\n\n` +
-						`📊 **Resultados:**\n${resultados}`;
+					const mensaje = `🔔 *🧠 RESULTADOS DEL TEST COMPLETADO*\n\n` +
+`👤 **Paciente:** ${numeroUsuario}\n` +
+`📄 **Test aplicado:** *DASS-21*\n\n` +
+`📊 **Resultados obtenidos:**\n${await resultados}`;
 					
 					await sendAutonomousMessage(telefonoPracticante, mensaje);
 					console.log(`✅ Resultados enviados al practicante: ${telefonoPracticante}`);
@@ -278,7 +278,7 @@ export const evaluarDASS21 = async (puntajes, umbrales) => {
 
 	console.log('Resultado final:', resultado)
 
-	return `== DASS-21 COMPLETADO ==
+	return `DASS-21 COMPLETADO
 
   ** Resultados por área: **
 
