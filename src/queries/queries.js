@@ -257,6 +257,17 @@ export async function resolverRemitentePorTelefono(rawPhone) {
 export const obtenerHist = async (numero) => {
 	try {
 		console.log('Obteniendo historial del usuario:', numero)
+		
+		// 🔥 VERIFICAR PRIMERO SI ES UN PRACTICANTE
+		const practicante = await prisma.practicante.findFirst({
+			where: { telefono: numero }
+		});
+		
+		if (practicante) {
+			console.log('📋 Es un practicante, retornando historial vacío');
+			return []; // Los practicantes no necesitan historial
+		}
+		
 		const user = await prisma.informacionUsuario.findUnique({
 			where: {
 				telefonoPersonal: numero,
@@ -285,6 +296,16 @@ export const obtenerHist = async (numero) => {
 export async function saveHist(numero, conversationHistory) {
   try {
     console.log("Guardando historial para:", numero);
+    
+    // 🔥 VERIFICAR PRIMERO SI ES UN PRACTICANTE
+    const practicante = await prisma.practicante.findFirst({
+      where: { telefono: numero }
+    });
+    
+    if (practicante) {
+      console.log('📋 Es un practicante, no guardar historial');
+      return; // Los practicantes no necesitan historial
+    }
 
     await prisma.informacionUsuario.upsert({
       where: { telefonoPersonal: numero },

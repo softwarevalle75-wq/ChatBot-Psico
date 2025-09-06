@@ -278,7 +278,7 @@ export const evaluarDASS21 = async (puntajes, umbrales) => {
 
 	console.log('Resultado final:', resultado)
 
-	return `DASS-21 COMPLETADO
+	return `== DASS-21 COMPLETADO ==
 
   ** Resultados por área: **
 

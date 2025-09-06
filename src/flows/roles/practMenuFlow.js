@@ -2,6 +2,8 @@
 import { addKeyword } from '@builderbot/bot';
 import { switchFlujo, obtenerUsuario, sendAutonomousMessage, prisma, changeTest } from '../../queries/queries.js';
 import { apiAssistant2 } from '../../flows/assist/assistant2.js';
+//import { procesarGHQ12 } from '../../flows/tests/ghq12.js';
+//import { procesarDASS21 } from '../../flows/tests/dass21.js';
 
 // --- Opción 2: Consejos a la IA 
 export const practConsejosFlow = addKeyword(['__pract_ayuda__']) // Keyword interno
@@ -78,11 +80,12 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
   //-------------------------------------------------------------------------------------------------------------------------------
 
   // --- Opción 1 (parte 2): elegir test a asignar
-  export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
-  .addAction(async (_, { state }) => {
+export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
+.addAction(async (_, { state }) => {
     await state.update({ currentFlow: 'practicante' });
+    console.log('🔥 Estado actualizado - currentFlow: practicante');
   })
-  .addAnswer(
+.addAnswer(
     'Elige el *test* para asignar:\n' +
     '1️⃣ GHQ-12 (tamizaje general)\n' +
     '2️⃣ DASS-21\n' +
@@ -148,11 +151,47 @@ export const practOfrecerTestFlow__PedirTelefono = addKeyword(['__pedir_tel__'])
         `Cuando el paciente escriba al bot, iniciará el cuestionario.`
       );
 
-      await new Promise(res => setTimeout(res, 500));
-      return gotoFlow(practMenuFlow);
+      await new Promise(res => setTimeout(res, 500));    
+      await state.update({ currentFlow: 'esperandoResultados' });
+      console.log('🔥 Estado actualizado - currentFlow: esperandoResultados');
+      return gotoFlow(practEsperarResultados);
     }
   );
 
+  //------------------------------------------------------------------------------------------------------------------------------
+
+  export const practEsperarResultados = addKeyword('__ESPERAR_RESULTADOS__')
+  .addAction(async (_, { state }) => {
+    await state.update({ currentFlow: 'esperandoResultados',
+      esperandoResultados: true
+     });
+    console.log('🔥 Estado actualizado - currentFlow: esperandoResultados');
+  })
+  .addAnswer(
+    '⏳ Por favor, espera a que el paciente termine su prueba.',   
+    { capture: true },
+    async (_, { flowDynamic, fallBack, state }) => {      
+      
+      // 🔥 VERIFICAR SI HAY UNA BANDERA DE TEST COMPLETADO EN EL ESTADO
+      const testCompletado = await state.get('testCompletadoPorPaciente');
+      if (testCompletado) {
+        console.log('✅ Test completado detectado por bandera de estado en practEsperarResultados');
+        await flowDynamic('✅ *Test completado.* Regresando al menú principal...');
+        
+        // Limpiar la bandera y cambiar estado
+        await state.update({
+          testCompletadoPorPaciente: false,
+          currentFlow: 'practicante',
+          esperandoResultados: false
+        });
+        
+        return;
+      }      
+      
+      // Usar fallBack() para mantener el flujo activo y seguir capturando mensajes
+      return fallBack();
+    }
+  )
 
   //------------------------------------------------------------------------------------------------------------------------------
   

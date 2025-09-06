@@ -60,7 +60,7 @@ import { practMenuFlow } from './roles/practMenuFlow.js'
 //---------------------------------------------------------------------------------------------------------
 
 export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
-  async (ctx, { gotoFlow, state }) => {
+  async (ctx, { gotoFlow, flowDynamic, state }) => {
     try {
       console.log('🟡 WELCOME ejecutándose para:', ctx.from, 'mensaje:', ctx.body);
       
@@ -109,6 +109,34 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
 
       // 3. Manejar por tipo de usuario
       if (user.tipo === 'practicante') {
+        // 🔥 VERIFICAR SI EL PRACTICANTE ESTÁ ESPERANDO RESULTADOS
+        const esperandoResultados = await state.get('esperandoResultados');
+        const currentFlow = await state.get('currentFlow');
+
+        console.log('🔍 DEBUG - currentFlow:', currentFlow);
+        
+        if (esperandoResultados || currentFlow === 'esperandoResultados') {
+          console.log('🔄 Practicante esperando resultados, verificando si debe salir...');
+          
+          // 🔥 VERIFICAR SI HAY UNA BANDERA DE TEST COMPLETADO EN EL ESTADO
+          const testCompletado = await state.get('testCompletadoPorPaciente');
+          if (testCompletado) {
+            console.log('✅ Test completado detectado por bandera de estado, redirigir a practMenuFlow');
+            
+            await state.update({ 
+              currentFlow: 'practicante',
+              esperandoResultados: false,
+              testCompletadoPorPaciente: false // Limpiar la bandera
+            });
+
+            return gotoFlow(practMenuFlow);
+          }
+          
+          
+          await flowDynamic('⏳ Debes esperar a que el paciente termine la prueba.\n\nCuando termine, recibirás los resultados automáticamente.');
+          return; // No hacer nada, mantener el flujo actual
+        }
+        
         console.log('🔑 Practicante detectado -> practMenuFlow');
         await state.update({ currentFlow: 'practicante' });
         return gotoFlow(practMenuFlow);
