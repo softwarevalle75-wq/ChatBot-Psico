@@ -377,6 +377,7 @@ export const sendAutonomousMessage = async (numero, mensaje) => {
 	}
 }
 
+
 //---------------------------------------------------------------------------------------------------------
 
 export const getEstadoCuestionario = async(telefono, tipoTest) => {

@@ -6,8 +6,20 @@ import {
 	sendAutonomousMessage,
 } from '../../queries/queries.js'
 
+import { generarPDFResultadosDASS21 } from './testPDF_DASS21.js'
+import fs from 'fs'
+
 const rtasDass21 = () => {
     return '0️⃣ No me ha ocurrido.\n    1️⃣ Me ha ocurrido un poco, o durante parte del tiempo.\n    2️⃣ Me ha ocurrido bastante, o durante una buena parte del tiempo.\n    3️⃣ Me ha ocurrido mucho, o la mayor parte del tiempo'
+}
+
+//--------------------------------------------------------------------------------
+
+let globalProvider = null;
+
+export const configurarProviderDASS21 = (provider) => {
+    globalProvider = provider;
+    console.log('👍 Provider configurado para envío de PDFs DASS-21')
 }
 
 const cuestDass21 = {
@@ -166,20 +178,83 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 				}
 			);
 
-			// Enviar resultados al practicante
+			// Enviar resultados al practicante con PDF
 			try {
 				const telefonoPracticante = await obtenerTelefonoPracticante(numeroUsuario);
 				if (telefonoPracticante) {
-					const mensaje = `🔔 *🧠 RESULTADOS DEL TEST COMPLETADO*\n\n` +
-`👤 **Paciente:** ${numeroUsuario}\n` +
-`📄 **Test aplicado:** *DASS-21*\n\n` +
-`📊 **Resultados obtenidos:**\n${await resultados}`;
+					const mensajeInicial = `🔔 *📋 TEST DASS-21 COMPLETADO - GENERANDO REPORTE*\n\n`;
 					
-					await sendAutonomousMessage(telefonoPracticante, mensaje);
-					console.log(`✅ Resultados enviados al practicante: ${telefonoPracticante}`);
+					await sendAutonomousMessage(telefonoPracticante, mensajeInicial);
+
+					// Generar PDF
+					const rutaPDF = await generarPDFResultadosDASS21(
+						numeroUsuario,
+						puntajes,
+						estado.resPreg
+					);
+
+					console.log('PDF DASS-21 generado: ', rutaPDF);
+
+					// Enviar PDF al practicante
+					setTimeout(async() => {
+						try {
+							if (globalProvider) {
+								try{
+									// Enviar PDF con sendMedia
+									const numeroCompleto = telefonoPracticante.includes('@') 
+										? telefonoPracticante 
+										: `${telefonoPracticante}@s.whatsapp.net`;
+									
+									await globalProvider.sendMedia(
+										numeroCompleto,
+										rutaPDF,
+										'📊 *Reporte DASS-21*'
+									);									
+
+									// 🔥 MARCAR TEST COMPLETADO PARA SALIR DE ESPERANDO RESULTADOS
+									setTimeout(async () => {
+										await sendAutonomousMessage(
+											telefonoPracticante,
+											"✅ *Reporte enviado exitosamente*\n\n" +
+											"_Para continuar, escribe cualquier mensaje._"
+										)
+									}, 1000);
+
+									console.log('PDF DASS-21 enviado exitosamente via provider')
+								} catch (providerError) {
+									console.log('Error con provider DASS-21, usando fallback')
+									throw providerError;
+								}
+							} else {
+								throw new Error('Provider no configurado para DASS-21')
+							}
+
+						} catch (error) {
+							console.log('Error al enviar el PDF DASS-21', error)
+							
+							await sendAutonomousMessage(
+								telefonoPracticante,
+								`🔔 *🧠 RESULTADOS DASS-21*\n\n` +
+								`👤 *Paciente:* ${numeroUsuario}\n` +
+								`📊 *Resultados obtenidos:*\n${resultados}`
+							)
+						}
+
+						setTimeout(() => {
+							try {
+								fs.unlinkSync(rutaPDF)
+								console.log('PDF DASS-21 eliminado exitosamente')
+							} catch (error) {
+								console.log('Error al eliminar el PDF DASS-21', error)
+							}
+						}, 30000)
+					}, 3000)
+
+				} else {
+					console.log('No se pudo obtener teléfono del practicante para DASS-21')
 				}
 			} catch (error) {
-				console.error('❌ Error enviando resultados:', error);
+				console.error('Error procesando resultados DASS-21', error)
 			}
 
 			return "✅ *Prueba completada con éxito.*\n\nGracias por completar la evaluación. Los resultados han sido enviados a tu practicante asignado."

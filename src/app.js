@@ -104,6 +104,12 @@ const adapterFlow = createFlow([
 		database: adapterDB,
 	});
 
+	// 🔥 CONFIGURAR PROVIDER PARA ENVÍO DE PDFs
+	const { configurarProviderGHQ12 } = await import('./flows/tests/ghq12.js');
+	const { configurarProviderDASS21 } = await import('./flows/tests/dass21.js');
+	configurarProviderGHQ12(adapterProvider);
+	configurarProviderDASS21(adapterProvider);
+
 	//---------------------------------------------------------------------------------------------------------
 	
 	adapterProvider.server.post(

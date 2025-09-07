@@ -6,12 +6,15 @@ import {
 	sendAutonomousMessage,
 } from '../../queries/queries.js'
 
+import { generarPDFResultados} from '../tests/testPDF.js'
+import fs from 'fs'
+
 const cuestGhq12 = {    
     preguntas: [
         '1. ¿Ha podido concentrarse bien en lo que hace?\n    0️⃣ Mejor que lo habitual.\n    1️⃣ Igual que lo habitual.\n    2️⃣ Menos que lo habitual.\n    3️⃣ Mucho menos que lo habitual.',
         '2. ¿Sus preocupaciones le han hecho perder mucho el sueño?\n    0️⃣ No, en absoluto.\n    1️⃣ Igual que lo habitual.\n    2️⃣ Más que lo habitual.\n    3️⃣ Mucho más que lo habitual.',
         '3. ¿Ha sentido que está desempeñando un papel útil en la vida?\n    0️⃣ Más que lo habitual.\n    1️⃣ Igual que lo habitual.\n    2️⃣ Menos que lo habitual.\n    3️⃣ Mucho menos que lo habitual.',
-        /*
+        
         '4. ¿Se ha sentido capaz de tomar decisiones?\n    0️⃣ Más capaz que lo habitual.\n    1️⃣ Igual que lo habitual.\n    2️⃣ Menos capaz que lo habitual.\n    3️⃣ Mucho menos capaz que lo habitual.',
         '5. ¿Se ha sentido constantemente agobiado y en tensión?\n    0️⃣ No, en absoluto.\n    1️⃣ Igual que lo habitual.\n    2️⃣ Más que lo habitual.\n    3️⃣ Mucho más que lo habitual.',        
         '6. ¿Ha sentido que no puede superar sus dificultades?\n    0️⃣ No, en absoluto.\n    1️⃣ Igual que lo habitual.\n    2️⃣ Más que lo habitual.\n    3️⃣ Mucho más que lo habitual.',
@@ -21,7 +24,7 @@ const cuestGhq12 = {
         '10. ¿Ha perdido confianza en sí mismo/a?\n    0️⃣ No, en absoluto.\n    1️⃣ No más que lo habitual.\n    2️⃣ Más que lo habitual.\n    3️⃣ Mucho más que lo habitual.',
         '11. ¿Ha pensado que usted es una persona que no vale para nada?\n    0️⃣ No, en absoluto.\n    1️⃣ No más que lo habitual.\n    2️⃣ Más que lo habitual.\n    3️⃣ Mucho más que lo habitual.',
         '12. ¿Se siente razonablemente feliz considerando todas las circunstancias?\n    0️⃣ Más feliz que lo habitual.\n    1️⃣ Igual que lo habitual.\n    2️⃣ Menos feliz que lo habitual.\n    3️⃣ Mucho menos feliz que lo habitual.',
-        */
+        
     ],
     umbrales: {
         bajo: {
@@ -45,6 +48,17 @@ const cuestGhq12 = {
         3: [],
     },
 }
+
+//--------------------------------------------------------------------------------
+
+let globalProvider = null;
+
+export const configurarProviderGHQ12 = (provider) => {
+    globalProvider = provider;
+    console.log('👍 Provider configurado para envío de PDFs')
+}
+
+//--------------------------------------------------------------------------------
 
 export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
     const tipoTest = 'ghq12'
@@ -106,24 +120,84 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
             )
             await savePuntajeUsuario(numeroUsuario, tipoTest, estado.Puntaje, estado.resPreg )
 
-            const resultados = evaluarGHQ12(estado.Puntaje, umbrales);
-            
-            // Enviar resultados al practicante
             try {
-                const telefonoPracticante = await obtenerTelefonoPracticante(numeroUsuario);
+                const telefonoPracticante = await obtenerTelefonoPracticante(numeroUsuario)
                 if (telefonoPracticante) {
-                    const mensaje = `🔔 *🧠 RESULTADOS DEL TEST COMPLETADO*\n\n` +
-                    `👤 **Paciente:** ${numeroUsuario}\n` +
-                    `📄 **Test aplicado:** *GHQ-12*\n\n` +
-                    `📊 **Resultados obtenidos:**\n${await resultados}`;
+                    const mensajeInicial = `🔔 *📋 TEST GHQ12 COMPLETADO - GENERANDO REPORTE*\n\n`;
                     
-                    await sendAutonomousMessage(telefonoPracticante, mensaje);
-                    console.log(`✅ Resultados enviados al practicante: ${telefonoPracticante}`);
+                    await sendAutonomousMessage(telefonoPracticante, mensajeInicial);
+
+                    //Aqui se genera el pdf
+                    const rutaPDF = await generarPDFResultados(
+                        numeroUsuario, 
+                        estado.Puntaje, 
+                        estado.resPreg,
+                        umbrales                        
+                    )
+
+                    console.log('PDF generado: ', rutaPDF)
+
+                    //Se envia el pdf al practicante
+                    setTimeout(async() => {
+                        try {
+                            if (globalProvider) {
+                                try{
+                                    // Enviar PDF con sendMedia
+                                    const numeroCompleto = telefonoPracticante.includes('@') 
+                                        ? telefonoPracticante 
+                                        : `${telefonoPracticante}@s.whatsapp.net`;
+                                    
+                                    await globalProvider.sendMedia(
+                                        numeroCompleto,
+                                        rutaPDF,
+                                        '📊 *Reporte GHQ-12*'
+                                    );
+
+                                    setTimeout(async () => {
+										await sendAutonomousMessage(
+											telefonoPracticante,
+											"✅ *Reporte enviado exitosamente*\n\n" +
+											"_Para continuar, escribe cualquier mensaje._"
+										)
+									}, 1000);
+
+                                    console.log('PDF enviado existosamente via provider')
+                                } catch (providerError) {
+                                    console.log('Error con provider, usando fallback')
+                                    throw providerError;
+                                }
+                            } else {
+                                throw new Error('Provider no configurado')
+                            }
+
+                        } catch (error) {
+                            console.log('Error al enviar el PDF', error)
+                            
+                            const resultadosTexto = await evaluarGHQ12(estado.Puntaje, umbrales);
+                            
+                            await sendAutonomousMessage(
+                                telefonoPracticante,
+                                `🔔 *🧠 RESULTADOS GHQ12*\n\n` +
+                                `👤 *Paciente:* ${numeroUsuario}\n` +
+                                `📊 *Resultados obtenidos:*</br>${resultadosTexto}`
+                            )
+                        }
+
+                        setTimeout(() => {
+                            try {
+                                fs.unlinkSync(rutaPDF)
+                                console.log('PDF eliminado exitosamente')
+                            } catch (error) {
+                                console.log('Error al eliminar el PDF', error)
+                            }
+                        }, 30000)
+                    }, 3000)
+
                 } else {
-                    console.log('Ocurrió un error al enviar el mensaje al practicante')
-                }               
+                    console.log('No se pudo obtener teléfono del practicante')
+                }
             } catch (error) {
-                console.error('❌ Error enviando resultados:', error);
+                console.error('Error procesando resultados GHQ-12', error)
             }
 
             return "✅ *Prueba completada con éxito.*\n\nGracias por completar la evaluación. Los resultados han sido enviados a tu practicante asignado."
@@ -148,6 +222,8 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
     }
 }
 
+//--------------------------------------------------------------------------------
+
 export const evaluarGHQ12 = async (puntaje, umbrales) => {
 	if (puntaje <= umbrales.bajo.max) {
 		return `== GHQ-12 COMPLETADO ==. 
@@ -162,6 +238,8 @@ export const evaluarGHQ12 = async (puntaje, umbrales) => {
 		return 'Error al evaluar su puntaje'
 	}
 }
+
+//--------------------------------------------------------------------------------
 
 export const GHQ12info = () => {
     return {

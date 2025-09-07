@@ -21,7 +21,10 @@
     "@formkit/tempo": "^0.1.2",
     "@prisma/client": "6.15.0",
     "dotenv": "^17.2.1",
+    "fs": "^0.0.1-security",
     "openai": "^5.11.0",
+    "path": "^0.12.7",
+    "pdfkit": "^0.17.2",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

@@ -162,7 +162,8 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
 
   export const practEsperarResultados = addKeyword('__ESPERAR_RESULTADOS__')
   .addAction(async (_, { state }) => {
-    await state.update({ currentFlow: 'esperandoResultados',
+    await state.update({ 
+      currentFlow: 'esperandoResultados',
       esperandoResultados: true
      });
     console.log('🔥 Estado actualizado - currentFlow: esperandoResultados');
@@ -198,9 +199,8 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
   
   
   // --- Menú principal del practicante (con validación de rol)
-  export const practMenuFlow = addKeyword(['__NUNCA__']) // No usar keywords directos
+  export const practMenuFlow = addKeyword(['__NUNCA__'])
   .addAction(async (ctx, { state }) => {
-    // Marcar que estamos en el flujo de practicante
     await state.update({ currentFlow: 'practicante' });
   })
   .addAnswer(

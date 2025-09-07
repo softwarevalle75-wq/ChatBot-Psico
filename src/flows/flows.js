@@ -64,10 +64,9 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
     try {
       console.log('🟡 WELCOME ejecutándose para:', ctx.from, 'mensaje:', ctx.body);
       
-      // 🔥 VERIFICAR SI HAY UN FLUJO ACTIVO CRÍTICO
+      // 1. VERIFICAR FLUJOS ACTIVOS CRÍTICOS (prioridad máxima)
       const currentFlow = await state.get('currentFlow');
       
-      // 🚨 SI ESTAMOS EN TEST, REDIRIGIR AL TESTFLOW DIRECTAMENTE
       if (currentFlow === 'test') {
         console.log('🔀 Redirigiendo mensaje de test a testFlow');
         return gotoFlow(testFlow);
@@ -78,7 +77,7 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         return;
       }
       
-      // 2. Obtener usuario de BD
+      // 2. OBTENER USUARIO DE BD
       const user = await obtenerUsuario(ctx.from);
       console.log('👤 Usuario obtenido:', {
         tipo: user?.tipo,
@@ -91,109 +90,16 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         return gotoFlow(registerFlow);
       }
 
-      // ✅ PERMITIR welcomeFlow durante el registro
-      if (user.flujo === 'register') {
-        console.log('📝 Usuario en registro, permitir welcomeFlow');
-        await state.update({ user: user, currentFlow: 'register' });
-        return gotoFlow(registerFlow);
-      }
-
-      // ✅ Verificar si ya está inicializado para flujos estables
-      const isFirstMessage = !await state.get('initialized');
-      if (!isFirstMessage && user.flujo === 'menuFlow' && currentFlow === 'menu') {
-        console.log('🔄 Usuario ya inicializado en menú, no hacer nada');
-        return;
-      }
-
+      // 3. ACTUALIZAR ESTADO CON USUARIO
       await state.update({ initialized: true, user: user });
 
-      // 3. Manejar por tipo de usuario
+      // 4. MANEJAR POR TIPO DE USUARIO
       if (user.tipo === 'practicante') {
-        // 🔥 VERIFICAR SI EL PRACTICANTE ESTÁ ESPERANDO RESULTADOS
-        const esperandoResultados = await state.get('esperandoResultados');
-        const currentFlow = await state.get('currentFlow');
-
-        console.log('🔍 DEBUG - currentFlow:', currentFlow);
-        
-        if (esperandoResultados || currentFlow === 'esperandoResultados') {
-          console.log('🔄 Practicante esperando resultados, verificando si debe salir...');
-          
-          // 🔥 VERIFICAR SI HAY UNA BANDERA DE TEST COMPLETADO EN EL ESTADO
-          const testCompletado = await state.get('testCompletadoPorPaciente');
-          if (testCompletado) {
-            console.log('✅ Test completado detectado por bandera de estado, redirigir a practMenuFlow');
-            
-            await state.update({ 
-              currentFlow: 'practicante',
-              esperandoResultados: false,
-              testCompletadoPorPaciente: false // Limpiar la bandera
-            });
-
-            return gotoFlow(practMenuFlow);
-          }
-          
-          
-          await flowDynamic('⏳ Debes esperar a que el paciente termine la prueba.\n\nCuando termine, recibirás los resultados automáticamente.');
-          return; // No hacer nada, mantener el flujo actual
-        }
-        
-        console.log('🔑 Practicante detectado -> practMenuFlow');
-        await state.update({ currentFlow: 'practicante' });
-        return gotoFlow(practMenuFlow);
+        return await handlePracticanteFlow(ctx, user, state, gotoFlow, flowDynamic);
       }
 
-      // 4. Para usuarios normales, usar el flujo de la BD
-      console.log('📋 Flujo BD:', user.flujo);
-      
-      switch (user.flujo) {
-        case 'consentimiento_rechazado':
-          console.log('❌ Usuario rechazó consentimiento -> reconsentFlow');
-          return gotoFlow(reconsentFlow);
-          
-        case 'menuFlow':
-          console.log('📋 -> menuFlow');
-          await state.update({ currentFlow: 'menu' });
-          return gotoFlow(menuFlow);
-          
-        case 'testFlow':
-          // 🔥 SOLO SI NO ESTAMOS YA EN TEST
-          if (currentFlow !== 'test') {
-            console.log('📝 -> testFlow (desde welcomeFlow)');
-            await state.update({ 
-              currentFlow: 'test',
-              justInitializedTest: true,
-              user: user,
-              testAsignadoPorPracticante: true // 🔥 BANDERA PARA DISTINGUIR ORIGEN
-            });
-            return gotoFlow(testFlow);
-          } else {
-            console.log('🔄 Ya estamos en testFlow, no redirigir');
-            return;
-          }
-          
-        case 'agendFlow':
-          console.log('📅 -> agendFlow');
-          await state.update({ currentFlow: 'agenda' });
-          return gotoFlow(agendFlow);
-          
-        case 'testSelectionFlow':
-          // 🔥 SOLO SI NO ESTAMOS YA EN SELECCIÓN
-          if (currentFlow !== 'testSelection') {
-            console.log('🎯 -> testSelectionFlow');
-            await state.update({ currentFlow: 'testSelection' });
-            return gotoFlow(testSelectionFlow);
-          } else {
-            console.log('🔄 Ya estamos en testSelectionFlow, no redirigir');
-            return;
-          }
-
-          
-        default:
-          console.log('❓ Flujo por defecto -> menuFlow');
-          await switchFlujo(ctx.from, 'menuFlow');
-          await state.update({ currentFlow: 'menu' });
-          return gotoFlow(menuFlow);
-      }
+      // 5. MANEJAR USUARIOS NORMALES POR FLUJO DE BD
+      return await handleUserFlow(ctx, user, state, gotoFlow);
       
     } catch (e) {
       console.error('❌ welcomeFlow error:', e);
@@ -201,6 +107,79 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
     }
   }
 );
+
+// Función auxiliar para manejar flujo de practicantes
+async function handlePracticanteFlow(ctx, user, state, gotoFlow, flowDynamic) {
+  const esperandoResultados = await state.get('esperandoResultados');
+  const currentFlow = await state.get('currentFlow');
+
+  if (esperandoResultados || currentFlow === 'esperandoResultados') {
+    console.log('⏳ Practicante esperando resultados...');
+    await flowDynamic('⏳ Debes esperar a que el paciente termine la prueba.\n\nCuando termine, recibirás los resultados automáticamente.');
+    return;
+  }
+
+  console.log('🔑 Practicante detectado -> practMenuFlow');
+  await state.update({ currentFlow: 'practicante' });
+  return gotoFlow(practMenuFlow);
+}
+
+// Función auxiliar para manejar flujo de usuarios normales
+async function handleUserFlow(ctx, user, state, gotoFlow) {
+  console.log('📋 Flujo BD:', user.flujo);
+  
+  switch (user.flujo) {
+    case 'register':
+      console.log('📝 Usuario en registro -> registerFlow');
+      await state.update({ currentFlow: 'register' });
+      return gotoFlow(registerFlow);
+      
+    case 'consentimiento_rechazado':
+      console.log('❌ Usuario rechazó consentimiento -> reconsentFlow');
+      return gotoFlow(reconsentFlow);
+      
+    case 'menuFlow':
+      console.log('📋 -> menuFlow');
+      await state.update({ currentFlow: 'menu' });
+      return gotoFlow(menuFlow);
+      
+    case 'testFlow':
+      if (await state.get('currentFlow') !== 'test') {
+        console.log('📝 -> testFlow (desde welcomeFlow)');
+        await state.update({ 
+          currentFlow: 'test',
+          justInitializedTest: true,
+          user: user,
+          testAsignadoPorPracticante: true
+        });
+        return gotoFlow(testFlow);
+      } else {
+        console.log('🔄 Ya estamos en testFlow, no redirigir');
+        return;
+      }
+      
+    case 'agendFlow':
+      console.log('📅 -> agendFlow');
+      await state.update({ currentFlow: 'agenda' });
+      return gotoFlow(agendFlow);
+      
+    case 'testSelectionFlow':
+      if (await state.get('currentFlow') !== 'testSelection') {
+        console.log('🎯 -> testSelectionFlow');
+        await state.update({ currentFlow: 'testSelection' });
+        return gotoFlow(testSelectionFlow);
+      } else {
+        console.log('🔄 Ya estamos en testSelectionFlow, no redirigir');
+        return;
+      }
+
+    default:
+      console.log('❓ Flujo por defecto -> menuFlow');
+      await switchFlujo(ctx.from, 'menuFlow');
+      await state.update({ currentFlow: 'menu' });
+      return gotoFlow(menuFlow);
+  }
+}
 
 // ========================================
 // TESTFLOW CORREGIDO - CON KEYWORD ESPECÍFICO
@@ -295,7 +274,89 @@ export const testResponseFlow = addKeyword(['0', '1', '2', '3'])
 // FUNCIÓN HELPER PARA PROCESAR RESPUESTAS
 // ========================================
 
-async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
+// async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
+//   const user = state.get('user');
+//   const testActual = user?.testActual || state.get('testActual');
+  
+//   if (!testActual) {
+//     console.log('❌ No hay test en curso');
+//     await flowDynamic('❌ Error: no hay test activo.');
+//     await state.update({ currentFlow: 'menu', waitingForTestResponse: false });
+//     return gotoFlow(menuFlow);
+//   }
+
+//   try {
+//     console.log('🔄 Procesando respuesta:', ctx.body, 'para test:', testActual);
+    
+//     let message;
+//     if (testActual === 'dass21') {
+//       message = await procesarDass21(ctx.from, ctx.body);
+//     } else if (testActual === 'ghq12') {
+//       message = await procesarGHQ12(ctx.from, ctx.body);
+//     }
+
+//     if (!message?.trim()) {
+//       console.error('❌ Respuesta inválida del procesador');
+//       await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
+//       return;
+//     }
+    
+//     console.log('📤 Enviando:', message.substring(0, 50) + '...');
+//     await flowDynamic(message);
+
+//     // ✅ Verificar si terminó
+//     if (message.includes('completada') || 
+//         message.includes('terminada') || 
+//         message.includes('finalizada') ||
+//         message.includes('Puntaje total') ||
+//         message.includes('🎉')) {
+      
+//       console.log('🎉 Test completado');
+      
+//       // Verificar si fue asignado por practicante
+//       const testAsignadoPorPracticante = await state.get('testAsignadoPorPracticante');
+      
+//       if (testAsignadoPorPracticante) {
+//         console.log('🔥 Test asignado por practicante - NO ir a menuFlow');
+//         // Limpiar estado sin redirigir a menú
+//         user.testActual = null;
+//         await state.update({ 
+//           user: user, 
+//           currentFlow: null,
+//           justInitializedTest: false,
+//           testActual: null,
+//           waitingForTestResponse: false,
+//           testAsignadoPorPracticante: false
+//         });
+//         await switchFlujo(ctx.from, 'menuFlow'); // Solo actualizar BD      
+//         return; // NO hacer gotoFlow
+//       } else {
+//         console.log('🎉 Test seleccionado por usuario - ir a menuFlow');
+//         // Limpiar estado y redirigir a menú
+//         user.testActual = null;
+//         await state.update({ 
+//           user: user, 
+//           currentFlow: 'menu',
+//           justInitializedTest: false,
+//           testActual: null,
+//           waitingForTestResponse: false
+//         });
+//         await switchFlujo(ctx.from, 'menuFlow');
+        
+//         setTimeout(() => {
+//           gotoFlow(menuFlow);
+//         }, 1000);
+//       }
+//     }
+//     // Si no terminó, seguimos esperando más respuestas
+
+//   } catch (error) {
+//     console.error('❌ Error procesando respuesta:', error);
+//     await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
+//   }
+// }
+
+export const procesarRespuestaTest = async (ctx, { flowDynamic, gotoFlow, state, provider }) => {
   const user = state.get('user');
   const testActual = user?.testActual || state.get('testActual');
   
@@ -306,76 +367,37 @@ async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
     return gotoFlow(menuFlow);
   }
 
-  try {
-    console.log('🔄 Procesando respuesta:', ctx.body, 'para test:', testActual);
-    
-    let message;
-    if (testActual === 'dass21') {
-      message = await procesarDass21(ctx.from, ctx.body);
-    } else if (testActual === 'ghq12') {
-      message = await procesarGHQ12(ctx.from, ctx.body);
-    }
+  let resultado;
+  if (testActual === 'ghq12') {
+    resultado = await procesarGHQ12(ctx.from, ctx.body, provider)
+  } else if (testActual === 'dass21') {
+    resultado = await procesarDass21(ctx.from, ctx.body, provider)
+  }
 
-    if (!message?.trim()) {
-      console.error('❌ Respuesta inválida del procesador');
-      await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
-      return;
-    }
-    
-    console.log('📤 Enviando:', message.substring(0, 50) + '...');
-    await flowDynamic(message);
+  if (resultado?.error) {
+    await flowDynamic(resultado.error);
+    return;
+  }
 
-    // ✅ Verificar si terminó
-    if (message.includes('completada') || 
-        message.includes('terminada') || 
-        message.includes('finalizada') ||
-        message.includes('Puntaje total') ||
-        message.includes('🎉')) {
-      
-      console.log('🎉 Test completado');
-      
-      // Verificar si fue asignado por practicante
-      const testAsignadoPorPracticante = await state.get('testAsignadoPorPracticante');
-      
-      if (testAsignadoPorPracticante) {
-        console.log('🔥 Test asignado por practicante - NO ir a menuFlow');
-        // Limpiar estado sin redirigir a menú
-        user.testActual = null;
-        await state.update({ 
-          user: user, 
-          currentFlow: null,
-          justInitializedTest: false,
-          testActual: null,
-          waitingForTestResponse: false,
-          testAsignadoPorPracticante: false
-        });
-        await switchFlujo(ctx.from, 'menuFlow'); // Solo actualizar BD      
-        return; // NO hacer gotoFlow
-      } else {
-        console.log('🎉 Test seleccionado por usuario - ir a menuFlow');
-        // Limpiar estado y redirigir a menú
-        user.testActual = null;
-        await state.update({ 
-          user: user, 
-          currentFlow: 'menu',
-          justInitializedTest: false,
-          testActual: null,
-          waitingForTestResponse: false
-        });
-        await switchFlujo(ctx.from, 'menuFlow');
-        
-        setTimeout(() => {
-          gotoFlow(menuFlow);
-        }, 1000);
-      }
-    }
-    // Si no terminó, seguimos esperando más respuestas
+  if (typeof resultado === 'string') {
+    await flowDynamic(resultado);
 
-  } catch (error) {
-    console.error('❌ Error procesando respuesta:', error);
-    await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
+    if(resultado.includes('completada')) {
+      console.log('🎉 Test completado, limpiando estado');
+      await state.update({
+        user: user,
+        currentFlow: 'menu',
+        justInitializedTest: false,
+        testActual: null,
+        waitingForTestResponse: false
+      });
+      await switchFlujo(ctx.from, 'menuFlow');
+      return gotoFlow(menuFlow);
+    }
   }
 }
+
+//--------------------------------------------------------------------------------
 
 export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'))
   .addAction(async (ctx, { state }) => {
