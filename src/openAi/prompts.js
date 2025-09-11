@@ -1,3 +1,5 @@
+import { generarPDFResultados } from "../flows/tests/testPDF"
+
 //---------------------------------------------------------------------------------------------------------
 
 export const registerPrompt = `
@@ -130,3 +132,8 @@ export const promptAgend = ` *PERSONALIDAD*
   debe tener la longitud promedio de un mensaje sencillo de whatsapp, 
   si no es suficiente para meter toda la informacion, vas a repetir el paso 3 y 4 en los siguientes mensajes
   del flujo de conversacion hasta terminar la informacion y las dudas del cliente, para luego terminar con la confirmacion del cliente.`
+
+//---------------------------------------------------------------------------------------------------------
+
+export const promptResultadosGHQ = `
+  `

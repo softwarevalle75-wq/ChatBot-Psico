@@ -485,7 +485,7 @@ export const pedirNumeroPracticanteAsignadoFlow = addKeyword(utils.setEvent('PED
     console.log('🟢 PEDIR_NUMERO_PRACTICANTE_ASIGNADO: Inicializado para:', ctx.from);
   })
   .addAnswer(
-    'Por favor, proporciona el número de tu practicante asignado:',
+    'Por favor, proporciona el número de tu *psicologo asignado* \n\nSi *no tienes el número*, puedes solicitarlo a tu psicologo.',
     { capture: true },
     async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
       const numeroPracticanteAsignado = (ctx.body || '').replace(/\D/g, '');  
