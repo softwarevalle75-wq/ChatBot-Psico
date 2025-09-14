@@ -1,5 +1,3 @@
-import { generarPDFResultados } from "../flows/tests/testPDF"
-
 //---------------------------------------------------------------------------------------------------------
 
 export const registerPrompt = `
@@ -134,6 +132,3 @@ export const promptAgend = ` *PERSONALIDAD*
   del flujo de conversacion hasta terminar la informacion y las dudas del cliente, para luego terminar con la confirmacion del cliente.`
 
 //---------------------------------------------------------------------------------------------------------
-
-export const promptResultadosGHQ = `
-  `

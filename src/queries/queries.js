@@ -1074,3 +1074,86 @@ export const guardarPracticanteAsignado = async (numeroUsuario, numeroPracticant
 		throw new Error('Hubo un problema guardando el practicante asignado.');
 	}
 };
+
+//---------------------------------------------------------------------------------------------------------
+
+// Función para obtener los resultados de tests de un paciente específico
+export const obtenerResultadosPaciente = async (telefonoPaciente) => {
+	try {
+		console.log(`🔍 Obteniendo resultados para paciente: ${telefonoPaciente}`);
+		
+		// Obtener información básica del paciente
+		const paciente = await prisma.informacionUsuario.findUnique({
+			where: { telefonoPersonal: telefonoPaciente },
+			select: {
+				nombre: true,
+				apellido: true,
+				telefonoPersonal: true,
+				fechaCreacion: true
+			}
+		});
+
+		if (!paciente) {
+			return null;
+		}
+
+		// Obtener resultados de GHQ-12
+		const resultadosGHQ12 = await prisma.ghq12.findUnique({
+			where: { telefono: telefonoPaciente },
+			select: {
+				Puntaje: true,
+				resPreg: true,
+				preguntaActual: true
+			}
+		});
+
+		// Obtener resultados de DASS-21
+		const resultadosDASS21 = await prisma.dass21.findUnique({
+			where: { telefono: telefonoPaciente },
+			select: {
+				puntajeDep: true,
+				puntajeAns: true,
+				puntajeEstr: true,
+				resPreg: true,
+				respuestas: true,
+				preguntaActual: true
+			}
+		});
+
+		return {
+			paciente,
+			ghq12: resultadosGHQ12,
+			dass21: resultadosDASS21
+		};
+	} catch (error) {
+		console.error('Error obteniendo resultados del paciente:', error);
+		throw new Error('Hubo un problema obteniendo los resultados del paciente.');
+	}
+};
+
+//---------------------------------------------------------------------------------------------------------
+
+// Función para obtener lista de pacientes asignados a un practicante
+export const obtenerPacientesAsignados = async (idPracticante) => {
+	try {
+		console.log(`🔍 Obteniendo pacientes para practicante: ${idPracticante}`);
+		
+		const pacientes = await prisma.informacionUsuario.findMany({
+			where: { practicanteAsignado: idPracticante },
+			select: {
+				nombre: true,
+				apellido: true,
+				telefonoPersonal: true,
+				fechaCreacion: true
+			},
+			orderBy: {
+				fechaCreacion: 'desc'
+			}
+		});
+
+		return pacientes;
+	} catch (error) {
+		console.error('Error obteniendo pacientes asignados:', error);
+		throw new Error('Hubo un problema obteniendo los pacientes asignados.');
+	}
+};

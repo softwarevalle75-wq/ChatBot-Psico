@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
-import { obtenerHist, saveHist, getCita } from '../../queries/queries.js'
+import { obtenerHist, saveHist, getCita, obtenerResultadosPaciente, obtenerPacientesAsignados } from '../../queries/queries.js'
 import { assistantPrompt } from '../../openAi/prompts.js'
+import { formatearResultadosParaIA, formatearListaPacientes } from '../../openAi/resultFormatter.js'
 import { format } from '@formkit/tempo'
 
 const aiRegister = new OpenAI({
@@ -43,6 +44,34 @@ const tools = [
 		function: {
 			name: 'cancelarCita',
 			description: 'Cancel an existing appointment',
+			parameters: {
+				type: 'object',
+				properties: {},
+			},
+		},
+	},
+	{
+		type: 'function',
+		function: {
+			name: 'consultarResultadosPaciente',
+			description: 'Consulta los resultados de tests psicológicos de un paciente específico usando su número de teléfono',
+			parameters: {
+				type: 'object',
+				properties: {
+					telefonoPaciente: {
+						type: 'string',
+						description: 'Número de teléfono del paciente (solo números, sin prefijos)',
+					},
+				},
+				required: ['telefonoPaciente'],
+			},
+		},
+	},
+	{
+		type: 'function',
+		function: {
+			name: 'listarPacientesAsignados',
+			description: 'Lista todos los pacientes asignados al practicante actual',
 			parameters: {
 				type: 'object',
 				properties: {},
@@ -114,6 +143,57 @@ export async function apiAssistant2(numero, msg, id) {
 						await saveHist(numero, conversationHistory)
 						return `Se ha sido cancelada, recuerde que a la segunda cancelada, se le cerrarra su proceso.`
 					}
+
+					// Consultar resultados de paciente
+					if (call.function.name === 'consultarResultadosPaciente') {
+						console.log('consultarResultadosPaciente')
+						const { telefonoPaciente } = JSON.parse(call.function.arguments)
+						
+						try {
+							// Normalizar el número de teléfono
+							const telefonoNormalizado = telefonoPaciente.startsWith('57') ? telefonoPaciente : `57${telefonoPaciente.replace(/\D/g, '')}`
+							
+							const resultados = await obtenerResultadosPaciente(telefonoNormalizado)
+							const resultadosFormateados = formatearResultadosParaIA(resultados)
+							
+							conversationHistory.push({
+								role: 'assistant',
+								content: resultadosFormateados,
+							})
+
+							conversationHistory.shift() // Remover el prompt del sistema
+							await saveHist(numero, conversationHistory)
+							
+							return resultadosFormateados
+						} catch (error) {
+							console.error('Error consultando resultados:', error)
+							return 'No se pudieron obtener los resultados del paciente. Verifica que el número de teléfono sea correcto.'
+						}
+					}
+
+					// Listar pacientes asignados
+					if (call.function.name === 'listarPacientesAsignados') {
+						console.log('listarPacientesAsignados')
+						
+						try {
+							const pacientes = await obtenerPacientesAsignados(id)
+							const listaFormateada = formatearListaPacientes(pacientes)
+							
+							conversationHistory.push({
+								role: 'assistant',
+								content: listaFormateada,
+							})
+
+							conversationHistory.shift() // Remover el prompt del sistema
+							await saveHist(numero, conversationHistory)
+							
+							return listaFormateada
+						} catch (error) {
+							console.error('Error listando pacientes:', error)
+							return 'No se pudieron obtener los pacientes asignados.'
+						}
+					}
+
 					conversationHistory.shift()
 					await saveHist(numero, conversationHistory)
 					return assistantResponse
