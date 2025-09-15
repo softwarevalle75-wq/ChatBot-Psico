@@ -151,10 +151,12 @@ export async function apiAssistant2(numero, msg, id) {
 						
 						try {
 							// Normalizar el número de teléfono
-							const telefonoNormalizado = telefonoPaciente.startsWith('57') ? telefonoPaciente : `57${telefonoPaciente.replace(/\D/g, '')}`
+							// const telefonoNormalizado = telefonoPaciente.startsWith('57') ? telefonoPaciente : `57${telefonoPaciente.replace(/\D/g, '')}`
 							
-							const resultados = await obtenerResultadosPaciente(telefonoNormalizado)
-							const resultadosFormateados = formatearResultadosParaIA(resultados)
+							// const resultados = await obtenerResultadosPaciente(telefonoNormalizado)
+							// const resultadosFormateados = formatearResultadosParaIA(resultados)
+
+							const resultadosFormateados = formatearResultadosParaIA(await obtenerResultadosPaciente(telefonoPaciente))
 							
 							conversationHistory.push({
 								role: 'assistant',

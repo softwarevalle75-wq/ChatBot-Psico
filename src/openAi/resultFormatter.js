@@ -7,7 +7,7 @@ export const formatearResultadosParaIA = (resultados) => {
 
     const { paciente, ghq12, dass21 } = resultados;
     let resumen = `**RESULTADOS DEL PACIENTE**\n`;
-    resumen += `Nombre: ${paciente.nombre || 'N/A'} ${paciente.apellido || 'N/A'}\n`;
+    resumen += `Nombre: ${paciente.nombre || 'Sin especificar'} ${paciente.apellido || ''}\n`;
     resumen += `Teléfono: ${paciente.telefonoPersonal}\n`;
     resumen += `Fecha registro: ${new Date(paciente.fechaCreacion).toLocaleDateString()}\n\n`;
 

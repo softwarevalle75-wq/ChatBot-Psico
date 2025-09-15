@@ -9,53 +9,11 @@ import {
 	guardarPracticanteAsignado,
 } from '../queries/queries.js'
 import { apiRegister } from './register/aiRegister.js'
-//import { procesarMensaje } from './tests/proccesTest.js'
 import { menuCuestionarios, parsearSeleccionTest} from './tests/controlTest.js'
 import { apiAgend } from './agend/aiAgend.js'
 import { procesarDass21 } from './tests/dass21.js'
 import { procesarGHQ12 } from './tests/ghq12.js'
-
 import { practMenuFlow } from './roles/practMenuFlow.js'
-// import { adminMenuFlow } from './roles/adminMenuFlow.js'
-
-// NUEVO: resolver remitente
-// import { resolverRemitentePorTelefono } from '../queries/queries.js'
-
-//---------------------------------------------------------------------------------------------------------
-
-// export const roleFlow = addKeyword(['menu', 'inicio', 'volver', '/start']).addAction(
-//   async (ctx, { gotoFlow, state }) => {
-//     try {
-//       // 🔥 MEJORADO: Verificar más estados
-//       const currentFlow = await state.get('currentFlow');
-//       const currentMenu = await state.get('currentMenu');
-//       const inTest = await state.get('testInProgress');
-//       const inAgenda = await state.get('agendaInProgress');
-      
-//       // Si estamos en cualquier flujo activo, NO interrumpir
-//       if (currentFlow || currentMenu || inTest || inAgenda) {
-//         console.log('🚫 roleFlow: Usuario ya en flujo activo, no redirigiendo');
-//         return;
-//       }
-
-//       // Solo verificar roles si realmente es un inicio limpio
-//       const remitente = await resolverRemitentePorTelefono(ctx.from);
-//       if (!remitente) return gotoFlow(registerFlow);
-
-//       if (remitente.tipo === 'admin')       return gotoFlow(adminMenuFlow);
-//       if (remitente.tipo === 'practicante') return gotoFlow(practMenuFlow);
-//       if (remitente.tipo === 'usuario')     return gotoFlow(welcomeFlow);
-
-//       return gotoFlow(registerFlow);
-//     } catch (e) {
-//       console.error('roleFlow error:', e);
-//       return gotoFlow(registerFlow);
-//     }
-//   }
-// );
-
-//---------------------------------------------------------------------------------------------------------
-
 
 //---------------------------------------------------------------------------------------------------------
 
