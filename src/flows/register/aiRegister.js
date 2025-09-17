@@ -37,6 +37,9 @@ async function register(conversationHistory, number) {
 		messages: hist,
 		response_format: { type: 'json_object' },
 	})
+
+	console.log("✨ Uso de tokens en 'register':", jsonRegister.usage);
+
 	const responseJson = JSON.parse(jsonRegister.choices[0].message.content)
 
 	const { nombre, apellido, correo, tipoDocumento, documento } = responseJson
@@ -50,6 +53,9 @@ async function register(conversationHistory, number) {
 		message: 'Usuario Registrado',
 	}
 }
+
+//---- 
+
 
 //---------------------------------------------------------------------------------------------------------
 

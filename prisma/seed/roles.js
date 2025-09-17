@@ -756,7 +756,7 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '573123192484', //agregar telefono
+            telefono: '57', //agregar telefono
         }
     ]
     await prisma.practicante.createMany({

@@ -99,6 +99,11 @@ export async function apiAssistant2(numero, msg, id) {
 		const assistantResponse = response.choices[0].message.content
 		const toolCalls = response.choices[0].message.tool_calls
 
+		const { prompt_tokens, completion_tokens, total_tokens } = response.usage;
+
+		console.log(`✨ Uso de tokens en 'assistant': \nTokens por prompt: → ${prompt_tokens} \n Tokens por respuesta: → ${completion_tokens} \n Tokens en total: → ${total_tokens}`)
+		//console.log("✨ Uso de tokens en 'assistant': ",)
+
 		conversationHistory.shift()
 
 		if (toolCalls && toolCalls.length > 0) {

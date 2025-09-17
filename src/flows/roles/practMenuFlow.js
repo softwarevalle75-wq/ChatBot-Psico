@@ -143,17 +143,7 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
         console.error('❌ Error asignando test:', error);
       }
       
-      
-
-
-      await cambiarFlujoYNotificar(tel, 'testFlow', `Se te ha asignado una prueba, \n\npor favor indica tu nombre y apellido para continuar`)      
-      const nombre = ctx.body.split(' ')[0]
-      const apellido = ctx.body.split(' ')[1]
-      console.log(nombre, apellido)
-      await registrarUsuario(nombre, apellido, tel);
-      
-
-
+      await cambiarFlujoYNotificar(tel, 'testFlow', `Se te ha asignado una prueba, \n\npor favor indica tu nombre y apellido para continuar`)   
       
       await flowDynamic(
         `✅ Listo. Asigné el test *${tipoTest.toUpperCase()}* al paciente *${tel}*.\n` +
