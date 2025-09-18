@@ -4,6 +4,7 @@ import {
 	savePuntajeUsuario,
 	obtenerTelefonoPracticante,
 	sendAutonomousMessage,
+	notificarTestCompletadoAPracticante,
 } from '../../queries/queries.js'
 
 import { generarPDFResultadosDASS21 } from './testPDF_DASS21.js'
@@ -211,12 +212,9 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 										'📊 *Reporte DASS-21*'
 									);									
 
-									// 🔥 MARCAR TEST COMPLETADO PARA SALIR DE ESPERANDO RESULTADOS
+									// 🔥 NOTIFICAR AL PRACTICANTE QUE EL TEST SE COMPLETÓ
 									setTimeout(async () => {
-										await sendAutonomousMessage(
-											telefonoPracticante,
-											"_Para continuar, escribe cualquier mensaje._"
-										)
+										await notificarTestCompletadoAPracticante(numeroUsuario);
 									}, 1000);
 
 									console.log('PDF DASS-21 enviado exitosamente via provider')
@@ -237,6 +235,11 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 								`👤 *Paciente:* ${numeroUsuario}\n` +
 								`📊 *Resultados obtenidos:*\n${resultados}`
 							)
+							
+							// 🔥 NOTIFICAR AL PRACTICANTE QUE EL TEST SE COMPLETÓ (fallback)
+							setTimeout(async () => {
+								await notificarTestCompletadoAPracticante(numeroUsuario);
+							}, 1000);
 						}
 
 						setTimeout(() => {

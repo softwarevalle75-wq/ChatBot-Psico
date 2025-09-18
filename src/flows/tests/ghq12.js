@@ -4,6 +4,7 @@ import {
 	savePuntajeUsuario,
 	obtenerTelefonoPracticante,
 	sendAutonomousMessage,
+	notificarTestCompletadoAPracticante,
 } from '../../queries/queries.js'
 
 import { generarPDFResultados} from '../tests/testPDF_GHQ12.js'
@@ -154,10 +155,7 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
                                     );
 
                                     setTimeout(async () => {
-										await sendAutonomousMessage(
-											telefonoPracticante,
-											"_Para continuar, escribe cualquier mensaje._"
-										)
+										await notificarTestCompletadoAPracticante(numeroUsuario);
 									}, 1000);
 
                                     console.log('PDF enviado existosamente via provider')

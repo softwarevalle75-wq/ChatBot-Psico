@@ -153,16 +153,19 @@ export async function apiAssistant2(numero, msg, id) {
 					if (call.function.name === 'consultarResultadosPaciente') {
 						console.log('consultarResultadosPaciente')
 						const { telefonoPaciente } = JSON.parse(call.function.arguments)
-						
-						try {
-							// Normalizar el número de teléfono
-							// const telefonoNormalizado = telefonoPaciente.startsWith('57') ? telefonoPaciente : `57${telefonoPaciente.replace(/\D/g, '')}`
-							
-							// const resultados = await obtenerResultadosPaciente(telefonoNormalizado)
-							// const resultadosFormateados = formatearResultadosParaIA(resultados)
 
-							const resultadosFormateados = formatearResultadosParaIA(await obtenerResultadosPaciente(telefonoPaciente))
-							
+						try {
+							// Normalizar el número de teléfono a formato 57XXXXXXXXXX
+							const soloNumeros = (telefonoPaciente || '').replace(/\D/g, '')
+							const telefonoNormalizado = soloNumeros.startsWith('57') ? soloNumeros : `57${soloNumeros}`
+
+							const resultados = await obtenerResultadosPaciente(telefonoNormalizado)
+							if (!resultados) {
+								return 'No se encontraron resultados para este paciente.'
+							}
+
+							const resultadosFormateados = formatearResultadosParaIA(resultados)
+
 							conversationHistory.push({
 								role: 'assistant',
 								content: resultadosFormateados,
@@ -170,7 +173,7 @@ export async function apiAssistant2(numero, msg, id) {
 
 							conversationHistory.shift() // Remover el prompt del sistema
 							await saveHist(numero, conversationHistory)
-							
+
 							return resultadosFormateados
 						} catch (error) {
 							console.error('Error consultando resultados:', error)

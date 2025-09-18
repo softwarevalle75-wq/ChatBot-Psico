@@ -377,6 +377,69 @@ export const sendAutonomousMessage = async (numero, mensaje) => {
 	}
 }
 
+// Función para notificar al practicante que el test se completó y cambiar su flujo
+export const notificarTestCompletadoAPracticante = async (telefonoPaciente) => {
+	try {
+		console.log(`🔔 Notificando test completado para paciente: ${telefonoPaciente}`);
+		
+		const telefonoPracticante = await obtenerTelefonoPracticante(telefonoPaciente);
+		if (!telefonoPracticante) {
+			console.log('❌ No se encontró practicante asignado');
+			return false;
+		}
+
+		// Enviar mensaje de notificación al practicante
+		await sendAutonomousMessage(
+			telefonoPracticante,
+			"✅ *Test completado.* Los resultados han sido enviados.\n\n_Escribe cualquier mensaje para regresar al menú._"
+		);
+
+		console.log(`✅ Practicante ${telefonoPracticante} notificado del test completado`);
+		return true;
+	} catch (error) {
+		console.error('Error notificando test completado:', error);
+		return false;
+	}
+}
+
+// Función para limpiar el estado de test completado del practicante
+export const limpiarEstadoTestCompletado = async (telefonoPracticante) => {
+	try {
+		const telefonoLimpio = telefonoPracticante.replace(/\D/g, '');
+		await prisma.practicante.update({
+			where: { telefono: telefonoLimpio },
+			data: { 
+				testCompletadoReciente: false,
+				ultimoPacienteTest: null
+			}
+		});
+		console.log(`🧹 Estado de test completado limpiado para practicante: ${telefonoPracticante}`);
+		return true;
+	} catch (error) {
+		console.error('Error limpiando estado de test completado:', error);
+		return false;
+	}
+}
+
+// Función para verificar si un practicante tiene un test completado reciente
+export const verificarTestCompletadoReciente = async (telefonoPracticante) => {
+	try {
+		const telefonoLimpio = telefonoPracticante.replace(/\D/g, '');
+		const practicante = await prisma.practicante.findUnique({
+			where: { telefono: telefonoLimpio },
+			select: { 
+				testCompletadoReciente: true,
+				ultimoPacienteTest: true
+			}
+		});
+		
+		return practicante?.testCompletadoReciente || false;
+	} catch (error) {
+		console.error('Error verificando test completado reciente:', error);
+		return false;
+	}
+}
+
 
 //---------------------------------------------------------------------------------------------------------
 

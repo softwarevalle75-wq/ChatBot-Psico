@@ -26,7 +26,8 @@ import {
 	practMenuFlow, 
 	practOfrecerTestFlow__ElegirTest, 
 	practOfrecerTestFlow__PedirTelefono, 
-	practConsejosFlow 
+	practConsejosFlow,
+	practEsperarResultados
 } from './flows/roles/practMenuFlow.js'
 
 import {
@@ -69,6 +70,7 @@ const adapterFlow = createFlow([
     menuFlow,
     // Flujos de roles (después de welcome)
     practMenuFlow,
+    practEsperarResultados,
     adminMenuFlow,
     
     // Flujos de tests (en orden lógico)

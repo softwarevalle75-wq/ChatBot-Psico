@@ -143,7 +143,7 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
         console.error('❌ Error asignando test:', error);
       }
       
-      await cambiarFlujoYNotificar(tel, 'testFlow', `Se te ha asignado una prueba, \n\npor favor indica tu nombre y apellido para continuar`)   
+      await cambiarFlujoYNotificar(tel, 'testFlow', `Se te ha asignado una prueba`)   
       
       await flowDynamic(
         `✅ Listo. Asigné el test *${tipoTest.toUpperCase()}* al paciente *${tel}*.\n` +
@@ -170,26 +170,18 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
   .addAnswer(
     '⏳ Por favor, espera a que el paciente termine su prueba.',   
     { capture: true },
-    async (_, { flowDynamic, fallBack, state }) => {      
-      
-      // 🔥 VERIFICAR SI HAY UNA BANDERA DE TEST COMPLETADO EN EL ESTADO
-      const testCompletado = await state.get('testCompletadoPorPaciente');
-      if (testCompletado) {
-        console.log('✅ Test completado detectado por bandera de estado en practEsperarResultados');
-        await flowDynamic('✅ *Test completado.* Regresando al menú principal...');
-        
-        // Limpiar la bandera y cambiar estado
-        await state.update({
-          testCompletadoPorPaciente: false,
-          currentFlow: 'practicante',
-          esperandoResultados: false
-        });
-        
-        return;
-      }      
-      
-      // Usar fallBack() para mantener el flujo activo y seguir capturando mensajes
-      return fallBack();
+    async (_, { flowDynamic, gotoFlow, state }) => {      
+      // A partir de ahora, cualquier mensaje del practicante lo saca del estado de espera
+      console.log('🔄 Mensaje recibido en practEsperarResultados -> salir de espera');
+      await flowDynamic('✅ *Test completado o espera cancelada.* Regresando al menú del practicante...');
+
+      await state.update({
+        currentFlow: 'practicante',
+        esperandoResultados: false,
+        testCompletadoPorPaciente: false,
+      });
+
+      return gotoFlow(practMenuFlow);
     }
   )
 
@@ -248,15 +240,18 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
   // --- Middleware global para manejar "menu" solo cuando estés en flujo practicante
   export const practMenuMiddleware = addKeyword(['menu'])
   .addAction(async (ctx, { state, gotoFlow, endFlow }) => {
-    const currentFlow = state.get('currentFlow');
-    if (currentFlow === 'practicante') {
-      const user = state.get('user') || await obtenerUsuario(ctx.from);
-      if (user && user.idPracticante) {
-        await state.update({ user: user });
-        return gotoFlow(practMenuFlow);
-      }
+    // Permitir 'menu' en cualquier estado si es practicante
+    const user = state.get('user') || await obtenerUsuario(ctx.from);
+    if (user && user.idPracticante) {
+      await state.update({ 
+        user: user,
+        currentFlow: 'practicante',
+        esperandoResultados: false,
+        testCompletadoPorPaciente: false,
+      });
+      return gotoFlow(practMenuFlow);
     }
-    return endFlow(); // No hacer nada si no está en flujo practicante
+    return endFlow(); // No hacer nada si no es practicante
   });
   
   

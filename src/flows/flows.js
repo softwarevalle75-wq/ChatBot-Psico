@@ -13,7 +13,7 @@ import { menuCuestionarios, parsearSeleccionTest} from './tests/controlTest.js'
 import { apiAgend } from './agend/aiAgend.js'
 import { procesarDass21 } from './tests/dass21.js'
 import { procesarGHQ12 } from './tests/ghq12.js'
-import { practMenuFlow } from './roles/practMenuFlow.js'
+import { practMenuFlow, practEsperarResultados } from './roles/practMenuFlow.js'
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -67,14 +67,13 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
 );
 
 // Función auxiliar para manejar flujo de practicantes
-async function handlePracticanteFlow(ctx, user, state, gotoFlow, flowDynamic) {
+async function handlePracticanteFlow(ctx, user, state, gotoFlow) {
   const esperandoResultados = await state.get('esperandoResultados');
   const currentFlow = await state.get('currentFlow');
 
   if (esperandoResultados || currentFlow === 'esperandoResultados') {
     console.log('⏳ Practicante esperando resultados...');
-    await flowDynamic('⏳ Debes esperar a que el paciente termine la prueba.\n\nCuando termine, recibirás los resultados automáticamente.');
-    return;
+    return gotoFlow(practEsperarResultados);
   }
 
   console.log('🔑 Practicante detectado -> practMenuFlow');
