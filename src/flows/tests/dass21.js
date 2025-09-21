@@ -235,11 +235,6 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 								`👤 *Paciente:* ${numeroUsuario}\n` +
 								`📊 *Resultados obtenidos:*\n${resultados}`
 							)
-							
-							// 🔥 NOTIFICAR AL PRACTICANTE QUE EL TEST SE COMPLETÓ (fallback)
-							setTimeout(async () => {
-								await notificarTestCompletadoAPracticante(numeroUsuario);
-							}, 1000);
 						}
 
 						setTimeout(() => {

@@ -1145,9 +1145,19 @@ export const obtenerResultadosPaciente = async (telefonoPaciente) => {
 	try {
 		console.log(`🔍 Obteniendo resultados para paciente: ${telefonoPaciente}`);
 		
-		// Obtener información básica del paciente
-		const paciente = await prisma.informacionUsuario.findUnique({
-			where: { telefonoPersonal: telefonoPaciente },
+		// Normalizar el número de teléfono - probar ambos formatos
+		const soloNumeros = (telefonoPaciente || '').replace(/\D/g, '');
+		const telefonoSinPrefijo = soloNumeros.startsWith('57') ? soloNumeros.substring(2) : soloNumeros;
+		const telefonoConPrefijo = soloNumeros.startsWith('57') ? soloNumeros : `57${soloNumeros}`;
+		
+		console.log(`🔍 DEBUG: Número original: ${telefonoPaciente}`);
+		console.log(`🔍 DEBUG: Solo números: ${soloNumeros}`);
+		console.log(`🔍 DEBUG: Sin prefijo: ${telefonoSinPrefijo}`);
+		console.log(`🔍 DEBUG: Con prefijo: ${telefonoConPrefijo}`);
+		
+		// Buscar paciente con ambos formatos
+		let paciente = await prisma.informacionUsuario.findUnique({
+			where: { telefonoPersonal: telefonoConPrefijo },
 			select: {
 				nombre: true,
 				apellido: true,
@@ -1155,14 +1165,33 @@ export const obtenerResultadosPaciente = async (telefonoPaciente) => {
 				fechaCreacion: true
 			}
 		});
-
+		
+		// Si no se encuentra con prefijo, buscar sin prefijo
 		if (!paciente) {
-			return null;
+			console.log(`🔍 DEBUG: No encontrado con prefijo, buscando sin prefijo: ${telefonoSinPrefijo}`);
+			paciente = await prisma.informacionUsuario.findUnique({
+				where: { telefonoPersonal: telefonoSinPrefijo },
+				select: {
+					nombre: true,
+					apellido: true,
+					telefonoPersonal: true,
+					fechaCreacion: true
+				}
+			});
 		}
 
+		if (!paciente) {
+			console.log(`❌ DEBUG: Paciente no encontrado con ningún formato`);
+			return null;
+		}
+		
+		console.log(`✅ DEBUG: Paciente encontrado:`, paciente);
+		const telefonoFinal = paciente.telefonoPersonal;
+
 		// Obtener resultados de GHQ-12
+		console.log(`🔍 DEBUG: Buscando GHQ-12 para: ${telefonoFinal}`);
 		const resultadosGHQ12 = await prisma.ghq12.findUnique({
-			where: { telefono: telefonoPaciente },
+			where: { telefono: telefonoFinal },
 			select: {
 				Puntaje: true,
 				resPreg: true,
@@ -1172,7 +1201,7 @@ export const obtenerResultadosPaciente = async (telefonoPaciente) => {
 
 		// Obtener resultados de DASS-21
 		const resultadosDASS21 = await prisma.dass21.findUnique({
-			where: { telefono: telefonoPaciente },
+			where: { telefono: telefonoFinal },
 			select: {
 				puntajeDep: true,
 				puntajeAns: true,

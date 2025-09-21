@@ -143,7 +143,7 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
         console.error('❌ Error asignando test:', error);
       }
       
-      await cambiarFlujoYNotificar(tel, 'testFlow', `Se te ha asignado una prueba`)   
+      await cambiarFlujoYNotificar(tel, 'testFlow', `Se te ha asignado una prueba, escribe para iniciar.`)   
       
       await flowDynamic(
         `✅ Listo. Asigné el test *${tipoTest.toUpperCase()}* al paciente *${tel}*.\n` +
@@ -173,7 +173,7 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
     async (_, { flowDynamic, gotoFlow, state }) => {      
       // A partir de ahora, cualquier mensaje del practicante lo saca del estado de espera
       console.log('🔄 Mensaje recibido en practEsperarResultados -> salir de espera');
-      await flowDynamic('✅ *Test completado o espera cancelada.* Regresando al menú del practicante...');
+      await flowDynamic('✅ *Test completado.* Regresando al menú del practicante...');
 
       await state.update({
         currentFlow: 'practicante',
