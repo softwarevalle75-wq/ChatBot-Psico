@@ -661,23 +661,7 @@ function seleccionarModelo(tipoTest) {
 	} else {
 		return prisma.tests
 	}
-}
-
-//---------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+} 
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -1224,6 +1208,47 @@ export const obtenerResultadosPaciente = async (telefonoPaciente) => {
 };
 
 //---------------------------------------------------------------------------------------------------------
+export const resetearEstadoPrueba = async (telefono, tipoTest) => {
+	try{
+		const modelo = seleccionarModelo(tipoTest);
+		console.log(`🫡 Se intenta resetear el estado para ${telefono} en ${tipoTest}`)
+		const registroExistente = await modelo.findUnique({
+			where: { telefono },
+		})
+
+		if(!registroExistente){
+			console.log(`❌ No existe registro previo para ${telefono} en ${tipoTest}`)
+			return;
+		} else if (tipoTest === 'ghq12'){
+			await modelo.update({
+				where: { telefono },
+				data: ({
+					Puntaje: 0,
+					preguntaActual: 0,
+					resPreg: {},
+				})
+			})
+		} else if (tipoTest === 'dass21'){
+			await modelo.update({
+				where: { telefono },
+				data: ({
+					puntajeAns: 0,
+					puntajeDep: 0,
+					puntajeEstr: 0,
+					preguntaActual: 0,
+					resPreg: 0,
+					respuestas: [],
+				})
+			})
+		}
+		console.log(`✅ El estado se reseteó correctamente para ${telefono} en ${tipoTest}`)
+
+	} catch (error) {
+		console.error(`❌ No se pudo resetear correctamente el estado para ${telefono} en ${tipoTest}`)
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------
 
 // Función para obtener lista de pacientes asignados a un practicante
 export const obtenerPacientesAsignados = async (idPracticante) => {
@@ -1247,5 +1272,35 @@ export const obtenerPacientesAsignados = async (idPracticante) => {
 	} catch (error) {
 		console.error('Error obteniendo pacientes asignados:', error);
 		throw new Error('Hubo un problema obteniendo los pacientes asignados.');
+	}
+};
+
+//---------------------------------------------------------------------------------------------------------
+
+export const guardarResultadoPrueba = async (telefono, tipoTest, datosResultados) => {
+	try{
+ 		console.log(`🫡 Guardando prueba ${tipoTest} para usuario ${telefono}`)
+
+		// Obtener usuario en BD
+		const usuario = await prisma.informacionUsuario.findUnique({
+			where: { telefonoPersonal: telefono },
+			select: { idUsuario: true },
+		});
+		if (!usuario){
+			console.log(`❌ El usuario con telefono ${telefono} no se encuentra en la base de datos`)
+			return;
+		}
+
+		// Se crea el registro en la BD
+		await prisma.historialTest.create({
+			data: {
+				usuarioId: usuario.idUsuario,
+				tipoTest: tipoTest,
+				resultados: datosResultados,
+			}
+		})
+		console.log(`✅ Los resultados para ${telefono} en ${tipoTest} fueron guardados con éxito`)
+	} catch (error){
+		console.error(`❌ Error al guardar resultado para ${telefono} en ${tipoTest}:`, error);
 	}
 };

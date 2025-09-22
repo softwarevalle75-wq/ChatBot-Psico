@@ -35,6 +35,21 @@ model informacionUsuario {
   // Agendamiento
   citas         cita[]
   registroCitas registroCitas[]
+
+  // Historial de pruebas
+  historialTests HistorialTest[]
+}
+
+//Modelo Historial pruebas usuario
+model HistorialTest {
+  id                Int @id @default(autoincrement())
+  usuario           InformacionUsuario @relation(fields: [usuarioId], references: [idUsuario])
+  usuarioId         Int
+  tipoTest          String
+  fechaCompletado   DateTime @default(now())
+  resultados        Json
+
+  @@index([usuarioId]) // Indice para optimizar busquedas por usuario
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------

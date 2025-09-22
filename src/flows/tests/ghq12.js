@@ -5,6 +5,7 @@ import {
 	obtenerTelefonoPracticante,
 	sendAutonomousMessage,
 	notificarTestCompletadoAPracticante,
+    guardarResultadoPrueba,    
 } from '../../queries/queries.js'
 
 import { generarPDFResultados} from '../tests/testPDF_GHQ12.js'
@@ -121,6 +122,14 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
             )
             await savePuntajeUsuario(numeroUsuario, tipoTest, estado.Puntaje, estado.resPreg )
 
+            // Se guarda el resultado en la BD
+            await guardarResultadoPrueba(numeroUsuario, tipoTest, {
+                puntaje: estado.Puntaje,
+                respuestasPorPuntos: estado.resPreg,
+                interpretacion: await evaluarGHQ12(estado.Puntaje, umbrales)
+            });
+
+
             try {
                 const telefonoPracticante = await obtenerTelefonoPracticante(numeroUsuario)
                 if (telefonoPracticante) {
@@ -223,14 +232,11 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
 
 export const evaluarGHQ12 = async (puntaje, umbrales) => {
 	if (puntaje <= umbrales.bajo.max) {
-		return `== GHQ-12 COMPLETADO ==. 
-        El puntaje del paciente fue de: ${puntaje} \n${umbrales.bajo.mensaje}`
+		return `El puntaje del paciente fue de: ${puntaje} \n${umbrales.bajo.mensaje}`
 	} else if (puntaje >= umbrales.medio.min && puntaje <= umbrales.medio.max) {
-		return `== GHQ-12 COMPLETADO ==. 
-        El puntaje del paciente fue de: ${puntaje} \n${umbrales.medio.mensaje}`
+		return `El puntaje del paciente fue de: ${puntaje} \n${umbrales.medio.mensaje}`
 	} else if (puntaje >= umbrales.alto.min) {
-		return `== GHQ-12 COMPLETADO ==. 
-        El puntaje del paciente fue de: ${puntaje} \n${umbrales.alto.mensaje}`
+		return `El puntaje del paciente fue de: ${puntaje} \n${umbrales.alto.mensaje}`
 	} else {
 		return 'Error al evaluar su puntaje'
 	}

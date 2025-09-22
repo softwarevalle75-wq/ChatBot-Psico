@@ -56,7 +56,7 @@ export const menuCuestionarios = () => {
    • Nº de preguntas: ${dassInfo.numPreguntas}
 
 ───────────────────────────────
-👉 *Responde con 1 o 2* para seleccionar el test que deseas realizar.`
+👉 *Responde con _1_ o _2_* para seleccionar el test que deseas realizar.`
 }
 
 export const iniciarTest = async (numeroUsuario, tipoTest) => {

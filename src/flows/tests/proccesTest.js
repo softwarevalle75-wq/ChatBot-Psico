@@ -15,15 +15,6 @@ const mensajesTest = {
     dass21: 'El Cuestionario DASS-21 es una herramienta que nos permitirá evaluar tus niveles de depresión, ansiedad y estrés. Tus respuestas son confidenciales y nos ayudarán a entenderte mejor.',    
 }
 
-// Verificar si es la primera vez que realiza el test
-// function verificarPrimeraVez(numeroUsuario, tipoTest) {
-//     if (!estadoUsuarios.has(numeroUsuario)) {
-//         estadoUsuarios.set(numeroUsuario, { ghq12: true, dass21: true })
-//     }
-//     const estadoUsuario = estadoUsuarios.get(numeroUsuario)
-//     return estadoUsuario[tipoTest]
-// }
-
 // Marcar test como visto
 function marcarTestVisto(numeroUsuario, tipoTest) {
     if (!estadoUsuarios.has(numeroUsuario)) {

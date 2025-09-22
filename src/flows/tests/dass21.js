@@ -3,6 +3,7 @@ import {
 	saveEstadoCuestionario,
 	savePuntajeUsuario,
 	obtenerTelefonoPracticante,
+	guardarResultadoPrueba,
 	sendAutonomousMessage,
 	notificarTestCompletadoAPracticante,
 } from '../../queries/queries.js'
@@ -169,6 +170,16 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 				puntajes.estres,
 				estado.resPreg, 
 			)
+
+			await guardarResultadoPrueba(numeroUsuario, tipoTest) ({
+				puntaje: puntajes,
+				respuestasPorPuntos: estado.resPreg,
+				interpretacion: await evaluarDASS21(puntajes, {
+					depresion: cuestDass21.umbralesDep,
+					ansiedad: cuestDass21.umbralesAns,
+					estres: cuestDass21.umbralesEstr,
+				})
+			});
 
 			const resultados = await evaluarDASS21(
 				puntajes,
@@ -350,13 +361,9 @@ export const evaluarDASS21 = async (puntajes, umbrales) => {
 
 	console.log('Resultado final:', resultado)
 
-	return `== DASS-21 COMPLETADO ==
-
-  ** Resultados por área: **
-
-  **Depresión:** ${resultado.depresion.nivel} (${resultado.depresion.puntaje} puntos)
-  **Ansiedad:** ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje} puntos)
-  **Estrés:** ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos)`;
+	return `*Depresión:* ${resultado.depresion.nivel} (${resultado.depresion.puntaje} puntos)
+*Ansiedad:* ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje} puntos)
+*Estrés:* ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos)`;
 }
 
 

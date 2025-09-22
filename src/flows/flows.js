@@ -4,8 +4,10 @@ import { addKeyword, utils, EVENTS } from '@builderbot/bot'
 import {
 	obtenerUsuario,
 	changeTest,
+  resetearEstadoPrueba,
 	switchFlujo,
 	switchAyudaPsicologica,
+	resetearEstadoTest,
 	guardarPracticanteAsignado,
 } from '../queries/queries.js'
 import { apiRegister } from './register/aiRegister.js'
@@ -227,91 +229,6 @@ export const testResponseFlow = addKeyword(['0', '1', '2', '3'])
     }
   });
 
-// ========================================
-// FUNCIÓN HELPER PARA PROCESAR RESPUESTAS
-// ========================================
-
-// async function procesarRespuestaTest(ctx, { flowDynamic, gotoFlow, state }) {
-//   const user = state.get('user');
-//   const testActual = user?.testActual || state.get('testActual');
-  
-//   if (!testActual) {
-//     console.log('❌ No hay test en curso');
-//     await flowDynamic('❌ Error: no hay test activo.');
-//     await state.update({ currentFlow: 'menu', waitingForTestResponse: false });
-//     return gotoFlow(menuFlow);
-//   }
-
-//   try {
-//     console.log('🔄 Procesando respuesta:', ctx.body, 'para test:', testActual);
-    
-//     let message;
-//     if (testActual === 'dass21') {
-//       message = await procesarDass21(ctx.from, ctx.body);
-//     } else if (testActual === 'ghq12') {
-//       message = await procesarGHQ12(ctx.from, ctx.body);
-//     }
-
-//     if (!message?.trim()) {
-//       console.error('❌ Respuesta inválida del procesador');
-//       await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
-//       return;
-//     }
-    
-//     console.log('📤 Enviando:', message.substring(0, 50) + '...');
-//     await flowDynamic(message);
-
-//     // ✅ Verificar si terminó
-//     if (message.includes('completada') || 
-//         message.includes('terminada') || 
-//         message.includes('finalizada') ||
-//         message.includes('Puntaje total') ||
-//         message.includes('🎉')) {
-      
-//       console.log('🎉 Test completado');
-      
-//       // Verificar si fue asignado por practicante
-//       const testAsignadoPorPracticante = await state.get('testAsignadoPorPracticante');
-      
-//       if (testAsignadoPorPracticante) {
-//         console.log('🔥 Test asignado por practicante - NO ir a menuFlow');
-//         // Limpiar estado sin redirigir a menú
-//         user.testActual = null;
-//         await state.update({ 
-//           user: user, 
-//           currentFlow: null,
-//           justInitializedTest: false,
-//           testActual: null,
-//           waitingForTestResponse: false,
-//           testAsignadoPorPracticante: false
-//         });
-//         await switchFlujo(ctx.from, 'menuFlow'); // Solo actualizar BD      
-//         return; // NO hacer gotoFlow
-//       } else {
-//         console.log('🎉 Test seleccionado por usuario - ir a menuFlow');
-//         // Limpiar estado y redirigir a menú
-//         user.testActual = null;
-//         await state.update({ 
-//           user: user, 
-//           currentFlow: 'menu',
-//           justInitializedTest: false,
-//           testActual: null,
-//           waitingForTestResponse: false
-//         });
-//         await switchFlujo(ctx.from, 'menuFlow');
-        
-//         setTimeout(() => {
-//           gotoFlow(menuFlow);
-//         }, 1000);
-//       }
-//     }
-//     // Si no terminó, seguimos esperando más respuestas
-
-//   } catch (error) {
-//     console.error('❌ Error procesando respuesta:', error);
-//     await flowDynamic('❌ Error procesando respuesta. Intenta de nuevo.');
-//   }
-// }
 
 export const procesarRespuestaTest = async (ctx, { flowDynamic, gotoFlow, state, provider }) => {
   const user = state.get('user');
@@ -381,6 +298,9 @@ export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'
 
       try {
         console.log('🔧 Configurando test:', tipoTest);
+
+        // Resetear estado prueba
+        await resetearEstadoPrueba(ctx.from, tipoTest)
         
         // Configurar test en BD
         await changeTest(ctx.from, tipoTest);
@@ -391,7 +311,7 @@ export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'
           user: user,
           currentFlow: 'test',
           testActual: tipoTest,
-          justInitializedTest: true // 🔥 BANDERA CRÍTICA
+          justInitializedTest: true 
         });
         
         // Cambiar flujo en BD
