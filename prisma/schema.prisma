@@ -43,8 +43,8 @@ model informacionUsuario {
 //Modelo Historial pruebas usuario
 model HistorialTest {
   id                Int @id @default(autoincrement())
-  usuario           InformacionUsuario @relation(fields: [usuarioId], references: [idUsuario])
-  usuarioId         Int
+  usuario           informacionUsuario @relation(fields: [usuarioId], references: [idUsuario])
+  usuarioId         String
   tipoTest          String
   fechaCompletado   DateTime @default(now())
   resultados        Json

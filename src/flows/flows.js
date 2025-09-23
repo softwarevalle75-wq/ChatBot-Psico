@@ -7,7 +7,6 @@ import {
   resetearEstadoPrueba,
 	switchFlujo,
 	switchAyudaPsicologica,
-	resetearEstadoTest,
 	guardarPracticanteAsignado,
 } from '../queries/queries.js'
 import { apiRegister } from './register/aiRegister.js'

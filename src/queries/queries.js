@@ -1279,7 +1279,7 @@ export const obtenerPacientesAsignados = async (idPracticante) => {
 
 export const guardarResultadoPrueba = async (telefono, tipoTest, datosResultados) => {
 	try{
- 		console.log(`🫡 Guardando prueba ${tipoTest} para usuario ${telefono}`)
+		console.log(`🫡 Guardando prueba ${tipoTest} para usuario ${telefono}`)
 
 		// Obtener usuario en BD
 		const usuario = await prisma.informacionUsuario.findUnique({
