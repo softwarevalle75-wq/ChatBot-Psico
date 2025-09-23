@@ -519,7 +519,7 @@ export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
         return gotoFlow(testSelectionFlow, { body: '' });
         
       } else if (msg === '2') {
-        await flowDynamic('🛠 *Lo sentimos! esta opción no esta disponible en este momento.*')
+        await flowDynamic('🛠 *Lo sentimos! esta opción no esta disponible en este momento.* \n\n*Pero, puedes realizar una prueba*')
         return fallBack();
         // Agendar cita
         /*

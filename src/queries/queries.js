@@ -81,7 +81,28 @@ export const buscarUsuarioPorTelefono = async (numero) => {
 export const obtenerUsuario = async (numero) => {
   try {
     const getUser = async (numero) => {
-      // ✅ Para usuarios normales
+
+      // ✅ Primero: intentar detectar practicante por teléfono
+      const pract = await prisma.practicante.findUnique({
+        where: {
+          telefono: numero
+        },
+        select: {
+          idPracticante: true,
+          nombre: true,
+          telefono: true,
+        }
+      })
+
+      if (pract) {
+        return {
+          tipo: 'practicante',
+          data: pract,
+          flujo: 'practMenuFlow'
+        };
+      }
+
+      // ✅ Luego: buscar usuario normal
       let user = await prisma.informacionUsuario.findUnique({
         where: {
           telefonoPersonal: numero,
@@ -94,56 +115,45 @@ export const obtenerUsuario = async (numero) => {
           telefonoPersonal: true,
           documento: true,
           tipoDocumento: true,
-          flujo: true, // ← AGREGAR ESTO
-          testActual: true, // ← AGREGAR ESTO PARA QUE TESTFLOW PUEDA LEERLO
+          flujo: true,
+          testActual: true,
           historial: true,
           estado: true
         }
       })
 
-      if(user){
-        return { 
-          tipo: 'usuario', 
+      if (user) {
+        return {
+          tipo: 'usuario',
           data: user,
-          flujo: user.flujo, // ← EXPONER EL FLUJO
-          testActual: user.testActual // ← EXPONER EL TEST ACTUAL
+          flujo: user.flujo,
+          testActual: user.testActual
         }
       }
 
-      // ✅ Para practicantes
-      const pract = await prisma.practicante.findUnique({
-        where: {
-          telefono: numero
-        },
-        select: {
-          idPracticante: true,
-          nombre: true,
-          telefono: true,
-          // Los practicantes no tienen campo flujo, siempre van a practMenuFlow
-        }
-      })
-
-      if(pract) {
-        return { 
-          tipo: 'practicante', 
-          data: pract,
-          flujo: 'practMenuFlow' // ← Flujo fijo para practicantes
-        };
-      }
-      
       return null;
     }
 
     let user = await getUser(numero);
 
-    // Si el usuario no existe, crearlo con valores por defecto
+    // Si el usuario no existe y no es practicante, crearlo con valores por defecto
     if (!user) {
+      // doble verificación: si es practicante no crear usuario
+      const pract = await prisma.practicante.findUnique({ where: { telefono: numero } });
+      if (pract) {
+        return {
+          tipo: 'practicante',
+          data: pract,
+          flujo: 'practMenuFlow'
+        };
+      }
       const newUser = await prisma.informacionUsuario.create({
         data: {
           telefonoPersonal: numero,
           historial: [],
           flujo: 'register' // ← BD ya tiene este default
         },
+
         select: {
           idUsuario: true,
           telefonoPersonal: true,

@@ -9,7 +9,7 @@ export const generarPDFResultados = async (numeroUsuario, puntaje, respuestas, u
             // Crear documento PDF
             const doc = new PDFDocument({ margin: 50 });
             const fileName = `GHQ12_${numeroUsuario}.pdf`;
-            const filePath = path.join('./temp', fileName);
+            const filePath = path.resolve('./temp', fileName);
             
             // Asegurar que existe la carpeta temp
             if (!fs.existsSync('./temp')) {

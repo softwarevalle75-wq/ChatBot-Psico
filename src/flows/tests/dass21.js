@@ -171,7 +171,7 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 				estado.resPreg, 
 			)
 
-			await guardarResultadoPrueba(numeroUsuario, tipoTest) ({
+			await guardarResultadoPrueba(numeroUsuario, tipoTest, {
 				puntaje: puntajes,
 				respuestasPorPuntos: estado.resPreg,
 				interpretacion: await evaluarDASS21(puntajes, {

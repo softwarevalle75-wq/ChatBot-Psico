@@ -9,7 +9,7 @@ export const generarPDFResultadosDASS21 = async (numeroUsuario, puntajes, respue
             // Crear documento PDF
             const doc = new PDFDocument({ margin: 50 });
             const fileName = `DASS21_${numeroUsuario}.pdf`;
-            const filePath = path.join('./temp', fileName);
+            const filePath = path.resolve('./temp', fileName);
             
             // Asegurar que existe la carpeta temp
             if (!fs.existsSync('./temp')) {
