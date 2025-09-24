@@ -499,40 +499,44 @@ export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
     '¡Perfecto! Ahora puedes elegir qué hacer:\n\n' +
     '🔹 *1* - Realizar cuestionarios psicológicos\n' +
     '🔹 *2* - Agendar cita con profesional\n\n' +
-    'Responde con *_1_* o *_2_*',
-    { capture: true }, 
-    async (ctx, { flowDynamic, gotoFlow, fallBack }) => {
-      console.log('🟢 MENU_FLOW: Recibido mensaje:', ctx.body);
-      console.log('🟢 MENU_FLOW: Usuario desde:', ctx.from);
-      
-      if (!ctx.body || ctx.body.trim() === '') {
-        await flowDynamic('👉 *Por favor responde con 1 o 2*');
-        return fallBack();
-      }
+    'Responde con *_1_* o *_2_*.',
+    { capture: true, idle: 600000 }, // Timeout de 10 minutos
+    async (ctx, { flowDynamic, gotoFlow, fallBack, endFlow }) => {
+      try {
+        // Manejo de inactividad (timeout)
+        if (ctx.idleFallBack) {
+          await flowDynamic('Te demoraste en responder, Escribe otra vez para empezar.');
+          return endFlow();
+        } // sirve para hacer un timeout de 10 mins
 
-      const msg = validarRespuestaMenu(ctx.body, ['1', '2']);
+        console.log('🟢 MENU_FLOW: Recibido mensaje:', ctx.body);
+        const msg = validarRespuestaMenu(ctx.body, ['1', '2']);
 
-      if (msg === '1') {
-        // Hacer cuestionarios
-        await flowDynamic(menuCuestionarios());
-        await switchFlujo(ctx.from, 'testSelectionFlow')
-        return gotoFlow(testSelectionFlow, { body: '' });
-        
-      } else if (msg === '2') {
-        await flowDynamic('🛠 *Lo sentimos! esta opción no esta disponible en este momento.* \n\n*Pero, puedes realizar una prueba*')
-        return fallBack();
-        // Agendar cita
-        /*
-        await switchFlujo(ctx.from, 'agendFlow');
-        await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.');
-        return gotoFlow(agendFlow);
-        */
-      } else {
-        // Opción inválida
-        await flowDynamic('❌ *Opción no válida. Por favor responde con:*\n' +
-        '🔹 *1* - _Para realizar cuestionarios_\n' +
-        '🔹 *2* - _Para agendar cita_');        
-        return fallBack();
+        if (msg === '1') {
+          // Hacer cuestionarios
+          await flowDynamic(menuCuestionarios());
+          await switchFlujo(ctx.from, 'testSelectionFlow')
+          return gotoFlow(testSelectionFlow, { body: '' });
+          
+        } else if (msg === '2') {
+          await flowDynamic('🛠 *Lo sentimos! esta opción no esta disponible en este momento.* \n\n*Pero, puedes realizar una prueba*')
+          return fallBack();
+          // Agendar cita
+          /*
+          await switchFlujo(ctx.from, 'agendFlow');
+          await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.');
+          return gotoFlow(agendFlow);
+          */
+        } else {
+          // Opción inválida
+          await flowDynamic('❌ *Opción no válida. Por favor responde con:*\n' +
+          '🔹 *1* - _Para realizar cuestionarios_\n' +
+          '🔹 *2* - _Para agendar cita_');        
+          return fallBack();
+        }
+      } catch (error) {
+        console.error('❌ Error en menuFlow.addAnswer:', error);
+        await flowDynamic('⚠️ Ocurrió un error de conexión. Por favor, intenta enviar tu mensaje de nuevo.');
       }
     }
   );
@@ -550,33 +554,36 @@ export const assistantFlow = addKeyword(utils.setEvent('ASSISTANT_FLOW')).addAct
 
 // --------------------------------------------------------------------------------------------------
 
-export const postTestFlow = addKeyword(utils.setEvent('POST_TEST_FLOW')).addAction(
-	async (ctx, { flowDynamic, gotoFlow }) => {
-		const msg = ctx.body.trim()
+// export const postTestFlow = addKeyword(utils.setEvent('POST_TEST_FLOW'))
+//   .addAnswer(
+//     '¿Qué te gustaría hacer ahora?\n\n' +
+//     '🔹 *1* - Realizar otro cuestionario\n' +
+//     '🔹 *2* - Agendar cita\n' +
+//     '🔹 *3* - Finalizar por ahora',
+//     { capture: true, idle: 300000 }, // Espera 5 minutos
+//     async (ctx, { flowDynamic, gotoFlow, fallBack, endFlow }) => {
+//       // Si el temporizador se activa (el usuario no responde)
+//       if (ctx.idleFallBack) {
+//         await flowDynamic('Gracias por usar nuestros servicios. Si necesitas algo más, solo escribe. 👋');
+//         return endFlow();
+//       }
 
-		if (msg === '1') {
-			// Hacer otro cuestionario
-			return gotoFlow(testSelectionFlow, { body: '' })
-		} else if (msg === '2') {
-			// Agendar cita
-			await switchFlujo(ctx.from, 'agendFlow')
-			await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.')
-			return gotoFlow(agendFlow, { body: '' })
-		} else if (msg === '3') {
-			// Finalizar
-			await switchFlujo(ctx.from, 'menuFlow')
-			await flowDynamic('¡Gracias por usar nuestros servicios! Puedes regresar cuando gustes escribiendo cualquier mensaje.')
-			return gotoFlow(menuFlow, { body: '' })
-		} else {
-			// Opción inválida
-			await flowDynamic(`Por favor responde:
-
-🔹 **1** - Realizar otro cuestionario
-🔹 **2** - Agendar cita
-🔹 **3** - Finalizar`)
-		}
-	}
-)
+//       const opcion = ctx.body.trim();
+//       if (opcion === '1') {
+//         await flowDynamic(menuCuestionarios()); // Asumiendo que menuCuestionarios devuelve el texto del menú
+//         return gotoFlow(testSelectionFlow);
+//       }
+//       if (opcion === '2') {
+//         await switchFlujo(ctx.from, 'agendFlow');
+//         await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.');
+//         return gotoFlow(agendFlow);
+//       }
+//       if (opcion === '3') {
+//         return endFlow('¡Gracias por usar nuestros servicios! Puedes regresar cuando gustes escribiendo cualquier mensaje.');
+//       }
+//       return fallBack('❌ Opción no válida. Por favor, responde con *1*, *2* o *3*.');
+//     }
+//   )
 
 //---------------------------------------------------------------------------------------------------------
 

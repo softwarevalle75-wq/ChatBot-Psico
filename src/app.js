@@ -10,7 +10,7 @@ import {
 	testSelectionFlow, 
 	testFlow,
 	//testResponseFlow,
-	postTestFlow, 
+	//postTestFlow, 
 	agendFlow, 
 	postAgendFlow, 
 	assistantFlow, 
@@ -50,7 +50,12 @@ import "dotenv/config";
 
 
 const PORT = process.env.PORT ?? 3008;
-export const adapterProvider = createProvider(Provider);
+export const adapterProvider = createProvider(Provider, {
+	// Esto envía pings cada 30 segundos, pa mantener activa la conec
+	baileys: {
+		keepAliveIntervalMs: 30000,
+	}
+})
 //---------------------------------------------------------------------------------------------------------
 
 const main = async () => {
@@ -78,7 +83,7 @@ const adapterFlow = createFlow([
     practOfrecerTestFlow__ElegirTest,
     practOfrecerTestFlow__PedirTelefono,
     testFlow,
-    postTestFlow,
+    //postTestFlow,
     practConsejosFlow,
     
     // Flujos de agendamiento
