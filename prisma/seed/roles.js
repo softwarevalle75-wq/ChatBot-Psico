@@ -124,7 +124,7 @@ async function main() {
                 martes: "9-11"
                 },
             sesiones: 0, 
-            telefono: '57321 7230278',
+            telefono: '573217230278',
         },
         //8
         {

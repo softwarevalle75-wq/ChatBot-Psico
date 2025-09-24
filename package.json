@@ -14,10 +14,9 @@
   },
   "keywords": [],
   "dependencies": {
-    "@adiwajshing/baileys": "^5.0.0",
     "@builderbot/bot": "1.2.9",
     "@builderbot/database-mysql": "1.2.9",
-    "@builderbot/provider-baileys": "^1.2.9",
+    "@builderbot/provider-baileys": "^1.3.5-alpha.4", 
     "@formkit/tempo": "^0.1.2",
     "@prisma/client": "6.15.0",
     "dotenv": "^17.2.1",
