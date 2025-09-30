@@ -10,13 +10,23 @@ datasource db {
 //Creacion usuario:-----------------------------------------------------------------------------------------------------------------------------------------------------
 model informacionUsuario {
   idUsuario           String   @id @unique @default(uuid())
-  nombre              String?
-  apellido            String?
+  primerNombre        String?
+  segundoNombre       String?
+  primerApellido      String?
+  segundoApellido     String?
   correo              String?  @unique
+  segundoCorreo       String?
   telefonoPersonal    String   @unique
+  segundoTelefono     String?
+  fechaNacimiento     DateTime?
+  perteneceUniversidad Boolean @default(false)
+  semestre            String?
+  jornada             String?
+  carrera             String?
+  password            String?
   documento           String?  @unique
   tipoDocumento       String   @default("CC")
-  testActual          String   @default("ghq12")
+  testActual          String   @default("")
   motivo              String?
   ayudaPsicologica    Int      @default(1)
   historial           Json?
@@ -26,6 +36,8 @@ model informacionUsuario {
   fechaCreacion       DateTime @default(now())
   disponibilidad      Json     @default("{}")
   practicanteAsignado String?
+  isAuthenticated     Boolean  @default(false)
+  consentimientoInformado Boolean @default(false)
 
   // Relación con ghq12
   ghq12  ghq12?

@@ -18,9 +18,11 @@ import {
 	// roleFlow 
 } from "./flows/flows.js";
 
-import { 
-	adminMenuFlow 
-} from './flows/roles/adminMenuFlow.js'
+// Importar flujos de autenticación web (temporalmente comentado)
+// import { 
+//	welcomeAuthFlow, 
+//	checkAuthFlow 
+// } from "./flows/authFlow.js";
 
 import { 
 	practMenuFlow, 
@@ -49,7 +51,7 @@ import {
 import "dotenv/config";
 
 
-const PORT = process.env.PORT ?? 3008;
+const PORT = process.env.PORT ?? 3000;
 export const adapterProvider = createProvider(Provider, {
 	// Esto envía pings cada 30 segundos, pa mantener activa la conec
 	baileys: {
@@ -59,13 +61,18 @@ export const adapterProvider = createProvider(Provider, {
 //---------------------------------------------------------------------------------------------------------
 
 const main = async () => {
+console.log('🚀 Iniciando función main...');
+
 const adapterFlow = createFlow([
     // roleFlow,
+	// Flujos de autenticación web (temporalmente comentado)
+    // welcomeAuthFlow,
+    // checkAuthFlow,
+    
 	// Flujos de entrada y bienvenida
     welcomeFlow,
     
-    
-    // Flujos de registro
+    // Flujos de registro (DEPRECADOS - ahora se hace por web)
     registerFlow,
     dataConsentFlow,
     reconsentFlow,
@@ -76,7 +83,7 @@ const adapterFlow = createFlow([
     // Flujos de roles (después de welcome)
     practMenuFlow,
     practEsperarResultados,
-    adminMenuFlow,
+    // adminMenuFlow,
     
     // Flujos de tests (en orden lógico)
     testSelectionFlow,
@@ -95,21 +102,37 @@ const adapterFlow = createFlow([
 ]);
 
 
-	// const adapterProvider = createProvider(Provider);
-	const adapterDB = new Database({
+	console.log('📊 Configurando base de datos...');
+	console.log('DB Config:', {
 		host: process.env.MYSQL_DB_HOST,
 		user: process.env.MYSQL_DB_USER,
 		database: process.env.MYSQL_DB_NAME,
-		password: process.env.MYSQL_DB_PASSWORD,
+		password: process.env.MYSQL_DB_PASSWORD ? '***' : 'NO_PASSWORD'
 	});
-
-
 	
+	let adapterDB;
+	try {
+		adapterDB = new Database({
+			host: process.env.MYSQL_DB_HOST,
+			user: process.env.MYSQL_DB_USER,
+			database: process.env.MYSQL_DB_NAME,
+			password: process.env.MYSQL_DB_PASSWORD,
+		});
+		console.log('✅ Base de datos configurada');
+	} catch (error) {
+		console.error('❌ Error configurando base de datos:', error.message);
+		console.log('⚠️ Continuando sin base de datos...');
+		adapterDB = null;
+	}
+
+
+	console.log('🤖 Creando bot...');
 	const { handleCtx, httpServer } = await createBot({
 		flow: adapterFlow,
 		provider: adapterProvider,
 		database: adapterDB,
 	});
+	console.log('✅ Bot creado exitosamente');
 
 	// 🔥 CONFIGURAR PROVIDER PARA ENVÍO DE PDFs
 	const { configurarProviderGHQ12 } = await import('./flows/tests/ghq12.js');
@@ -118,6 +141,12 @@ const adapterFlow = createFlow([
 	configurarProviderDASS21(adapterProvider);
 
 	//---------------------------------------------------------------------------------------------------------
+	
+	// Ruta raíz - redirige al sistema web
+	adapterProvider.server.get("/", (req, res) => {
+		res.writeHead(302, { 'Location': 'http://localhost:3002' });
+		res.end();
+	});
 	
 	adapterProvider.server.post(
 		"/v1/messages",
@@ -477,6 +506,18 @@ const adapterFlow = createFlow([
 		})
 	);
 	
-	httpServer(+PORT);
+	console.log(`🤖 Bot iniciado en puerto ${PORT}`);
+	try {
+		httpServer(+PORT);
+		console.log(`✅ Servidor HTTP iniciado correctamente en puerto ${PORT}`);
+	} catch (error) {
+		console.error('❌ Error iniciando servidor HTTP:', error);
+		throw error;
+	}
 };
-main();
+
+main().catch((error) => {
+	console.error('❌ Error fatal en main:', error);
+	console.error('Stack trace:', error.stack);
+	process.exit(1);
+});
