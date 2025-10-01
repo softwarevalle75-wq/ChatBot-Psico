@@ -112,9 +112,14 @@ export const updateUserFlow = async (telefono, nuevoFlujo) => {
  * @returns {string} - URL de la página web
  */
 export const getWebURL = () => {
-    const webPort = process.env.WEB_PORT || 3008;
-    const webHost = process.env.WEB_HOST || 'localhost';
-    return `http://${webHost}:${webPort}`;
+    const webPort = process.env.WEB_PORT
+    const webHost = process.env.WEB_HOST || '';
+    const ipDomain = process.env.IP_DOMAIN
+
+    if (!webPort && !webHost)
+        return `http://${webHost}:${webPort}`;
+    
+    return ipDomain
 };
 
 /**

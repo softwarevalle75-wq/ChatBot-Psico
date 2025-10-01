@@ -29,7 +29,7 @@ const cuestDass21 = {
 		'1. Me ha costado mucho descargar la tensión\n    ' + rtasDass21(),
 		'2. Me di cuenta que tenía la boca seca\n    ' + rtasDass21(),
 		'3. No podía sentir ningún sentimiento positivo\n    ' + rtasDass21(),
-		/*
+		
 		'4. Se me hizo difícil respirar\n    ' + rtasDass21(),			
 		'5. Se me hizo difícil tomar la iniciativa para hacer cosas\n    ' + rtasDass21(),
 		'6. Reaccioné exageradamente en ciertas situaciones\n    ' + rtasDass21(),
@@ -48,7 +48,7 @@ const cuestDass21 = {
 		'19. Sentí los latidos de mi corazón a pesar de no haber hecho ningún esfuerzo físico\n    ' + rtasDass21(),
 		'20. Tuve miedo sin razón\n    ' + rtasDass21(),
 		'21. Sentí que la vida no tenía ningún sentido\n    ' + rtasDass21(),
-	*/
+	
 		],
 
 	subescalas: {
