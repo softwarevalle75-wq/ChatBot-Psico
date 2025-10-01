@@ -29,20 +29,66 @@
             padding: 40px;
         }
 
-        .logo {
+        .header {
             text-align: center;
             margin-bottom: 30px;
         }
 
-        .logo h1 {
-            color: #333;
-            font-size: 28px;
-            margin-bottom: 10px;
+        .progress-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 4px;
+            margin-top: 15px;
+            margin-bottom: 40px;
+            gap: 12px;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+            background: #ccc;
+            transition: all 0.3s ease;
+        }
+
+        .progress-circle.active {
+            background: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .progress-circle.completed {
+            background: #28a745;
+        }
+
+        .progress-line {
+            width: 60px;
+            height: 2px;
+            background: #ccc;
+            transition: all 0.3s ease;
+        }
+
+        .progress-line.completed {
+            background: #28a745;
         }
 
         .logo p {
             color: #666;
             font-size: 14px;
+            margin-top: 8px;
         }
 
         .form-row {
@@ -206,7 +252,25 @@
     <div class="register-container">
         <div class="logo">
             <h1>🤖 ChatBot Psicológico</h1>
-            <p>Registro de Usuario</p>
+            
+            <!-- Indicadores de progreso -->
+            <div class="progress-container">
+                <div class="progress-step">
+                    <div class="progress-circle active" data-step="1">1</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step">
+                    <div class="progress-circle" data-step="2">2</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step">
+                    <div class="progress-circle" data-step="3">3</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step">
+                    <div class="progress-circle" data-step="4">4</div>
+                </div>
+            </div>
         </div>
 
         <div class="info-text">
@@ -356,12 +420,12 @@
                     };
                     localStorage.setItem('user', JSON.stringify(userInfo));
 
-                    successDiv.textContent = 'Registro exitoso. Redirigiendo al formulario sociodemográfico...';
+                    successDiv.textContent = 'Registro exitoso. Redirigiendo al tratamiento de datos...';
                     successDiv.style.display = 'block';
 
                     setTimeout(() => {
-                        window.location.href = '/sociodemografico';
-                    }, 2000);
+                        window.location.href = '/tratamientodatos';
+                    }, 1500);
                 } else {
                     errorDiv.textContent = result.error || 'Error en el registro';
                     errorDiv.style.display = 'block';

@@ -34,6 +34,55 @@
             margin-bottom: 30px;
         }
 
+        .progress-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
+            gap: 20px;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+            background: #ccc;
+            transition: all 0.3s ease;
+        }
+
+        .progress-circle.active {
+            background: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .progress-circle.completed {
+            background: #28a745;
+        }
+
+        .progress-line {
+            width: 60px;
+            height: 2px;
+            background: #ccc;
+            transition: all 0.3s ease;
+        }
+
+        .progress-line.completed {
+            background: #28a745;
+        }
+
         .header h1 {
             color: #333;
             font-size: 28px;
@@ -212,13 +261,25 @@
         <div class="header">
             <h1>📊 Información Sociodemográfica</h1>
             <p>Complete la siguiente información para personalizar su experiencia</p>
-        </div>
 
-        <div id="errorMessage" class="error-message"></div>
-        <div id="successMessage" class="success-message"></div>
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p>Guardando información...</p>
+            <!-- Indicadores de progreso -->
+            <div class="progress-container">
+                <div class="progress-step">
+                    <div class="progress-circle completed" data-step="1">1</div>
+                </div>
+                <div class="progress-line completed"></div>
+                <div class="progress-step">
+                    <div class="progress-circle completed" data-step="2">2</div>
+                </div>
+                <div class="progress-line completed"></div>
+                <div class="progress-step">
+                    <div class="progress-circle active" data-step="3">3</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step">
+                    <div class="progress-circle" data-step="4">4</div>
+                </div>
+            </div>
         </div>
 
         <form id="sociodemograficoForm">
@@ -423,7 +484,7 @@
                     successDiv.style.display = 'block';
                     
                     setTimeout(() => {
-                        window.location.href = '/login';
+                        window.location.href = '/consentimiento';
                     }, 1500);
                 } else {
                     console.error('Error del servidor:', result);

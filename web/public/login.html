@@ -228,30 +228,44 @@
                     successDiv.textContent = 'Login exitoso. Redirigiendo...';
                     successDiv.style.display = 'block';
                     
-                    // Verificar información sociodemográfica y redirigir
+                    // Verificar tratamiento de datos y redirigir
                     setTimeout(async () => {
                         try {
-                            const socioResponse = await fetch(`/api/auth/check-sociodemografico?userId=${result.user.id}`, {
+                            // Verificar si tiene autorización de datos
+                            const datosResponse = await fetch(`/api/auth/check-tratamiento-datos?userId=${result.user.id}`, {
                                 headers: {
                                     'Authorization': `Bearer ${result.token}`
                                 }
                             });
-                            const socioResult = await socioResponse.json();
+                            const datosResult = await datosResponse.json();
 
-                            if (socioResult.hasSociodemografico) {
-                                // Tiene información sociodemográfica, verificar consentimiento
-                                if (!result.user.consentimientoInformado) {
-                                    window.location.href = '/consentimiento';
+                            if (datosResult.hasTratamientoDatos) {
+                                // Tiene autorización de datos, verificar sociodemográficos
+                                const socioResponse = await fetch(`/api/auth/check-sociodemografico?userId=${result.user.id}`, {
+                                    headers: {
+                                        'Authorization': `Bearer ${result.token}`
+                                    }
+                                });
+                                const socioResult = await socioResponse.json();
+
+                                if (socioResult.hasSociodemografico) {
+                                    // Tiene sociodemográficos, verificar consentimiento
+                                    if (!result.user.consentimientoInformado) {
+                                        window.location.href = '/consentimiento';
+                                    } else {
+                                        window.location.href = '/dashboard';
+                                    }
                                 } else {
-                                    window.location.href = '/dashboard';
+                                    // No tiene sociodemográficos
+                                    window.location.href = '/sociodemografico';
                                 }
                             } else {
-                                // No tiene información sociodemográfica
-                                window.location.href = '/sociodemografico';
+                                // No tiene autorización de datos
+                                window.location.href = '/tratamientodatos';
                             }
                         } catch (error) {
                             console.error('Error verificando información:', error);
-                            window.location.href = '/dashboard';
+                            window.location.href = '/login';
                         }
                     }, 1500);
                 } else {

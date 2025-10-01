@@ -295,4 +295,89 @@ router.get('/check-sociodemografico', async (req, res) => {
     }
 });
 
+// Ruta para guardar autorización de tratamiento de datos
+router.post('/tratamiento-datos', async (req, res) => {
+    try {
+        const token = req.headers['authorization']?.split(' ')[1];
+        const { userId, autorizacionDatos } = req.body;
+
+        let usuarioId;
+        if (token) {
+            // Verificar token y obtener userId
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+            usuarioId = decoded.userId;
+        } else if (userId) {
+            // Usar userId directamente
+            usuarioId = userId;
+        } else {
+            return res.status(401).json({ error: 'Usuario no autenticado' });
+        }
+
+        // Verificar si el usuario existe
+        const usuario = await prisma.informacionUsuario.findUnique({
+            where: { idUsuario: usuarioId },
+            select: { idUsuario: true }
+        });
+
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        // Actualizar autorización de tratamiento de datos
+        await prisma.informacionUsuario.update({
+            where: { idUsuario: usuarioId },
+            data: {
+                autorizacionDatos: autorizacionDatos || false
+            }
+        });
+
+        res.json({
+            message: 'Autorización de tratamiento de datos guardada exitosamente',
+            autorizacionDatos: autorizacionDatos
+        });
+        console.log('Autorización de tratamiento de datos guardada exitosamente para usuario:', usuarioId);
+    } catch (error) {
+        console.error('Error guardando autorización de tratamiento de datos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Ruta para verificar autorización de tratamiento de datos del usuario
+router.get('/check-tratamiento-datos', async (req, res) => {
+    try {
+        const token = req.headers['authorization']?.split(' ')[1];
+        const userId = req.query.userId;
+
+        let usuarioId;
+        if (token) {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+            usuarioId = decoded.userId;
+        } else if (userId) {
+            usuarioId = userId;
+        } else {
+            return res.status(401).json({ error: 'Usuario no autenticado' });
+        }
+
+        const usuario = await prisma.informacionUsuario.findUnique({
+            where: { idUsuario: usuarioId },
+            select: {
+                idUsuario: true,
+                autorizacionDatos: true
+            }
+        });
+
+        if (usuario && usuario.autorizacionDatos) {
+            res.json({
+                hasTratamientoDatos: true,
+                autorizacionDatos: usuario.autorizacionDatos
+            });
+        } else {
+            res.json({ hasTratamientoDatos: false });
+        }
+    } catch (error) {
+        console.error('Error verificando autorización de tratamiento de datos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 export default router;

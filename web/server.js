@@ -51,9 +51,20 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
+app.get('/tratamientodatos', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'tratamientodatos.html'))
+})
+
 // Manejo de errores
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
     console.error(err.stack);
+
+    // Verificar si la respuesta ya ha sido enviada o si no es un objeto de respuesta Express válido
+    if (res.headersSent || typeof res.status !== 'function') {
+        console.error('Error después de que la respuesta fue enviada o respuesta inválida');
+        return next(err);
+    }
+
     res.status(500).json({ error: 'Algo salió mal!' });
 });
 

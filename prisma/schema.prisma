@@ -25,6 +25,7 @@ model informacionUsuario {
   carrera                 String?
   password                String
   consentimientoInformado Boolean   @default(false)
+  autorizacionDatos       Boolean   @default(false)
   ayudaPsicologica        String?
   flujo                   String?
   historial               Json?
