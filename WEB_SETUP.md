@@ -50,6 +50,9 @@ npm install
 ### 2. Migrar Base de Datos
 ```bash
 npx prisma db push
+# Actualizamos la bd
+npx prisma migrate --name {nombre}
+# Creamos un historial de migración
 ```
 
 ### 3. Configurar Variables de Entorno

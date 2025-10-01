@@ -23,12 +23,17 @@ router.post('/register', async (req, res) => {
             password
         } = req.body;
 
-        // Verificar si el usuario ya existe
+        // Agregar prefijo 57 al teléfono si no lo tiene
+        const telefonoConPrefijo = telefonoPersonal.startsWith('57') ? telefonoPersonal : `57${telefonoPersonal}`;
+        console.log(`📞 Teléfono original: ${telefonoPersonal} -> Con prefijo: ${telefonoConPrefijo}`);
+
+        // Verificar si el usuario ya existe (buscar con ambos formatos)
         const existingUser = await prisma.informacionUsuario.findFirst({
             where: {
                 OR: [
                     { correo: correo },
-                    { telefonoPersonal: telefonoPersonal }
+                    { telefonoPersonal: telefonoPersonal },
+                    { telefonoPersonal: telefonoConPrefijo }
                 ]
             }
         });
@@ -47,7 +52,7 @@ router.post('/register', async (req, res) => {
                 segundoNombre,
                 primerApellido,
                 segundoApellido,
-                telefonoPersonal,
+                telefonoPersonal: telefonoConPrefijo, // USAR TELÉFONO CON PREFIJO 57
                 segundoTelefono,
                 correo,
                 segundoCorreo,

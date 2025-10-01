@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { getWebURL } from './authHelper.js';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +11,10 @@ const prisma = new PrismaClient();
  */
 export const verificarAutenticacionWeb = async (telefono, flowDynamic) => {
     try {
-        const user = await prisma.informacionUsuario.findUnique({
+        console.log('🔍 Buscando usuario con teléfono:', telefono);
+        
+        // Intentar buscar con el número tal como viene
+        let user = await prisma.informacionUsuario.findUnique({
             where: { telefonoPersonal: telefono },
             select: {
                 idUsuario: true,
@@ -26,9 +30,35 @@ export const verificarAutenticacionWeb = async (telefono, flowDynamic) => {
             }
         });
 
+        // Si no encuentra y el número empieza con 57, buscar sin prefijo
+        if (!user && telefono.startsWith('57')) {
+            const telefonoSinPrefijo = telefono.substring(2);
+            console.log('🔍 Buscando sin prefijo 57:', telefonoSinPrefijo);
+            
+            user = await prisma.informacionUsuario.findUnique({
+                where: { telefonoPersonal: telefonoSinPrefijo },
+                select: {
+                    idUsuario: true,
+                    primerNombre: true,
+                    primerApellido: true,
+                    isAuthenticated: true,
+                    consentimientoInformado: true,
+                    perteneceUniversidad: true,
+                    semestre: true,
+                    jornada: true,
+                    carrera: true,
+                    flujo: true
+                }
+            });
+        }
+
+        console.log('👤 Usuario encontrado:', user ? `${user.primerNombre} ${user.primerApellido}` : 'No encontrado');
+
+        const webURL = getWebURL();
+
         if (!user) {
             console.log('❌ Usuario no encontrado - debe registrarse en la web');
-            await flowDynamic('🚫 *Debes registrarte primero*\n\nPara usar este ChatBot, regístrate en nuestra página web:\n\n🌐 http://localhost:3008/register\n\n📝 Una vez registrado, podrás usar todas las funciones del bot.');
+            await flowDynamic(`🚫 *Debes registrarte primero*\n\nPara usar este ChatBot, regístrate en nuestra página web:\n\n🌐 ${webURL}/register\n\n📝 Una vez registrado, podrás usar todas las funciones del bot.`);
             return null;
         }
 

@@ -33,7 +33,11 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         return gotoFlow(testFlow);
       }
       if (currentFlow === 'testSelection') {
-        console.log('🚫 Selección de test activa, no interferir');
+        console.log('🔀 Redirigiendo mensaje a testSelectionFlow');
+        return gotoFlow(testSelectionFlow);
+      }
+      if (currentFlow === 'menu') {
+        console.log('🚫 Usuario ya en menú, no interferir con welcomeFlow');
         return;
       }
       // 2. VERIFICAR AUTENTICACIÓN WEB PRIMERO (SIEMPRE)
@@ -50,7 +54,6 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
 
       // 4. ACTUALIZAR ESTADO CON USUARIO
       await state.update({ initialized: true, user: usuarioAutenticado });
-
       // 5. MANEJAR POR TIPO DE USUARIO (practicantes tienen lógica especial)
       if (usuarioAutenticado.tipo === 'practicante') {
         return await handlePracticanteFlow(ctx, usuarioAutenticado, state, gotoFlow, flowDynamic);
@@ -58,6 +61,7 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
 
       // 6. MANEJAR USUARIOS NORMALES - SIEMPRE AL MENÚ (ya están autenticados)
       console.log('✅ Usuario autenticado -> menuFlow');
+      // Resetear flujo a menuFlow para evitar redirecciones automáticas
       await switchFlujo(ctx.from, 'menuFlow');
       await state.update({ currentFlow: 'menu' });
       return gotoFlow(menuFlow);
@@ -115,7 +119,7 @@ export const testFlow = addKeyword(EVENTS.ACTION)
       console.log('❌ No hay test seleccionado');
       await flowDynamic('❌ No hay un test seleccionado. Volviendo al menú.');
       await state.update({ currentFlow: 'menu', justInitializedTest: false });
-      await switchFlujo(ctx.from, 'menuFlow');
+      await switchFlujo(ctx.from, 'menuFlow'); // DESCOMENTADO - ahora funciona
       return gotoFlow(menuFlow);
     }
 
@@ -209,7 +213,7 @@ export const procesarRespuestaTest = async (ctx, { flowDynamic, gotoFlow, state,
         testActual: null,
         waitingForTestResponse: false
       });
-      await switchFlujo(ctx.from, 'menuFlow');
+      await switchFlujo(ctx.from, 'menuFlow'); // DESCOMENTADO - ahora funciona
       return gotoFlow(menuFlow);
     }
   }
@@ -436,7 +440,7 @@ const validarRespuestaMenu = (respuesta, opcionesValidas) => {
 export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
   .addAction(async (ctx, { state }) => {
     // Actualizar flujo solo cuando realmente llegamos al menú
-    await switchFlujo(ctx.from, 'menuFlow')
+    await switchFlujo(ctx.from, 'menuFlow') // ARREGLADO - ahora maneja usuarios web
     await state.update({ currentFlow: 'menu' })
     console.log('🟢 MENU_FLOW: Inicializado para:', ctx.from);
   })
@@ -446,7 +450,7 @@ export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
     '🔹 *2* - Agendar cita con profesional\n\n' +
     'Responde con *_1_* o *_2_*.',
     { capture: true, idle: 600000 }, // Timeout de 10 minutos
-    async (ctx, { flowDynamic, gotoFlow, fallBack, endFlow }) => {
+    async (ctx, { flowDynamic, gotoFlow, fallBack, endFlow, state }) => {
       try {
         // Manejo de inactividad (timeout)
         if (ctx.idleFallBack) {
@@ -460,17 +464,18 @@ export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
         if (msg === '1') {
           // Hacer cuestionarios
           await flowDynamic(menuCuestionarios());
-          await switchFlujo(ctx.from, 'testSelectionFlow')
+          await switchFlujo(ctx.from, 'testSelectionFlow') // DESCOMENTADO - ahora funciona
+          await state.update({ currentFlow: 'testSelection' }); // ACTUALIZAR ESTADO
           return gotoFlow(testSelectionFlow, { body: '' });
           
         } else if (msg === '2') {
-          // await flowDynamic('🛠 *Lo sentimos! esta opción no esta disponible en este momento.* \n\n*Pero, puedes realizar una prueba*')
-          // return fallBack();
+          await flowDynamic('🛠 *Lo sentimos! esta opción no esta disponible en este momento.* \n\n*Pero, puedes realizar una prueba*')
+          return fallBack();
           //--
           // Agendar cita
-          await switchFlujo(ctx.from, 'agendFlow');
-          await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.');
-          return gotoFlow(agendFlow);
+          // await switchFlujo(ctx.from, 'agendFlow');
+          // await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.');
+          // return gotoFlow(agendFlow);
           
         } else {
           // Opción inválida

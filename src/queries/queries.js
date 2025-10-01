@@ -357,17 +357,44 @@ export const switchAyudaPsicologica = async (numero, opcion) => {
 
 export const switchFlujo = async (numero, flujo) => {
 	try {
-		await prisma.informacionUsuario.update({
+		console.log('🔄 Intentando switchear flujo para:', numero, 'a:', flujo);
+		
+		// Intentar con el número tal como viene
+		let result = await prisma.informacionUsuario.updateMany({
 			where: {
 				telefonoPersonal: numero,
 			},
 			data: {
 				flujo: flujo,
 			},
-		})
+		});
+
+		// Si no actualizó nada y el número empieza con 57, intentar sin prefijo
+		if (result.count === 0 && numero.startsWith('57')) {
+			const numeroSinPrefijo = numero.substring(2);
+			console.log('🔄 Intentando sin prefijo 57:', numeroSinPrefijo);
+			
+			result = await prisma.informacionUsuario.updateMany({
+				where: {
+					telefonoPersonal: numeroSinPrefijo,
+				},
+				data: {
+					flujo: flujo,
+				},
+			});
+		}
+
+		console.log('✅ Flujo actualizado. Registros afectados:', result.count);
+		
+		// Si no se actualizó ningún registro, no es un error crítico para usuarios web
+		if (result.count === 0) {
+			console.log('⚠️ No se encontró usuario para actualizar flujo, pero continuando...');
+		}
+		
 	} catch (error) {
 		console.error('Error al switchear el flujo:', error)
-		throw new Error('Hubo un problema al switchear el flujo')
+		// No lanzar error para usuarios web que no existen en BD del bot
+		console.log('⚠️ Error en switchFlujo, pero continuando para usuarios web...');
 	}
 }
 
