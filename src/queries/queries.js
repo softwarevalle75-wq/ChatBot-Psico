@@ -4,8 +4,8 @@ import { adapterProvider } from '../app.js'
 //---------------------------------------------------------------------------------------------------------
 
 export const registrarUsuario = async (
-  nombre,
-  apellido,
+  primerNombre,
+  primerApellido,
   correo,
   tipoDocumento,
   documento,
@@ -17,16 +17,16 @@ export const registrarUsuario = async (
         telefonoPersonal: numero,
       },
       update: {
-        nombre,
-        apellido,
+        primerNombre,
+        primerApellido,
         correo,
         tipoDocumento,
         documento,
       },
       create: {
         telefonoPersonal: numero,
-        nombre,
-        apellido,
+        primerNombre,
+        primerApellido,
         correo,
         tipoDocumento,
         documento,
@@ -101,7 +101,6 @@ export const obtenerUsuario = async (numero) => {
           flujo: 'practMenuFlow'
         };
       }
-
       // ✅ Luego: buscar usuario normal
       let user = await prisma.informacionUsuario.findUnique({
         where: {
@@ -109,8 +108,8 @@ export const obtenerUsuario = async (numero) => {
         },
         select: {
           idUsuario: true,
-          nombre: true,
-          apellido: true,
+          primerNombre: true,
+          primerApellido: true,
           correo: true,
           telefonoPersonal: true,
           documento: true,
@@ -118,7 +117,10 @@ export const obtenerUsuario = async (numero) => {
           flujo: true,
           testActual: true,
           historial: true,
-          estado: true
+          estado: true,
+          fechaCreacion: true,
+          isAuthenticated: true,
+          consentimientoInformado: true
         }
       })
 
@@ -203,14 +205,14 @@ export async function createUsuarioBasico(telefono, data = {}) {
   const user = await prisma.informacionUsuario.upsert({
     where: { telefonoPersonal: phone },
     update: {
-      nombre: data.nombre ?? undefined,
-      apellido: data.apellido ?? undefined,
+      primerNombre: data.primerNombre ?? undefined,
+      primerApellido: data.primerApellido ?? undefined,
       correo: data.correo ?? undefined,
     },
     create: {
       telefonoPersonal: phone,
-      nombre: data.nombre ?? null,
-      apellido: data.apellido ?? null,
+      primerNombre: data.primerNombre ?? null,
+      primerApellido: data.primerApellido ?? null,
       correo: data.correo ?? null,
       historial: [],
       // los demás campos de tu modelo ya tienen defaults
@@ -1071,7 +1073,7 @@ export const obtenerTelefonoPracticante = async (telefonoPaciente) => {
 		
 		const paciente = await prisma.informacionUsuario.findUnique({
 			where: { telefonoPersonal: telefonoPaciente },
-			select: { practicanteAsignado: true, nombre: true, apellido: true }
+			select: { practicanteAsignado: true, primerNombre: true, primerApellido: true }
 		});
 
 		console.log(`🔍 DEBUG: Paciente encontrado:`, paciente);
@@ -1153,8 +1155,8 @@ export const obtenerResultadosPaciente = async (telefonoPaciente) => {
 		let paciente = await prisma.informacionUsuario.findUnique({
 			where: { telefonoPersonal: telefonoConPrefijo },
 			select: {
-				nombre: true,
-				apellido: true,
+				primerNombre: true,
+				primerApellido: true,
 				telefonoPersonal: true,
 				fechaCreacion: true
 			}
@@ -1166,8 +1168,8 @@ export const obtenerResultadosPaciente = async (telefonoPaciente) => {
 			paciente = await prisma.informacionUsuario.findUnique({
 				where: { telefonoPersonal: telefonoSinPrefijo },
 				select: {
-					nombre: true,
-					apellido: true,
+					primerNombre: true,
+					primerApellido: true,
 					telefonoPersonal: true,
 					fechaCreacion: true
 				}
@@ -1268,8 +1270,8 @@ export const obtenerPacientesAsignados = async (idPracticante) => {
 		const pacientes = await prisma.informacionUsuario.findMany({
 			where: { practicanteAsignado: idPracticante },
 			select: {
-				nombre: true,
-				apellido: true,
+				primerNombre: true,
+				primerApellido: true,
 				telefonoPersonal: true,
 				fechaCreacion: true
 			},

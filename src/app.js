@@ -3,19 +3,16 @@ import { MysqlAdapter as Database } from "@builderbot/database-mysql";
 import { BaileysProvider as Provider } from "@builderbot/provider-baileys";
 import { 
 	welcomeFlow, 
-	registerFlow, 
+	//registerFlow, 
 	dataConsentFlow,
 	reconsentFlow,
 	menuFlow, 
 	testSelectionFlow, 
 	testFlow,
-	//testResponseFlow,
-	//postTestFlow, 
 	agendFlow, 
 	postAgendFlow, 
 	assistantFlow, 
-	pedirNumeroPracticanteAsignadoFlow,
-	// roleFlow 
+	pedirNumeroPracticanteAsignadoFlow
 } from "./flows/flows.js";
 
 // Importar flujos de autenticación web (temporalmente comentado)
@@ -64,16 +61,11 @@ const main = async () => {
 console.log('🚀 Iniciando función main...');
 
 const adapterFlow = createFlow([
-    // roleFlow,
-	// Flujos de autenticación web (temporalmente comentado)
-    // welcomeAuthFlow,
-    // checkAuthFlow,
-    
-	// Flujos de entrada y bienvenida
+    // Flujos de entrada y bienvenida
     welcomeFlow,
     
     // Flujos de registro (DEPRECADOS - ahora se hace por web)
-    registerFlow,
+    //registerFlow,
     dataConsentFlow,
     reconsentFlow,
 	pedirNumeroPracticanteAsignadoFlow,
@@ -83,14 +75,12 @@ const adapterFlow = createFlow([
     // Flujos de roles (después de welcome)
     practMenuFlow,
     practEsperarResultados,
-    // adminMenuFlow,
     
     // Flujos de tests (en orden lógico)
     testSelectionFlow,
     practOfrecerTestFlow__ElegirTest,
     practOfrecerTestFlow__PedirTelefono,
     testFlow,
-    //postTestFlow,
     practConsejosFlow,
     
     // Flujos de agendamiento

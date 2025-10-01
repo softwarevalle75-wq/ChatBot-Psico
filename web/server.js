@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.WEB_PORT || 3002;
+const webHost = process.env.WEB_HOST || 'localhost';
 
 // Middlewares
 app.use(cors());
@@ -47,14 +48,14 @@ app.get('/dashboard', (req, res) => {
 });
 
 // Manejo de errores
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Algo salió mal!' });
 });
 
 // Iniciar servidor
 app.listen(PORT, () => {
-    console.log(`🌐 Servidor web corriendo en http://localhost:${PORT}`);
+    console.log(`🌐 Servidor web corriendo en http://${webHost}:${PORT}`);
 });
 
 export default app;

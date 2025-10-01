@@ -9,11 +9,13 @@ import {
 	switchAyudaPsicologica,
 	guardarPracticanteAsignado,
 } from '../queries/queries.js'
-import { apiRegister } from './register/aiRegister.js'
+//import { apiRegister } from './register/aiRegister.js'
 import { menuCuestionarios, parsearSeleccionTest} from './tests/controlTest.js'
 import { apiAgend } from './agend/aiAgend.js'
 import { procesarDass21 } from './tests/dass21.js'
 import { procesarGHQ12 } from './tests/ghq12.js'
+// Importar el helper al inicio del archivo
+import { verificarAutenticacionWeb } from '../helpers/auntenticarUsuario.js';
 import { practMenuFlow, practEsperarResultados } from './roles/practMenuFlow.js'
 
 //---------------------------------------------------------------------------------------------------------
@@ -30,39 +32,39 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         console.log('🔀 Redirigiendo mensaje de test a testFlow');
         return gotoFlow(testFlow);
       }
-      
       if (currentFlow === 'testSelection') {
         console.log('🚫 Selección de test activa, no interferir');
         return;
       }
+      // 2. VERIFICAR AUTENTICACIÓN WEB PRIMERO (SIEMPRE)
+      const authUser = await verificarAutenticacionWeb(ctx.from, flowDynamic);
+      if (!authUser) return; // Si no está autenticado, parar aquí
       
-      // 2. OBTENER USUARIO DE BD
-      const user = await obtenerUsuario(ctx.from);
-      console.log('👤 Usuario obtenido:', {
-        tipo: user?.tipo,
-        flujo: user?.flujo,
-        telefono: user?.data?.telefonoPersonal
-      });
-      
-      if (!user) {
-        console.log('❌ Error obteniendo usuario -> registerFlow');
-        return gotoFlow(registerFlow);
+      // 3. CREAR OBJETO USER CON DATOS AUTENTICADOS
+      const usuarioAutenticado = {
+        tipo: 'usuario',
+        data: authUser,
+        flujo: authUser.flujo || 'menuFlow'
+      };
+      console.log('👤 Usuario autenticado:', usuarioAutenticado);
+
+      // 4. ACTUALIZAR ESTADO CON USUARIO
+      await state.update({ initialized: true, user: usuarioAutenticado });
+
+      // 5. MANEJAR POR TIPO DE USUARIO (practicantes tienen lógica especial)
+      if (usuarioAutenticado.tipo === 'practicante') {
+        return await handlePracticanteFlow(ctx, usuarioAutenticado, state, gotoFlow, flowDynamic);
       }
 
-      // 3. ACTUALIZAR ESTADO CON USUARIO
-      await state.update({ initialized: true, user: user });
-
-      // 4. MANEJAR POR TIPO DE USUARIO
-      if (user.tipo === 'practicante') {
-        return await handlePracticanteFlow(ctx, user, state, gotoFlow, flowDynamic);
-      }
-
-      // 5. MANEJAR USUARIOS NORMALES POR FLUJO DE BD
-      return await handleUserFlow(ctx, user, state, gotoFlow);
+      // 6. MANEJAR USUARIOS NORMALES - SIEMPRE AL MENÚ (ya están autenticados)
+      console.log('✅ Usuario autenticado -> menuFlow');
+      await switchFlujo(ctx.from, 'menuFlow');
+      await state.update({ currentFlow: 'menu' });
+      return gotoFlow(menuFlow);
       
     } catch (e) {
       console.error('❌ welcomeFlow error:', e);
-      return gotoFlow(registerFlow);
+      return gotoFlow(menuFlow);
     }
   }
 );
@@ -80,63 +82,6 @@ async function handlePracticanteFlow(ctx, user, state, gotoFlow) {
   console.log('🔑 Practicante detectado -> practMenuFlow');
   await state.update({ currentFlow: 'practicante' });
   return gotoFlow(practMenuFlow);
-}
-
-// Función auxiliar para manejar flujo de usuarios normales
-async function handleUserFlow(ctx, user, state, gotoFlow) {
-  console.log('📋 Flujo BD:', user.flujo);
-  
-  switch (user.flujo) {
-    case 'register':
-      console.log('📝 Usuario en registro -> registerFlow');
-      await state.update({ currentFlow: 'register' });
-      return gotoFlow(registerFlow);
-      
-    case 'consentimiento_rechazado':
-      console.log('❌ Usuario rechazó consentimiento -> reconsentFlow');
-      return gotoFlow(reconsentFlow);
-      
-    case 'menuFlow':
-      console.log('📋 -> menuFlow');
-      await state.update({ currentFlow: 'menu' });
-      return gotoFlow(menuFlow);
-      
-    case 'testFlow':
-      if (await state.get('currentFlow') !== 'test') {
-        console.log('📝 -> testFlow (desde welcomeFlow)');
-        await state.update({ 
-          currentFlow: 'test',
-          justInitializedTest: true,
-          user: user,
-          testAsignadoPorPracticante: true
-        });
-        return gotoFlow(testFlow);
-      } else {
-        console.log('🔄 Ya estamos en testFlow, no redirigir');
-        return;
-      }
-      
-    case 'agendFlow':
-      console.log('📅 -> agendFlow');
-      await state.update({ currentFlow: 'agenda' });
-      return gotoFlow(agendFlow);
-      
-    case 'testSelectionFlow':
-      if (await state.get('currentFlow') !== 'testSelection') {
-        console.log('🎯 -> testSelectionFlow');
-        await state.update({ currentFlow: 'testSelection' });
-        return gotoFlow(testSelectionFlow);
-      } else {
-        console.log('🔄 Ya estamos en testSelectionFlow, no redirigir');
-        return;
-      }
-
-    default:
-      console.log('❓ Flujo por defecto -> menuFlow');
-      await switchFlujo(ctx.from, 'menuFlow');
-      await state.update({ currentFlow: 'menu' });
-      return gotoFlow(menuFlow);
-  }
 }
 
 // ========================================
@@ -332,26 +277,26 @@ export const testSelectionFlow = addKeyword(utils.setEvent('TEST_SELECTION_FLOW'
 
 //---------------------------------------------------------------------------------------------------------
 
-export const registerFlow = addKeyword(utils.setEvent('REGISTER_FLOW')).addAction(
-  async (ctx, { flowDynamic, gotoFlow, state }) => {
-    console.log('🔵 ctx.body:', ctx.body);
-    const registerResponse = await apiRegister(ctx.from, ctx.body)
-    await flowDynamic(registerResponse)
+// export const registerFlow = addKeyword(utils.setEvent('REGISTER_FLOW')).addAction(
+//   async (ctx, { flowDynamic, gotoFlow, state }) => {
+//     console.log('🔵 ctx.body:', ctx.body);
+//     const registerResponse = await apiRegister(ctx.from, ctx.body)
+//     await flowDynamic(registerResponse)
     
-    // Si el registro fue exitoso, ir al flujo de tratamiento de datos
-    if (registerResponse.includes('Registrado')) {
-	console.log('🔵 registerResponse:', registerResponse);
+//     // Si el registro fue exitoso, ir al flujo de tratamiento de datos
+//     if (registerResponse.includes('Registrado')) {
+// 	console.log('🔵 registerResponse:', registerResponse);
       
-      // Actualizar estado para tratamiento de datos
-      await state.update({ 
-        currentFlow: 'dataConsent',
-        user: { ...await state.get('user'), flujo: 'dataConsentFlow' }
-      });
+//       // Actualizar estado para tratamiento de datos
+//       await state.update({ 
+//         currentFlow: 'dataConsent',
+//         user: { ...await state.get('user'), flujo: 'dataConsentFlow' }
+//       });
       
-      return gotoFlow(dataConsentFlow)
-    }
-  }
-)
+//       return gotoFlow(dataConsentFlow)
+//     }
+//   }
+// )
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -519,14 +464,14 @@ export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
           return gotoFlow(testSelectionFlow, { body: '' });
           
         } else if (msg === '2') {
-          await flowDynamic('🛠 *Lo sentimos! esta opción no esta disponible en este momento.* \n\n*Pero, puedes realizar una prueba*')
-          return fallBack();
+          // await flowDynamic('🛠 *Lo sentimos! esta opción no esta disponible en este momento.* \n\n*Pero, puedes realizar una prueba*')
+          // return fallBack();
+          //--
           // Agendar cita
-          /*
           await switchFlujo(ctx.from, 'agendFlow');
           await flowDynamic('Te ayudaré a agendar tu cita. Por favor, dime qué día te gustaría agendar.');
           return gotoFlow(agendFlow);
-          */
+          
         } else {
           // Opción inválida
           await flowDynamic('❌ *Opción no válida. Por favor responde con:*\n' +

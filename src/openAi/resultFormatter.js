@@ -10,8 +10,8 @@ export const formatearResultadosParaIA = (resultados) => {
     // Preparar datos estructurados para GPT - SIN interpretaciones predefinidas
     const datosParaIA = {
         paciente: {
-            nombre: paciente.nombre || 'Sin especificar',
-            apellido: paciente.apellido || '',
+            nombre: paciente.primerNombre || 'Sin especificar',
+            apellido: paciente.primerApellido || '',
             telefono: paciente.telefonoPersonal,
             fechaRegistro: new Date(paciente.fechaCreacion).toLocaleDateString()
         },
@@ -64,7 +64,7 @@ export const formatearListaPacientes = (pacientes) => {
     let lista = `**PACIENTES ASIGNADOS (${pacientes.length})**\n\n`;
     
     pacientes.forEach((paciente, index) => {
-        lista += `${index + 1}. ${paciente.nombre || 'Sin nombre'} ${paciente.apellido || ''}\n`;
+        lista += `${index + 1}. ${paciente.primerNombre || 'Sin nombre'} ${paciente.primerApellido || ''}\n`;
         lista += `   Teléfono: ${paciente.telefonoPersonal}\n`;
         lista += `   Registro: ${new Date(paciente.fechaCreacion).toLocaleDateString()}\n\n`;
     });

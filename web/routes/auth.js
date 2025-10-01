@@ -14,7 +14,7 @@ router.post('/register', async (req, res) => {
             segundoNombre,
             primerApellido,
             segundoApellido,
-            telefono,
+            telefonoPersonal,
             segundoTelefono,
             correo,
             segundoCorreo,
@@ -28,7 +28,7 @@ router.post('/register', async (req, res) => {
             where: {
                 OR: [
                     { correo: correo },
-                    { telefono: telefono }
+                    { telefonoPersonal: telefonoPersonal }
                 ]
             }
         });
@@ -47,20 +47,18 @@ router.post('/register', async (req, res) => {
                 segundoNombre,
                 primerApellido,
                 segundoApellido,
-                telefono,
+                telefonoPersonal,
                 segundoTelefono,
                 correo,
                 segundoCorreo,
                 fechaNacimiento: new Date(fechaNacimiento),
                 perteneceUniversidad: perteneceUniversidad === 'true',
                 password: hashedPassword,
-                webRegistered: true,
-                webAuthenticated: false,
                 consentimientoInformado: false
             }
         });
 
-        res.status(201).json({ message: 'Usuario registrado exitosamente', userId: user.id });
+        res.status(201).json({ message: 'Usuario registrado exitosamente', userId: user.idUsuario });
     } catch (error) {
         console.error('Error en registro:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -89,22 +87,22 @@ router.post('/login', async (req, res) => {
 
         // Crear token JWT
         const token = jwt.sign(
-            { userId: user.id, correo: user.correo },
+            { userId: user.idUsuario, correo: user.correo },
             process.env.JWT_SECRET || 'secret_key',
-            { expiresIn: '24h' }
+            { expiresIn: '1h' }
         );
 
         // Actualizar estado de autenticación
         await prisma.informacionUsuario.update({
-            where: { id: user.id },
-            data: { webAuthenticated: true }
+            where: { idUsuario: user.idUsuario },
+            data: { isAuthenticated: true }
         });
 
         res.json({ 
             message: 'Login exitoso', 
             token,
             user: {
-                id: user.id,
+                id: user.idUsuario,
                 primerNombre: user.primerNombre,
                 correo: user.correo,
                 consentimientoInformado: user.consentimientoInformado
@@ -122,7 +120,7 @@ router.post('/consent', async (req, res) => {
         const { userId } = req.body;
 
         await prisma.informacionUsuario.update({
-            where: { id: parseInt(userId) },
+            where: { idUsuario: userId },
             data: { consentimientoInformado: true }
         });
 
@@ -133,22 +131,28 @@ router.post('/consent', async (req, res) => {
     }
 });
 
-// Datos sociodemográficos
-router.post('/sociodemographic', async (req, res) => {
+router.post('/sociodemografico', async (req, res) => {
     try {
-        const { userId, semestre, jornada, carrera } = req.body;
+        const { userId, consentimientoInformado, semestre, jornada, carrera } = req.body;
+
+        const updateData = {};
+        
+        // Siempre actualizar consentimiento si viene en la petición
+        if (consentimientoInformado !== undefined) {
+            updateData.consentimientoInformado = consentimientoInformado;
+        }
+        
+        // Solo agregar datos académicos si vienen
+        if (semestre) updateData.semestre = semestre;
+        if (jornada) updateData.jornada = jornada;
+        if (carrera) updateData.carrera = carrera;
 
         await prisma.informacionUsuario.update({
-            where: { id: parseInt(userId) },
-            data: {
-                semestre,
-                jornada,
-                carrera,
-                datosCompletos: true
-            }
+            where: { idUsuario: userId },
+            data: updateData
         });
 
-        res.json({ message: 'Datos sociodemográficos guardados' });
+        res.json({ message: 'Información guardada exitosamente' });
     } catch (error) {
         console.error('Error en datos sociodemográficos:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
