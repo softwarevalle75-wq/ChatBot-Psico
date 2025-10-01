@@ -24,7 +24,7 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             width: 100%;
-            max-width: 700px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 40px;
         }
@@ -46,35 +46,6 @@
             line-height: 1.5;
         }
 
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-
-        .step {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #e1e5e9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 10px;
-            color: #666;
-            font-weight: bold;
-        }
-
-        .step.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .step.completed {
-            background: #28a745;
-            color: white;
-        }
-
         .section {
             margin-bottom: 30px;
             padding: 25px;
@@ -87,37 +58,6 @@
             color: #333;
             margin-bottom: 20px;
             font-size: 20px;
-        }
-
-        .consent-text {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #e1e5e9;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .consent-text h4 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .consent-text p {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-        .consent-text ul {
-            margin-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .consent-text li {
-            color: #666;
-            margin-bottom: 8px;
         }
 
         .form-group {
@@ -136,7 +76,9 @@
             color: #e74c3c;
         }
 
-        .form-group select {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e1e5e9;
@@ -145,32 +87,46 @@
             transition: border-color 0.3s ease;
         }
 
-        .form-group select:focus {
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        .checkbox-group {
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
             display: flex;
-            align-items: flex-start;
             gap: 15px;
             margin-bottom: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            border: 2px solid #e1e5e9;
         }
 
-        .checkbox-group input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-top: 2px;
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
         }
 
-        .checkbox-group label {
-            color: #333;
-            line-height: 1.5;
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
             cursor: pointer;
+        }
+
+        .radio-group input[type="radio"] {
+            width: auto;
+            margin: 0;
         }
 
         .btn {
@@ -238,25 +194,15 @@
             100% { transform: rotate(360deg); }
         }
 
-        .university-fields {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .form-row .form-group {
-            flex: 1;
-        }
-
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
                 gap: 0;
+            }
+            
+            .radio-group {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -264,14 +210,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📙 Información Adicional</h1>
+            <h1>📊 Información Sociodemográfica</h1>
             <p>Complete la siguiente información para personalizar su experiencia</p>
-        </div>
-
-        <div class="step-indicator">
-            <div class="step completed">1</div>
-            <div class="step completed">2</div>
-            <div class="step active">3</div>
         </div>
 
         <div id="errorMessage" class="error-message"></div>
@@ -281,110 +221,113 @@
             <p>Guardando información...</p>
         </div>
 
-        <!-- Consentimiento Informado -->
-        <div class="section">
-            <h3>📋 Consentimiento Informado</h3>
-            <div class="consent-text">
-                <h4>CONSENTIMIENTO INFORMADO PARA PARTICIPACIÓN EN SERVICIOS DE APOYO PSICOLÓGICO</h4>
-                
-                <p><strong>Universidad:</strong> Institución Universitaria de Colombia</p>
-                <p><strong>Servicio:</strong> ChatBot de Apoyo Psicológico</p>
-                
-                <h4>INFORMACIÓN SOBRE EL SERVICIO</h4>
-                <p>El ChatBot de Apoyo Psicológico es una herramienta digital diseñada para brindar apoyo emocional y psicológico inicial a estudiantes y usuarios. Este servicio incluye:</p>
-                
-                <ul>
-                    <li>Evaluación inicial mediante cuestionarios estandarizados (GHQ-12, DASS-21)</li>
-                    <li>Conversaciones de apoyo emocional</li>
-                    <li>Orientación hacia recursos profesionales cuando sea necesario</li>
-                    <li>Seguimiento básico del bienestar emocional</li>
-                </ul>
-                
-                <h4>CONFIDENCIALIDAD Y PRIVACIDAD</h4>
-                <p>Su información personal y las conversaciones serán tratadas con estricta confidencialidad. Los datos recopilados serán utilizados únicamente para:</p>
-                
-                <ul>
-                    <li>Brindar el servicio de apoyo psicológico</li>
-                    <li>Mejorar la calidad del servicio</li>
-                    <li>Generar estadísticas anónimas para investigación</li>
-                </ul>
-                
-                <h4>DERECHOS DEL USUARIO</h4>
-                <p>Usted tiene derecho a:</p>
-                <ul>
-                    <li>Retirar su consentimiento en cualquier momento</li>
-                    <li>Solicitar la eliminación de sus datos</li>
-                    <li>Acceder a la información almacenada sobre usted</li>
-                    <li>Recibir atención profesional presencial cuando sea necesario</li>
-                </ul>
-                
-                <h4>LIMITACIONES</h4>
-                <p>Este servicio NO reemplaza la atención psicológica profesional presencial. En casos de crisis o emergencia, se recomienda contactar servicios de emergencia o profesionales de la salud mental.</p>
-            </div>
-            
-            <div class="checkbox-group">
-                <input type="checkbox" id="consentimientoInformado" name="consentimientoInformado" required>
-                <label for="consentimientoInformado">
-                    He leído y acepto el consentimiento informado. Entiendo los alcances y limitaciones del servicio y autorizo el tratamiento de mis datos personales para los fines descritos.
-                </label>
-            </div>
-        </div>
-
-        <!-- Información Universitaria -->
-        <div class="section" id="universitySection" style="display: none;">
-            <h3>🎓 Información Académica</h3>
-            <p style="color: #666; margin-bottom: 20px;">Como estudiante de la Universidad Universitaria de Colombia, necesitamos algunos datos adicionales:</p>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="semestre" class="required">Semestre Actual</label>
-                    <select id="semestre" name="semestre">
-                        <option value="">Seleccione su semestre</option>
-                        <option value="1">Primer Semestre</option>
-                        <option value="2">Segundo Semestre</option>
-                        <option value="3">Tercer Semestre</option>
-                        <option value="4">Cuarto Semestre</option>
-                        <option value="5">Quinto Semestre</option>
-                        <option value="6">Sexto Semestre</option>
-                        <option value="7">Séptimo Semestre</option>
-                        <option value="8">Octavo Semestre</option>
-                        <option value="9">Noveno Semestre</option>
-                        <option value="10">Décimo Semestre</option>
-                        <option value="otro">Otro</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="jornada" class="required">Jornada</label>
-                    <select id="jornada" name="jornada">
-                        <option value="">Seleccione su jornada</option>
-                        <option value="diurna">Diurna</option>
-                        <option value="nocturna">Nocturna</option>
-                        <option value="sabatina">Sabatina</option>
-                        <option value="virtual">Virtual</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="carrera" class="required">Carrera</label>
-                <select id="carrera" name="carrera">
-                    <option value="">Seleccione su carrera</option>
-                    <option value="psicologia">Psicología</option>
-                    <option value="medicina">Medicina</option>
-                    <option value="enfermeria">Enfermería</option>
-                    <option value="ingenieria_sistemas">Ingeniería de Sistemas</option>
-                    <option value="ingenieria_industrial">Ingeniería Industrial</option>
-                    <option value="administracion">Administración de Empresas</option>
-                    <option value="contaduria">Contaduría Pública</option>
-                    <option value="derecho">Derecho</option>
-                    <option value="comunicacion">Comunicación Social</option>
-                    <option value="otra">Otra</option>
-                </select>
-            </div>
-        </div>
-
         <form id="sociodemograficoForm">
+            <!-- Información Familiar -->
+            <div class="section">
+                <h3>👨‍👩‍👧‍👦 Información Familiar</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="estadoCivil" class="required">Estado Civil</label>
+                        <select id="estadoCivil" name="estadoCivil" required>
+                            <option value="">Seleccione su estado civil</option>
+                            <option value="soltero">Soltero(a)</option>
+                            <option value="casado">Casado(a)</option>
+                            <option value="union_libre">Unión Libre</option>
+                            <option value="divorciado">Divorciado(a)</option>
+                            <option value="viudo">Viudo(a)</option>
+                            <option value="separado">Separado(a)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="numeroHijos" class="required">Número de Hijos</label>
+                        <input type="number" id="numeroHijos" name="numeroHijos" min="0" max="20" value="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="numeroHermanos" class="required">Número de Hermanos</label>
+                        <input type="number" id="numeroHermanos" name="numeroHermanos" min="0" max="20" value="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rolFamiliar" class="required">Su Rol en la Familia</label>
+                        <select id="rolFamiliar" name="rolFamiliar" required>
+                            <option value="">Seleccione su rol</option>
+                            <option value="madre">Madre</option>
+                            <option value="padre">Padre</option>
+                            <option value="hijo">Hijo(a)</option>
+                            <option value="hermano">Hermano(a)</option>
+                            <option value="abuelo">Abuelo(a)</option>
+                            <option value="nieto">Nieto(a)</option>
+                            <option value="tio">Tío(a)</option>
+                            <option value="sobrino">Sobrino(a)</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="conQuienVive" class="required">¿Con quién vive actualmente?</label>
+                    <textarea id="conQuienVive" name="conQuienVive" placeholder="Ej: Con mis padres y hermanos, Solo(a), Con mi pareja e hijos, etc." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">¿Tiene personas a su cargo?</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="tienePersonasACargo" value="true" required>
+                            Sí
+                        </label>
+                        <label>
+                            <input type="radio" name="tienePersonasACargo" value="false" required>
+                            No
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Educativa y Laboral -->
+            <div class="section">
+                <h3>🎓 Información Educativa y Laboral</h3>
+                
+                <div class="form-group">
+                    <label for="escolaridad" class="required">Nivel de Escolaridad</label>
+                    <select id="escolaridad" name="escolaridad" required>
+                        <option value="">Seleccione su nivel educativo</option>
+                        <option value="primaria_incompleta">Primaria Incompleta</option>
+                        <option value="primaria_completa">Primaria Completa</option>
+                        <option value="secundaria_incompleta">Secundaria Incompleta</option>
+                        <option value="secundaria_completa">Secundaria Completa</option>
+                        <option value="tecnico_incompleto">Técnico Incompleto</option>
+                        <option value="tecnico_completo">Técnico Completo</option>
+                        <option value="universitario_incompleto">Universitario Incompleto</option>
+                        <option value="universitario_completo">Universitario Completo</option>
+                        <option value="posgrado_incompleto">Posgrado Incompleto</option>
+                        <option value="posgrado_completo">Posgrado Completo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="ocupacion" class="required">Ocupación Actual</label>
+                    <input type="text" id="ocupacion" name="ocupacion" placeholder="Ej: Estudiante, Empleado, Independiente, Ama de casa, etc." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="nivelIngresos" class="required">Nivel de Ingresos (SMMLV = Salario Mínimo)</label>
+                    <select id="nivelIngresos" name="nivelIngresos" required>
+                        <option value="">Seleccione su nivel de ingresos</option>
+                        <option value="nivel_0_1_smmlv">0 - 1 SMMLV</option>
+                        <option value="nivel_1_2_smmlv">1 SMMLV + 1 peso - 2 SMMLV</option>
+                        <option value="nivel_2_3_smmlv">2 SMMLV + 1 peso - 3 SMMLV</option>
+                        <option value="nivel_3_4_smmlv">3 SMMLV + 1 peso - 4 SMMLV</option>
+                        <option value="mayor_4_smmlv">Mayor a 4 SMMLV + 1 peso</option>
+                    </select>
+                </div>
+            </div>
+
             <button type="submit" class="btn" id="submitBtn">Continuar al ChatBot</button>
         </form>
     </div>
@@ -394,25 +337,25 @@
         window.addEventListener('load', async () => {
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user') || '{}');
-            
+
             if (!token) {
                 window.location.href = '/login';
                 return;
             }
-            
-            // Si el usuario pertenece a la universidad, mostrar campos adicionales
-            if (user.perteneceUniversidad) {
-                document.getElementById('universitySection').style.display = 'block';
+
+            // Si no tiene información básica del usuario, redirigir al login
+            if (!user.correo || !user.primerNombre) {
+                window.location.href = '/login';
+                return;
             }
-            
-            // Si ya completó el consentimiento, redirigir al dashboard
-            if (user.consentimientoInformado) {
-                window.location.href = '/dashboard';
-            }
+
+            // Nota: Permitir acceso al formulario sociodemográfico incluso sin consentimiento
+            // ya que puede venir directamente del registro
         });
 
         document.getElementById('sociodemograficoForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('Formulario enviado, procesando...');
             
             const errorDiv = document.getElementById('errorMessage');
             const successDiv = document.getElementById('successMessage');
@@ -423,35 +366,29 @@
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
             
-            // Validar consentimiento informado
-            const consentimiento = document.getElementById('consentimientoInformado').checked;
-            if (!consentimiento) {
-                errorDiv.textContent = 'Debe aceptar el consentimiento informado para continuar';
-                errorDiv.style.display = 'block';
-                return;
-            }
+            const formData = new FormData(e.target);
+            console.log('Datos del formulario:', Object.fromEntries(formData));
             
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
             const data = {
-                userId: user.id,
-                consentimientoInformado: consentimiento
+                estadoCivil: formData.get('estadoCivil'),
+                numeroHijos: parseInt(formData.get('numeroHijos')),
+                numeroHermanos: parseInt(formData.get('numeroHermanos')),
+                conQuienVive: formData.get('conQuienVive'),
+                tienePersonasACargo: formData.get('tienePersonasACargo') === 'true',
+                rolFamiliar: formData.get('rolFamiliar'),
+                escolaridad: formData.get('escolaridad'),
+                ocupacion: formData.get('ocupacion'),
+                nivelIngresos: formData.get('nivelIngresos')
             };
             
-            // Si es estudiante universitario, validar campos adicionales
-            if (user.perteneceUniversidad) {
-                const semestre = document.getElementById('semestre').value;
-                const jornada = document.getElementById('jornada').value;
-                const carrera = document.getElementById('carrera').value;
-                
-                if (!semestre || !jornada || !carrera) {
-                    errorDiv.textContent = 'Todos los campos académicos son obligatorios para estudiantes universitarios';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-                
-                data.semestre = semestre;
-                data.jornada = jornada;
-                data.carrera = carrera;
+            console.log('Datos procesados:', data);
+            
+            // Validaciones básicas
+            if (!data.estadoCivil || !data.conQuienVive || !data.rolFamiliar || 
+                !data.escolaridad || !data.ocupacion || !data.nivelIngresos) {
+                errorDiv.textContent = 'Todos los campos marcados con * son obligatorios';
+                errorDiv.style.display = 'block';
+                return;
             }
             
             // Mostrar loading
@@ -460,32 +397,36 @@
             
             try {
                 const token = localStorage.getItem('token');
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+                // Si viene del registro, usar el ID del usuario directamente
+                const requestBody = {
+                    ...data,
+                    userId: user.id // Agregar el ID del usuario
+                };
+
                 const response = await fetch('/api/auth/sociodemografico', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        ...(token && { 'Authorization': `Bearer ${token}` })
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(requestBody)
                 });
                 
                 const result = await response.json();
+                console.log('Respuesta del servidor:', result);
+                console.log('Status de respuesta:', response.status);
                 
                 if (response.ok) {
-                    // Actualizar datos del usuario en localStorage
-                    user.consentimientoInformado = true;
-                    if (data.semestre) user.semestre = data.semestre;
-                    if (data.jornada) user.jornada = data.jornada;
-                    if (data.carrera) user.carrera = data.carrera;
-                    localStorage.setItem('user', JSON.stringify(user));
-                    
-                    successDiv.textContent = 'Información guardada exitosamente. Redirigiendo...';
+                    successDiv.textContent = 'Información guardada exitosamente. Redirigiendo al login...';
                     successDiv.style.display = 'block';
                     
                     setTimeout(() => {
-                        window.location.href = '/dashboard';
+                        window.location.href = '/login';
                     }, 1500);
                 } else {
+                    console.error('Error del servidor:', result);
                     errorDiv.textContent = result.error || 'Error al guardar la información';
                     errorDiv.style.display = 'block';
                 }

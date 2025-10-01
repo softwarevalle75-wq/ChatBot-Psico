@@ -9,35 +9,31 @@ datasource db {
 
 //Creacion usuario:-----------------------------------------------------------------------------------------------------------------------------------------------------
 model informacionUsuario {
-  idUsuario           String   @id @unique @default(uuid())
-  primerNombre        String?
-  segundoNombre       String?
-  primerApellido      String?
-  segundoApellido     String?
-  correo              String?  @unique
-  segundoCorreo       String?
-  telefonoPersonal    String   @unique
-  segundoTelefono     String?
-  fechaNacimiento     DateTime?
-  perteneceUniversidad Boolean @default(false)
-  semestre            String?
-  jornada             String?
-  carrera             String?
-  password            String?
-  documento           String?  @unique
-  tipoDocumento       String   @default("CC")
-  testActual          String   @default("")
-  motivo              String?
-  ayudaPsicologica    Int      @default(1)
-  historial           Json?
-  flujo               String   @default("register")
-  sesion              Int      @default(0)
-  estado              Boolean  @default(true)
-  fechaCreacion       DateTime @default(now())
-  disponibilidad      Json     @default("{}")
-  practicanteAsignado String?
-  isAuthenticated     Boolean  @default(false)
-  consentimientoInformado Boolean @default(false)
+  idUsuario               String    @id @default(cuid())
+  primerNombre            String
+  segundoNombre           String?
+  primerApellido          String
+  segundoApellido         String?
+  telefonoPersonal        String    @unique
+  segundoTelefono         String?
+  correo                  String    @unique
+  segundoCorreo           String?
+  fechaNacimiento         DateTime
+  perteneceUniversidad    Boolean   @default(false)
+  semestre                String?
+  jornada                 String?
+  carrera                 String?
+  password                String
+  consentimientoInformado Boolean   @default(false)
+  ayudaPsicologica        String?
+  flujo                   String?
+  historial               Json?
+  testActual              String?
+  fechaCreacion           DateTime  @default(now())
+  fechaActualizacion      DateTime  @updatedAt
+  
+  // Relación con información sociodemográfica
+  informacionSociodemografica InformacionSociodemografica?
 
   // Relación con ghq12
   ghq12  ghq12?
@@ -175,4 +171,70 @@ model registroCitas {
   consultorio consultorio        @relation(fields: [idConsultorio], references: [idConsultorio]) // Relación con consultorio
   usuario     informacionUsuario @relation(fields: [idUsuario], references: [idUsuario]) // Relación con informacionUsuario
   practicante practicante        @relation(fields: [idPracticante], references: [idPracticante]) // Relación con practicante
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Información Sociodemográfica
+model InformacionSociodemografica {
+  id                    String @id @default(cuid())
+  usuarioId             String @unique
+  estadoCivil           EstadoCivil
+  numeroHijos           Int @default(0)
+  numeroHermanos        Int @default(0)
+  conQuienVive          String
+  tienePersonasACargo   Boolean @default(false)
+  rolFamiliar           RolFamiliar
+  escolaridad           Escolaridad
+  ocupacion             String
+  nivelIngresos         NivelIngresos
+  fechaCreacion         DateTime @default(now())
+  fechaActualizacion    DateTime @updatedAt
+  
+  // Relación con usuario
+  usuario               informacionUsuario @relation(fields: [usuarioId], references: [idUsuario], onDelete: Cascade)
+  
+  @@map("informacion_sociodemografica")
+}
+
+enum EstadoCivil {
+  soltero
+  casado
+  union_libre
+  divorciado
+  viudo
+  separado
+}
+
+enum RolFamiliar {
+  madre
+  padre
+  hijo
+  hermano
+  abuelo
+  nieto
+  tio
+  sobrino
+  otro
+}
+
+enum Escolaridad {
+  primaria_incompleta
+  primaria_completa
+  secundaria_incompleta
+  secundaria_completa
+  tecnico_incompleto
+  tecnico_completo
+  universitario_incompleto
+  universitario_completo
+  posgrado_incompleto
+  posgrado_completo
+}
+
+enum NivelIngresos {
+  nivel_0_1_smmlv
+  nivel_1_2_smmlv
+  nivel_2_3_smmlv
+  nivel_3_4_smmlv
+  mayor_4_smmlv
 }

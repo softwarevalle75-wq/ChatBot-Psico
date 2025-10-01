@@ -347,11 +347,20 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    successDiv.textContent = 'Registro exitoso. Redirigiendo al login...';
+                    // Guardar información básica del usuario en localStorage
+                    const userInfo = {
+                        id: result.userId,
+                        primerNombre: data.primerNombre,
+                        correo: data.correo,
+                        consentimientoInformado: false
+                    };
+                    localStorage.setItem('user', JSON.stringify(userInfo));
+
+                    successDiv.textContent = 'Registro exitoso. Redirigiendo al formulario sociodemográfico...';
                     successDiv.style.display = 'block';
-                    
+
                     setTimeout(() => {
-                        window.location.href = '/login';
+                        window.location.href = '/sociodemografico';
                     }, 2000);
                 } else {
                     errorDiv.textContent = result.error || 'Error en el registro';
@@ -367,13 +376,8 @@
             }
         });
 
-        // Verificar si ya está logueado
-        window.addEventListener('load', () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                window.location.href = '/dashboard';
-            }
-        });
+        // Nota: No necesitamos verificación automática aquí
+        // El usuario puede acceder al registro normalmente
     </script>
 </body>
 </html>

@@ -97,12 +97,6 @@ router.post('/login', async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        // Actualizar estado de autenticación
-        await prisma.informacionUsuario.update({
-            where: { idUsuario: user.idUsuario },
-            data: { isAuthenticated: true }
-        });
-
         res.json({ 
             message: 'Login exitoso', 
             token,
@@ -136,7 +130,8 @@ router.post('/consent', async (req, res) => {
     }
 });
 
-router.post('/sociodemografico', async (req, res) => {
+// Ruta para consentimiento informado
+router.post('/consentimiento', async (req, res) => {
     try {
         const { userId, consentimientoInformado, semestre, jornada, carrera } = req.body;
 
@@ -152,14 +147,150 @@ router.post('/sociodemografico', async (req, res) => {
         if (jornada) updateData.jornada = jornada;
         if (carrera) updateData.carrera = carrera;
 
-        await prisma.informacionUsuario.update({
+        const updatedUser = await prisma.informacionUsuario.update({
             where: { idUsuario: userId },
             data: updateData
         });
 
-        res.json({ message: 'Información guardada exitosamente' });
+        res.json({ message: 'Consentimiento guardado exitosamente', user: updatedUser });
     } catch (error) {
-        console.error('Error en datos sociodemográficos:', error);
+        console.error('Error guardando consentimiento:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// // Middleware para autenticar token
+// function authenticateToken(req, res, next) {
+//     const authHeader = req.headers['authorization'];
+//     const token = authHeader && authHeader.split(' ')[1];
+
+//     if (!token) {
+//         return res.status(401).json({ error: 'Token de acceso requerido' });
+//     }
+
+//     jwt.verify(token, process.env.JWT_SECRET || 'secret_key', (err, user) => {
+//         if (err) {
+//             return res.status(403).json({ error: 'Token inválido' });
+//         }
+//         req.user = user;
+//         next();
+//     });
+// }
+
+// Ruta para guardar información sociodemográfica (soporta ambos métodos: con token y con userId)
+router.post('/sociodemografico', async (req, res) => {
+    try {
+        console.log('Datos recibidos en /sociodemografico:', req.body);
+
+        const {
+            estadoCivil,
+            numeroHijos,
+            numeroHermanos,
+            conQuienVive,
+            tienePersonasACargo,
+            rolFamiliar,
+            escolaridad,
+            ocupacion,
+            nivelIngresos,
+            userId // Para casos donde viene directamente del registro
+        } = req.body;
+
+        console.log('Campos extraídos:', {
+            estadoCivil, conQuienVive, rolFamiliar, escolaridad, ocupacion, nivelIngresos
+        });
+
+        // Validar campos requeridos
+        if (!estadoCivil || !conQuienVive || !rolFamiliar || !escolaridad || !ocupacion || !nivelIngresos) {
+            console.log('Campos faltantes detectados');
+            return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+        }
+
+        // Determinar el ID del usuario (del token o del parámetro)
+        let usuarioId;
+        if (req.user) {
+            // Viene con token autenticado
+            usuarioId = req.user.userId;
+            console.log('Usando userId del token:', usuarioId);
+        } else if (userId) {
+            // Viene directamente del registro con userId
+            usuarioId = userId;
+            console.log('Usando userId del parámetro:', usuarioId);
+        } else {
+            console.log('No se pudo determinar usuarioId');
+            return res.status(401).json({ error: 'Usuario no autenticado' });
+        }
+
+        // Crear o actualizar información sociodemográfica
+        const informacionSociodemografica = await prisma.informacionSociodemografica.upsert({
+            where: { usuarioId: usuarioId },
+            update: {
+                estadoCivil,
+                numeroHijos: numeroHijos || 0,
+                numeroHermanos: numeroHermanos || 0,
+                conQuienVive,
+                tienePersonasACargo: tienePersonasACargo || false,
+                rolFamiliar,
+                escolaridad,
+                ocupacion,
+                nivelIngresos
+            },
+            create: {
+                usuarioId: usuarioId,
+                estadoCivil,
+                numeroHijos: numeroHijos || 0,
+                numeroHermanos: numeroHermanos || 0,
+                conQuienVive,
+                tienePersonasACargo: tienePersonasACargo || false,
+                rolFamiliar,
+                escolaridad,
+                ocupacion,
+                nivelIngresos
+            }
+        });
+
+        res.json({
+            message: 'Información sociodemográfica guardada exitosamente',
+            data: informacionSociodemografica
+        });
+        console.log('Información sociodemográfica guardada exitosamente para usuario:', usuarioId);
+    } catch (error) {
+        console.error('Error guardando información sociodemográfica:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Ruta para verificar información sociodemográfica del usuario (soporta ambos métodos)
+router.get('/check-sociodemografico', async (req, res) => {
+    try {
+        const token = req.headers['authorization']?.split(' ')[1];
+        const userId = req.query.userId; // Para casos donde viene con userId en query params
+
+        let usuarioId;
+        if (token) {
+            // Verificar token y obtener userId
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+            usuarioId = decoded.userId;
+        } else if (userId) {
+            // Usar userId directamente
+            usuarioId = userId;
+        } else {
+            return res.status(401).json({ error: 'Usuario no autenticado' });
+        }
+
+        const informacionSociodemografica = await prisma.informacionSociodemografica.findUnique({
+            where: { usuarioId: usuarioId }
+        });
+
+        if (informacionSociodemografica) {
+            res.json({
+                hasSociodemografico: true,
+                data: informacionSociodemografica
+            });
+        } else {
+            res.json({ hasSociodemografico: false });
+        }
+    } catch (error) {
+        console.error('Error verificando información sociodemográfica:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

@@ -228,11 +228,29 @@
                     successDiv.textContent = 'Login exitoso. Redirigiendo...';
                     successDiv.style.display = 'block';
                     
-                    // Redirigir según el estado del usuario
-                    setTimeout(() => {
-                        if (!result.user.consentimientoInformado) {
-                            window.location.href = '/sociodemografico';
-                        } else {
+                    // Verificar información sociodemográfica y redirigir
+                    setTimeout(async () => {
+                        try {
+                            const socioResponse = await fetch(`/api/auth/check-sociodemografico?userId=${result.user.id}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${result.token}`
+                                }
+                            });
+                            const socioResult = await socioResponse.json();
+
+                            if (socioResult.hasSociodemografico) {
+                                // Tiene información sociodemográfica, verificar consentimiento
+                                if (!result.user.consentimientoInformado) {
+                                    window.location.href = '/consentimiento';
+                                } else {
+                                    window.location.href = '/dashboard';
+                                }
+                            } else {
+                                // No tiene información sociodemográfica
+                                window.location.href = '/sociodemografico';
+                            }
+                        } catch (error) {
+                            console.error('Error verificando información:', error);
                             window.location.href = '/dashboard';
                         }
                     }, 1500);
@@ -250,13 +268,8 @@
             }
         });
 
-        // Verificar si ya está logueado
-        window.addEventListener('load', () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                window.location.href = '/dashboard';
-            }
-        });
+        // Nota: No necesitamos verificación automática aquí
+        // El usuario puede acceder al login normalmente
     </script>
 </body>
 </html>

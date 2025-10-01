@@ -20,7 +20,6 @@ export const verificarAutenticacionWeb = async (telefono, flowDynamic) => {
                 idUsuario: true,
                 primerNombre: true,
                 primerApellido: true,
-                isAuthenticated: true,
                 consentimientoInformado: true,
                 perteneceUniversidad: true,
                 semestre: true,
@@ -41,7 +40,6 @@ export const verificarAutenticacionWeb = async (telefono, flowDynamic) => {
                     idUsuario: true,
                     primerNombre: true,
                     primerApellido: true,
-                    isAuthenticated: true,
                     consentimientoInformado: true,
                     perteneceUniversidad: true,
                     semestre: true,
@@ -62,15 +60,13 @@ export const verificarAutenticacionWeb = async (telefono, flowDynamic) => {
             return null;
         }
 
-        if (!user.isAuthenticated) {
-            console.log('❌ Usuario no autenticado - debe hacer login en la web');
-            await flowDynamic('🔐 *Debes iniciar sesión*\n\nYa tienes una cuenta, pero necesitas iniciar sesión en la página web:\n\n🌐 http://localhost:3008/login\n\n✅ Una vez que inicies sesión, podrás usar el ChatBot normalmente.');
-            return null;
-        }
+        // Nota: Ya no verificamos isAuthenticated ya que ese campo no existe en la BD
+        // Si el usuario existe en la BD, consideramos que está registrado
+        console.log(`✅ Usuario encontrado: ${user.primerNombre} ${user.primerApellido}`);
 
         if (!user.consentimientoInformado) {
             console.log('❌ Usuario sin consentimiento - debe completarlo en la web');
-            await flowDynamic('📋 *Consentimiento Informado Pendiente*\n\nDebes completar el consentimiento informado en la página web:\n\n🌐 http://localhost:3008/sociodemografico\n\n⚠️ Este paso es obligatorio para usar el servicio de apoyo psicológico.');
+            await flowDynamic(`📋 *Consentimiento Informado Pendiente*\n\nDebes completar el consentimiento informado en la página web:\n\n🌐 ${webURL}/consentimiento\n\n⚠️ Este paso es obligatorio para usar el servicio de apoyo psicológico.`);
             return null;
         }
 

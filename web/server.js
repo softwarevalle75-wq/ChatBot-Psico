@@ -39,6 +39,10 @@ app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
+app.get('/consentimiento', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'consentimiento.html'));
+});
+
 app.get('/sociodemografico', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'sociodemografico.html'));
 });
