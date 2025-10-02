@@ -303,9 +303,12 @@
         // Verificar autenticación y obtener datos del usuario
         window.addEventListener('load', async () => {
             const token = localStorage.getItem('token');
+            console.log('Token en load:', token);  // Verifica si existe
             const user = JSON.parse(localStorage.getItem('user') || '{}');
+            console.log('Usuario en load:', user);
 
             if (!token) {
+                console.log('No hay token, redirigiendo...');
                 window.location.href = '/login';
                 return;
             }

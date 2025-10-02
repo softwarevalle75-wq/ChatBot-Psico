@@ -408,6 +408,7 @@
                 });
                 
                 const result = await response.json();
+                console.log('Respuesta del servidor:', result); // DEBUG
                 
                 if (response.ok) {
                     // Guardar información básica del usuario en localStorage
@@ -417,6 +418,8 @@
                         correo: data.correo,
                         consentimientoInformado: false
                     };
+                    console.log('Token recibido:', result.token); // DEBUG
+                    localStorage.setItem('token', result.token);
                     localStorage.setItem('user', JSON.stringify(userInfo));
 
                     successDiv.textContent = 'Registro exitoso. Redirigiendo al tratamiento de datos...';

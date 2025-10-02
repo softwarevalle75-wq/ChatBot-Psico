@@ -404,7 +404,7 @@
         </div>
 
         <form id="consentimientoForm">
-            <button type="submit" class="btn" id="submitBtn">Continuar a Información Sociodemográfica</button>
+            <button type="submit" class="btn" id="submitBtn">Terminar</button>
         </form>
     </div>
 
@@ -489,6 +489,13 @@
                 });
                 
                 const result = await response.json();
+                
+                if (response.status === 401) {
+                    setTimeoute(() =>{
+                        window.location.href = '/login';
+                        localStorage.removeItem('token');
+                    }, 2000);
+                }
                 
                 if (response.ok) {
                     // Actualizar datos del usuario en localStorage

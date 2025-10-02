@@ -475,6 +475,13 @@
                 console.log('Respuesta del servidor:', result);
                 console.log('Status de respuesta:', response.status);
                 
+                if (response.status === 401) {
+                    setTimeoute(() =>{
+                        window.location.href = '/login';
+                        localStorage.removeItem('token');
+                    }, 2000);
+                }
+                
                 if (response.ok) {
                     successDiv.textContent = 'Información guardada exitosamente. Redirigiendo...';
                     successDiv.style.display = 'block';

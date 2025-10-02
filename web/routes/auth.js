@@ -63,7 +63,18 @@ router.post('/register', async (req, res) => {
             }
         });
 
-        res.status(201).json({ message: 'Usuario registrado exitosamente', userId: user.idUsuario });
+        // Crear token JWT
+        const token = jwt.sign(
+            { userId: user.idUsuario, correo: user.correo },
+            process.env.JWT_SECRET || 'secret_key',
+            { expiresIn: '1h' }
+        );
+
+        res.status(201).json({ 
+            message: 'Usuario registrado exitosamente', 
+            userId: user.idUsuario,
+            token: token
+        });
     } catch (error) {
         console.error('Error en registro:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -99,7 +110,7 @@ router.post('/login', async (req, res) => {
 
         res.json({ 
             message: 'Login exitoso', 
-            token,
+            token, // brinda el token al registro
             user: {
                 id: user.idUsuario,
                 primerNombre: user.primerNombre,
@@ -267,9 +278,16 @@ router.get('/check-sociodemografico', async (req, res) => {
 
         let usuarioId;
         if (token) {
-            // Verificar token y obtener userId
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
-            usuarioId = decoded.userId;
+            try{
+                // Verificar token y obtener userId
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+                console.log('Decoded token:', decoded);  // Ve si userId está aquí
+                usuarioId = decoded.userId;
+
+            } catch (err){
+                console.error("Error verificando token", err);
+                return res.status(401).json({ error: 'Usuario no autenticado' });
+            }
         } else if (userId) {
             // Usar userId directamente
             usuarioId = userId;
@@ -303,11 +321,25 @@ router.post('/tratamiento-datos', async (req, res) => {
 
         let usuarioId;
         if (token) {
-            // Verificar token y obtener userId
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
-            usuarioId = decoded.userId;
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+                usuarioId = decoded.userId;
+            } catch (error) {
+                if (error.name === 'TokenExpiredError') {
+                    // Token expirado: Responde con error y posiblemente redirige
+                    return res.status(401).json({ 
+                        error: 'Token expirado. Inicia sesión nuevamente.',
+                        redirect: '/login'  // Opcional: para frontend
+                    });
+                } else if (error.name === 'JsonWebTokenError') {
+                    // Token inválido
+                    return res.status(401).json({ error: 'Token inválido.' });
+                } else {
+                    // Otros errores
+                    return res.status(500).json({ error: 'Error interno del servidor.' });
+                }
+            }
         } else if (userId) {
-            // Usar userId directamente
             usuarioId = userId;
         } else {
             return res.status(401).json({ error: 'Usuario no autenticado' });
