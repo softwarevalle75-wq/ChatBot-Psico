@@ -38,6 +38,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            margin-top: 15px;
             margin-bottom: 40px;
             gap: 20px;
         }
@@ -255,6 +256,7 @@
             }
         }
     </style>
+    <script src="/js/auth-utils.js"></script>
 </head>
 <body>
     <div class="container">
@@ -280,6 +282,13 @@
                     <div class="progress-circle" data-step="4">4</div>
                 </div>
             </div>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Procesando...</p>
         </div>
 
         <form id="sociodemograficoForm">
@@ -389,29 +398,16 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn" id="submitBtn">Continuar al ChatBot</button>
+            <button type="submit" class="btn" id="submitBtn">Continuar</button>
         </form>
     </div>
 
     <script>
         // Verificar autenticación y obtener datos del usuario
         window.addEventListener('load', async () => {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-            if (!token) {
-                window.location.href = '/login';
+            if (!window.authUtils.checkAuthentication()) {
                 return;
             }
-
-            // Si no tiene información básica del usuario, redirigir al login
-            if (!user.correo || !user.primerNombre) {
-                window.location.href = '/login';
-                return;
-            }
-
-            // Nota: Permitir acceso al formulario sociodemográfico incluso sin consentimiento
-            // ya que puede venir directamente del registro
         });
 
         document.getElementById('sociodemograficoForm').addEventListener('submit', async (e) => {
@@ -480,7 +476,7 @@
                 console.log('Status de respuesta:', response.status);
                 
                 if (response.ok) {
-                    successDiv.textContent = 'Información guardada exitosamente. Redirigiendo al login...';
+                    successDiv.textContent = 'Información guardada exitosamente. Redirigiendo...';
                     successDiv.style.display = 'block';
                     
                     setTimeout(() => {
@@ -488,12 +484,23 @@
                     }, 1500);
                 } else {
                     console.error('Error del servidor:', result);
-                    errorDiv.textContent = result.error || 'Error al guardar la información';
-                    errorDiv.style.display = 'block';
+                    if (response.status === 401) {
+                        errorDiv.textContent = 'Sesión expirada. Redirigiendo al login...';
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    } else {
+                        errorDiv.textContent = result.error || 'Error al guardar la información';
+                        errorDiv.style.display = 'block';
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
-                errorDiv.textContent = 'Error de conexión. Intenta nuevamente.';
+                if (error.message.includes('fetch')) {
+                    errorDiv.textContent = 'Error de conexión. Verifica tu conexión a internet.';
+                } else {
+                    errorDiv.textContent = 'Error inesperado. Intenta nuevamente.';
+                }
                 errorDiv.style.display = 'block';
             } finally {
                 loadingDiv.style.display = 'none';
