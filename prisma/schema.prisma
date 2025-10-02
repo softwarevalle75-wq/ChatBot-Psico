@@ -124,13 +124,34 @@ model practicante {
   estrato          String
   barrio           String
   localidad        String
-  horario          Json
   sesiones         Int      @default(0)
   fechaCreacion    DateTime @default(now())
   telefono         String  @unique
 
   citas         cita[] // Relación con cita
   registroCitas registroCitas[]
+
+  horarios Horario[]
+}
+
+model Horario {
+  id            String      @id @default(uuid())
+  dia           DiaSemana
+  horaInicio    Int
+  horaFin       Int
+
+  practicante   practicante @relation(fields: [practicanteId], references: [idPracticante])
+  practicanteId String
+}
+
+enum DiaSemana {
+  LUNES
+  MARTES
+  MIERCOLES
+  JUEVES
+  VIERNES
+  SABADO
+  DOMINGO
 }
 
 enum Rol {
@@ -138,6 +159,8 @@ enum Rol {
   practicante
   admin
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------------
 
 model rolChat {
   telefono   String   @id @unique

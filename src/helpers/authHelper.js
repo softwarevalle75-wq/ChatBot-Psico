@@ -116,7 +116,7 @@ export const getWebURL = () => {
     const webHost = process.env.WEB_HOST || '';
     const ipDomain = process.env.IP_DOMAIN
 
-    if (!webPort && !webHost)
+    if (!ipDomain)
         return `http://${webHost}:${webPort}`;
     
     return ipDomain
