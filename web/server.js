@@ -12,9 +12,19 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+console.log('📲 BotNum desde la config: ',process.env.BOT_NUM)
+
 const app = express();
 const PORT = process.env.WEB_PORT || 3002;
 const webHost = process.env.WEB_HOST || 'localhost';
+
+app.get('/config', (req, res) => {
+    res.json({
+        numBot: process.env.BOT_NUM
+    });
+})
 
 // Middlewares
 app.use(cors());

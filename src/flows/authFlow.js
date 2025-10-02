@@ -162,7 +162,7 @@ export const checkAuthFlow = addKeyword(['estado', 'status', 'verificar', 'check
             statusMessage += `\n👤 *Información:*\n`;
             statusMessage += `Nombre: ${authStatus.user.nombre}\n`;
             if (authStatus.user.perteneceUniversidad) {
-                statusMessage += `Universidad: Universidad Universitaria de Colombia\n`;
+                statusMessage += `Universidad: Universitaria de Colombia\n`;
                 if (authStatus.user.semestre) statusMessage += `Semestre: ${authStatus.user.semestre}\n`;
                 if (authStatus.user.jornada) statusMessage += `Jornada: ${authStatus.user.jornada}\n`;
                 if (authStatus.user.carrera) statusMessage += `Carrera: ${authStatus.user.carrera}\n`;
