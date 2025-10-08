@@ -596,40 +596,54 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
   )
   // PASO 2: SELECCIÓN DE HORARIO
   .addAnswer(
-    '🕐 *SELECCIONAR HORARIO*\n\n' +
-    'Elige el rango horario que prefieres:\n\n' +
-    '🔹 *1* - Mañana (8:00 AM - 12:00 PM)\n' +
-    '🔹 *2* - Tarde (12:00 PM - 5:00 PM)\n' +
-    '🔹 *3* - Noche (5:00 PM - 8:00 PM)\n\n' +
-    'Responde con el *número* del horario:',
-    { capture: true },
-    async (ctx, { flowDynamic, state, fallBack }) => {
-      console.log('🕐 Horario recibido:', ctx.body);
-      const horarioSeleccionado = ctx.body.trim();
-      const horariosValidos = ['1', '2', '3'];
-      
-      if (!horariosValidos.includes(horarioSeleccionado)) {
-        await flowDynamic('❌ Opción no válida. Por favor selecciona *1*, *2* o *3*.');
-        return fallBack();
-      }
-      
-      const mapaHorarios = {
-        '1': { inicio: 8, fin: 12, nombre: 'Mañana (8:00 AM - 12:00 PM)' },
-        '2': { inicio: 12, fin: 17, nombre: 'Tarde (12:00 PM - 5:00 PM)' },
-        '3': { inicio: 17, fin: 20, nombre: 'Noche (5:00 PM - 8:00 PM)' }
-      };
-      
-      const horario = mapaHorarios[horarioSeleccionado];
-      
-      await state.update({ 
-        horarioInicio: horario.inicio,
-        horarioFin: horario.fin,
-        horarioNombre: horario.nombre
-      });
-      
-      console.log('🕐 Horario guardado:', horario);
+  '🕐 *SELECCIONAR HORARIO*\n\n' +
+  'Elige el horario específico que prefieres:\n\n' +
+  '🔹 *1* - 8:00 - 9:00 AM\n' +
+  '🔹 *2* - 9:00 - 10:00 AM\n' +
+  '🔹 *3* - 10:00 - 11:00 AM\n' +
+  '🔹 *4* - 11:00 AM - 12:00 PM\n' +
+  '🔹 *5* - 12:00 - 1:00 PM\n' +
+  '🔹 *6* - 1:00 - 2:00 PM\n' +
+  '🔹 *7* - 2:00 - 3:00 PM\n' +
+  '🔹 *8* - 3:00 - 4:00 PM\n' +
+  '🔹 *9* - 4:00 - 5:00 PM\n\n' +
+  'Responde con el *número* del horario:',
+  { capture: true },
+  async (ctx, { flowDynamic, state, fallBack }) => {
+    console.log('🕐 Horario recibido:', ctx.body);
+    const horarioSeleccionado = ctx.body.trim();
+    const horariosValidos = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    
+    if (!horariosValidos.includes(horarioSeleccionado)) {
+      await flowDynamic('❌ Opción no válida. Por favor selecciona un número del *1* al *9*.');
+      return fallBack();
     }
-  )
+    
+    const mapaHorarios = {
+      '1': { inicio: 8, fin: 9, nombre: '8:00 - 9:00 AM', minInicio: 480, minFin: 540 },
+      '2': { inicio: 9, fin: 10, nombre: '9:00 - 10:00 AM', minInicio: 540, minFin: 600 },
+      '3': { inicio: 10, fin: 11, nombre: '10:00 - 11:00 AM', minInicio: 600, minFin: 660 },
+      '4': { inicio: 11, fin: 12, nombre: '11:00 AM - 12:00 PM', minInicio: 660, minFin: 720 },
+      '5': { inicio: 12, fin: 13, nombre: '12:00 - 1:00 PM', minInicio: 720, minFin: 780 },
+      '6': { inicio: 13, fin: 14, nombre: '1:00 - 2:00 PM', minInicio: 780, minFin: 840 },
+      '7': { inicio: 14, fin: 15, nombre: '2:00 - 3:00 PM', minInicio: 840, minFin: 900 },
+      '8': { inicio: 15, fin: 16, nombre: '3:00 - 4:00 PM', minInicio: 900, minFin: 960 },
+      '9': { inicio: 16, fin: 17, nombre: '4:00 - 5:00 PM', minInicio: 960, minFin: 1020 }
+    };
+    
+    const horario = mapaHorarios[horarioSeleccionado];
+    
+    await state.update({ 
+      horarioInicio: horario.inicio,
+      horarioFin: horario.fin,
+      horarioNombre: horario.nombre,
+      minInicio: horario.minInicio,
+      minFin: horario.minFin
+    });
+    
+    console.log('🕐 Horario guardado:', horario);
+  }
+)
   // PASO 3: BUSCAR DISPONIBILIDAD (INTEGRADO)
   .addAction(async (ctx, { flowDynamic, gotoFlow, state }) => {
     console.log('🔵 Iniciando búsqueda integrada...');
