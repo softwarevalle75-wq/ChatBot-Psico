@@ -22,7 +22,7 @@ import {
   guardarCita, 
   formatearMensajeCita,
   formatearHorariosDisponibles 
-} from '../helpers/agendHelpers.js';
+} from '../helpers/agendHelper.js';
 //---------------------------------------------------------------------------------------------------------
 
 export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(

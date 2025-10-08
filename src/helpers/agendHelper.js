@@ -40,9 +40,10 @@ function minutosAHora(minutos) {
  * await buscarPracticanteDisponible('LUNES', 8, 12)
  * // Retorna practicantes que trabajan LUNES de 8 AM a 12 PM
  */
-export async function buscarPracticanteDisponible(dia, horaInicio, horaFin) {
+export async function buscarPracticanteDisponible(dia, horaInicio, horaFin, fechaSolicitada) {
   try {
     // Convertir horas a minutos (8:00 = 480 minutos, 12:00 = 720 minutos)
+    
     const minInicio = horaAMinutos(horaInicio);
     const minFin = horaAMinutos(horaFin);
 
@@ -85,10 +86,34 @@ export async function buscarPracticanteDisponible(dia, horaInicio, horaFin) {
 
     // Filtrar practicantes que tengan disponibilidad (sin citas en conflicto)
     const practicantesDisponibles = practicantes.filter(practicante => {
-      // Por ahora retornamos todos
-      // TODO: Aquí puedes filtrar por citas existentes en ese horario
-      return true;
+
+      const tieneCitaEnHorario = practicante.citas.some(cita => {
+      // Convertir la fecha de la cita a minutos desde medianoche
+      const fechaCita = new Date(cita.fechaHora);
+      const horaCitaEnMinutos = fechaCita.getHours() * 60 + fechaCita.getMinutes();
+      
+      // Verificar si la cita está en el mismo día solicitado
+      const esMismoDia = fechaCita.toISOString().split('T')[0] === fechaSolicitada.toISOString().split('T')[0];
+      
+      // Verificar si hay solapamiento de horarios
+      // Una cita típicamente dura 60 minutos (ajusta según tu necesidad)
+      const duracionCita = 60; // minutos
+      const finCita = horaCitaEnMinutos + duracionCita;
+      
+      // Hay conflicto si:
+      // - Es el mismo día
+      // - Y hay solapamiento: la cita comienza antes de que termine el horario solicitado
+      //   Y la cita termina después de que comience el horario solicitado
+      const haySolapamiento = esMismoDia && (
+        (horaCitaEnMinutos < minFin && finCita > minInicio)
+      );
+      
+      return haySolapamiento;
     });
+    
+    // El practicante está disponible si NO tiene citas en ese horario
+    return !tieneCitaEnHorario;
+  });
 
     return practicantesDisponibles;
 
@@ -147,7 +172,7 @@ function obtenerProximaFecha(diaNombre) {
  * Ejemplo:
  * const cita = await guardarCita('573001234567', 'uuid-practicante', 'LUNES', 8, 12)
  */
-export async function guardarCita(telefono, idPracticante, dia, horaInicio, horaFin) {
+export async function guardarCita(telefono, idPracticante, dia, horaInicio) {
   try {
     console.log('💾 Guardando cita...');
     console.log('📞 Teléfono:', telefono);
@@ -240,7 +265,7 @@ export async function guardarCita(telefono, idPracticante, dia, horaInicio, hora
  * 🏥 Consultorio: Consultorio Principal
  */
 export function formatearMensajeCita(citaData) {
-  const { cita, practicante, fecha, consultorio } = citaData;
+  const { practicante, fecha, consultorio } = citaData;
   
   const opciones = { 
     weekday: 'long', 

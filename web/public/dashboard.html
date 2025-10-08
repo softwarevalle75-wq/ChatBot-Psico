@@ -218,7 +218,7 @@
         </div>
     </div>
 
-    <script>
+    <script>   
         // Cargar información del usuario
         window.addEventListener('load', () => {
             const token = localStorage.getItem('token');
@@ -238,10 +238,20 @@
             // Mostrar información del usuario
             displayUserInfo(user);
             
-            // Configurar número de WhatsApp (esto debería venir de configuración)
-            const botPhone = '+57 321 2671263'; // Cambiar por el número real
-            document.getElementById('botPhone').textContent = botPhone;
-            document.getElementById('whatsappLink').href = `https://wa.me/${botPhone.replace(/\s+/g, '').replace('+', '')}?text=Hola,%20quiero%20comenzar%20con%20el%20ChatBot%20psicológico`;
+            fetch('/config')
+            .then(res => res.json())
+            .then(config => {
+                const botPhone = `+57 ${config.numBot}` || 'No disponible';
+                console.log("num cargado: ", botPhone);
+
+                
+                document.getElementById('botPhone').textContent = botPhone;
+                document.getElementById('whatsappLink').href = `https://wa.me/${botPhone.replace(/\s+/g, '').replace('+', '')}?text=Hola,%20quiero%20comenzar%20con%20el%20ChatBot%20psicológico`;
+            })
+            .catch(err => {
+                console.error('No se pudo cargar la configuración:', err);
+            });
+
         });
 
         function displayUserInfo(user) {
@@ -267,7 +277,7 @@
                 infoHTML += `
                     <div class="info-item">
                         <strong>Universidad:</strong><br>
-                        <span>Universidad Universitaria de Colombia</span>
+                        <span>Universitaria de Colombia</span>
                     </div>
                 `;
                 

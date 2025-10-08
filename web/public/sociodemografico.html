@@ -283,7 +283,6 @@
                 </div>
             </div>
         </div>
-<<<<<<< HEAD
 
         <div id="errorMessage" class="error-message"></div>
         <div id="successMessage" class="success-message"></div>
@@ -292,9 +291,6 @@
             <p>Procesando...</p>
         </div>
 
-=======
-        
->>>>>>> d8ef8b6 ('A')
         <form id="sociodemograficoForm">
             <!-- Información Familiar -->
             <div class="section">
@@ -415,12 +411,57 @@
         });
 
         document.getElementById('sociodemograficoForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    console.log('Formulario enviado, procesando...');
+            e.preventDefault();
+            console.log('Formulario enviado, procesando...');
+            
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+            const loadingDiv = document.getElementById('loading');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // Ocultar mensajes previos
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            const formData = new FormData(e.target);
+            console.log('Datos del formulario:', Object.fromEntries(formData));
+            
+            const data = {
+                estadoCivil: formData.get('estadoCivil'),
+                numeroHijos: parseInt(formData.get('numeroHijos')),
+                numeroHermanos: parseInt(formData.get('numeroHermanos')),
+                conQuienVive: formData.get('conQuienVive'),
+                tienePersonasACargo: formData.get('tienePersonasACargo') === 'true',
+                rolFamiliar: formData.get('rolFamiliar'),
+                escolaridad: formData.get('escolaridad'),
+                ocupacion: formData.get('ocupacion'),
+                nivelIngresos: formData.get('nivelIngresos')
+            };
+            
+            console.log('Datos procesados:', data);
+            
+            // Validaciones básicas
+            if (!data.estadoCivil || !data.conQuienVive || !data.rolFamiliar || 
+                !data.escolaridad || !data.ocupacion || !data.nivelIngresos) {
+                errorDiv.textContent = 'Todos los campos marcados con * son obligatorios';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Mostrar loading
+            loadingDiv.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            try {
+                const token = localStorage.getItem('token');
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-    const submitBtn = document.getElementById('submitBtn');
+                // Si viene del registro, usar el ID del usuario directamente
+                const requestBody = {
+                    ...data,
+                    userId: user.id // Agregar el ID del usuario
+                };
 
-<<<<<<< HEAD
                 const response = await fetch('/api/auth/sociodemografico', {
                     method: 'POST',
                     headers: {
@@ -472,59 +513,7 @@
                 loadingDiv.style.display = 'none';
                 submitBtn.disabled = false;
             }
-=======
-    const formData = new FormData(e.target);
-    const data = {
-        estadoCivil: formData.get('estadoCivil'),
-        numeroHijos: parseInt(formData.get('numeroHijos')),
-        numeroHermanos: parseInt(formData.get('numeroHermanos')),
-        conQuienVive: formData.get('conQuienVive'),
-        tienePersonasACargo: formData.get('tienePersonasACargo') === 'true',
-        rolFamiliar: formData.get('rolFamiliar'),
-        escolaridad: formData.get('escolaridad'),
-        ocupacion: formData.get('ocupacion'),
-        nivelIngresos: formData.get('nivelIngresos')
-    };
-
-    // Validación básica
-    if (!data.estadoCivil || !data.conQuienVive || !data.rolFamiliar || 
-        !data.escolaridad || !data.ocupacion || !data.nivelIngresos) {
-        alert('Todos los campos marcados con * son obligatorios');
-        return;
-    }
-
-    submitBtn.disabled = true;
-
-    try {
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-        const response = await fetch('/api/auth/sociodemografico', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token && { 'Authorization': `Bearer ${token}` })
-            },
-            body: JSON.stringify({ ...data, userId: user.id })
->>>>>>> d8ef8b6 ('A')
         });
-
-        if (response.ok) {
-            // Redirigir al consentimiento después de 1.5s
-            setTimeout(() => {
-                window.location.href = '/consentimiento';
-            }, 1500);
-        } else {
-            const result = await response.json();
-            alert(result.error || 'Error al guardar la información');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Error de conexión. Intenta nuevamente.');
-    } finally {
-        submitBtn.disabled = false;
-    }
-});
     </script>
 </body>
 </html>
