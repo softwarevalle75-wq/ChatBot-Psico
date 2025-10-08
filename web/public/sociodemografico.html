@@ -348,11 +348,11 @@
                     <label class="required">¿Tiene personas a su cargo?</label>
                     <div class="radio-group">
                         <label>
-                            <input type="radio" name="tienePersonasACargo" value="true" required>
+                            <input type="radio" name="tienePersonasACargo" value="Si" required>
                             Sí
                         </label>
                         <label>
-                            <input type="radio" name="tienePersonasACargo" value="false" required>
+                            <input type="radio" name="tienePersonasACargo" value="No" required>
                             No
                         </label>
                     </div>
@@ -431,7 +431,7 @@
                 numeroHijos: parseInt(formData.get('numeroHijos')),
                 numeroHermanos: parseInt(formData.get('numeroHermanos')),
                 conQuienVive: formData.get('conQuienVive'),
-                tienePersonasACargo: formData.get('tienePersonasACargo') === 'true',
+                tienePersonasACargo: formData.get('tienePersonasACargo'),
                 rolFamiliar: formData.get('rolFamiliar'),
                 escolaridad: formData.get('escolaridad'),
                 ocupacion: formData.get('ocupacion'),

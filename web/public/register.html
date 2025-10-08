@@ -383,6 +383,10 @@
             loadingDiv.style.display = 'block';
             registerBtn.disabled = true;
             
+            const pertenece = document.getElementById('perteneceUniversidad');
+
+            console.log(pertenece)
+            
             const formData = new FormData(e.target);
             const data = {
                 primerNombre: formData.get('primerNombre'),
@@ -394,7 +398,7 @@
                 telefonoPersonal: formData.get('telefonoPersonal'),
                 segundoTelefono: formData.get('segundoTelefono'),
                 fechaNacimiento: formData.get('fechaNacimiento'),
-                perteneceUniversidad: document.getElementById('perteneceUniversidad').checked,
+                perteneceUniversidad: pertenece.checked ? 'Si' : 'No',              
                 password: formData.get('password')
             };
             
@@ -416,7 +420,7 @@
                         id: result.userId,
                         primerNombre: data.primerNombre,
                         correo: data.correo,
-                        consentimientoInformado: false
+                        consentimientoInformado: 'No'
                     };
                     console.log('Token recibido:', result.token); // DEBUG
                     localStorage.setItem('token', result.token);

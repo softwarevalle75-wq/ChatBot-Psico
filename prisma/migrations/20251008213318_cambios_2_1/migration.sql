@@ -1,0 +1,10 @@
+/*
+  Warnings:
+
+  - You are about to alter the column `consentimientoInformado` on the `informacionusuario` table. The data in that column could be lost. The data in that column will be cast from `TinyInt` to `VarChar(191)`.
+  - You are about to alter the column `autorizacionDatos` on the `informacionusuario` table. The data in that column could be lost. The data in that column will be cast from `TinyInt` to `VarChar(191)`.
+
+*/
+-- AlterTable
+ALTER TABLE `informacionusuario` MODIFY `consentimientoInformado` VARCHAR(191) NOT NULL DEFAULT 'No',
+    MODIFY `autorizacionDatos` VARCHAR(191) NOT NULL DEFAULT 'No';

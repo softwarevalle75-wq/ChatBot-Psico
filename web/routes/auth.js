@@ -57,9 +57,9 @@ router.post('/register', async (req, res) => {
                 correo,
                 segundoCorreo,
                 fechaNacimiento: new Date(fechaNacimiento),
-                perteneceUniversidad: perteneceUniversidad === 'true',
+                perteneceUniversidad,
                 password: hashedPassword,
-                consentimientoInformado: false
+                consentimientoInformado: "No"
             }
         });
 
@@ -131,7 +131,7 @@ router.post('/consent', async (req, res) => {
 
         await prisma.informacionUsuario.update({
             where: { idUsuario: userId },
-            data: { consentimientoInformado: true }
+            data: { consentimientoInformado: "Si" }
         });
 
         res.json({ message: 'Consentimiento registrado' });
@@ -239,7 +239,7 @@ router.post('/sociodemografico', async (req, res) => {
                 numeroHijos: numeroHijos || 0,
                 numeroHermanos: numeroHermanos || 0,
                 conQuienVive,
-                tienePersonasACargo: tienePersonasACargo || false,
+                tienePersonasACargo: tienePersonasACargo || "No",
                 rolFamiliar,
                 escolaridad,
                 ocupacion,
@@ -251,7 +251,7 @@ router.post('/sociodemografico', async (req, res) => {
                 numeroHijos: numeroHijos || 0,
                 numeroHermanos: numeroHermanos || 0,
                 conQuienVive,
-                tienePersonasACargo: tienePersonasACargo || false,
+                tienePersonasACargo: tienePersonasACargo || "No",
                 rolFamiliar,
                 escolaridad,
                 ocupacion,
@@ -359,7 +359,7 @@ router.post('/tratamiento-datos', async (req, res) => {
         await prisma.informacionUsuario.update({
             where: { idUsuario: usuarioId },
             data: {
-                autorizacionDatos: autorizacionDatos || false
+                autorizacionDatos: autorizacionDatos || 'No'
             }
         });
 
@@ -394,7 +394,7 @@ router.get('/check-tratamiento-datos', async (req, res) => {
             where: { idUsuario: usuarioId },
             select: {
                 idUsuario: true,
-                autorizacionDatos: true
+                autorizacionDatos: "Si"
             }
         });
 

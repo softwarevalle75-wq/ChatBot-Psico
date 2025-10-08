@@ -424,10 +424,11 @@
                 document.getElementById('universitySection').style.display = 'block';
             }
             
-            // Si ya completó el consentimiento, redirigir a login
-            if (user.consentimientoInformado) {
-                window.location.href = '/login';
-            }
+            // // Si ya completó el consentimiento, redirigir a login
+            // if (user.consentimientoInformado) {
+            //     window.location.href = '/login';
+            //     console.log("Consentimiento completado")
+            // }
         });
 
         document.getElementById('consentimientoForm').addEventListener('submit', async (e) => {
@@ -443,7 +444,7 @@
             successDiv.style.display = 'none';
             
             // Validar consentimiento informado
-            const consentimiento = document.getElementById('consentimientoInformado').checked;
+            const consentimiento = document.getElementById('consentimientoInformado');
             if (!consentimiento) {
                 errorDiv.textContent = 'Debe aceptar el consentimiento informado para continuar';
                 errorDiv.style.display = 'block';
@@ -453,7 +454,7 @@
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const data = {
                 userId: user.id,
-                consentimientoInformado: consentimiento
+                consentimientoInformado: consentimiento.checked ? 'Si' : 'No'
             };
             
             // Si es estudiante universitario, validar campos adicionales
@@ -499,7 +500,7 @@
                 
                 if (response.ok) {
                     // Actualizar datos del usuario en localStorage
-                    user.consentimientoInformado = true;
+                    user.consentimientoInformado = 'Si';
                     if (data.semestre) user.semestre = data.semestre;
                     if (data.jornada) user.jornada = data.jornada;
                     if (data.carrera) user.carrera = data.carrera;

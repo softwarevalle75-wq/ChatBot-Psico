@@ -333,7 +333,7 @@
             successDiv.style.display = 'none';
 
             // Validar autorización de datos
-            const autorizacion = document.getElementById('autorizacionDatos').checked;
+            const autorizacion = document.getElementById('autorizacionDatos');
             if (!autorizacion) {
                 errorDiv.textContent = 'Debe autorizar el tratamiento de datos para continuar';
                 errorDiv.style.display = 'block';
@@ -343,7 +343,7 @@
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const data = {
                 userId: user.id,
-                autorizacionDatos: autorizacion
+                autorizacionDatos: autorizacion.checked ? 'Si' : 'No'
             };
 
             // Mostrar loading
@@ -365,7 +365,7 @@
 
                 if (response.ok) {
                     // Actualizar datos del usuario en localStorage
-                    user.autorizacionDatos = true;
+                    user.autorizacionDatos = 'Si';
                     localStorage.setItem('user', JSON.stringify(user));
 
                     successDiv.textContent = 'Autorización guardada exitosamente. Redirigiendo...';

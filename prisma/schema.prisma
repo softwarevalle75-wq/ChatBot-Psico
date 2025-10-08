@@ -19,13 +19,13 @@ model informacionUsuario {
   correo                  String    @unique
   segundoCorreo           String?
   fechaNacimiento         DateTime
-  perteneceUniversidad    Boolean   @default(false)
+  perteneceUniversidad    String   @default("No") 
   semestre                String?
   jornada                 String?
   carrera                 String?
   password                String
-  consentimientoInformado Boolean   @default(false)
-  autorizacionDatos       Boolean   @default(false)
+  consentimientoInformado String   @default("No") 
+  autorizacionDatos       String   @default("No") 
   ayudaPsicologica        String?
   flujo                   String?
   historial               Json?
@@ -207,7 +207,7 @@ model InformacionSociodemografica {
   numeroHijos           Int @default(0)
   numeroHermanos        Int @default(0)
   conQuienVive          String
-  tienePersonasACargo   Boolean @default(false)
+  tienePersonasACargo   String @default("Si")
   rolFamiliar           RolFamiliar
   escolaridad           Escolaridad
   ocupacion             String
