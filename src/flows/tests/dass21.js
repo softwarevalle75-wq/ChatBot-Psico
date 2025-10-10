@@ -167,17 +167,39 @@ export const procesarDass21 = async (numeroUsuario, respuestas) => {
 				puntajes.ansiedad,
 				puntajes.estres,
 				estado.resPreg, 
-			)
+			)			
 
-			await guardarResultadoPrueba(numeroUsuario, tipoTest, {
-				puntaje: puntajes,
-				respuestasPorPuntos: estado.resPreg,
-				interpretacion: await evaluarDASS21(puntajes, {
-					depresion: cuestDass21.umbralesDep,
-					ansiedad: cuestDass21.umbralesAns,
-					estres: cuestDass21.umbralesEstr,
-				})
+			// Se guarda el resultado en la BD
+			const interpretaciones = await evaluarDASS21( puntajes, {
+				depresion: cuestDass21.umbralesDep,
+				ansiedad: cuestDass21.umbralesAns,
+				estres: cuestDass21.umbralesEstr,
 			});
+
+			const datosFormateados =
+				'*PUNTAJES*' +
+				`\n    Depresión: ${puntajes.depresion}` +
+				`\n    Ansiedad: ${puntajes.ansiedad}` +
+				`\n    Estrés: ${puntajes.estres} \n` +
+				'*RESPUESTAS POR PUNTOS*' +
+				`\n    Puntaje 0: [${estado.resPreg[0]?.join(', ') || ''}]` +
+				`\n    Puntaje 1: [${estado.resPreg[1]?.join(', ') || ''}]` +
+				`\n    Puntaje 2: [${estado.resPreg[2]?.join(', ') || ''}]` +
+				`\n    Puntaje 3: [${estado.resPreg[3]?.join(', ') || ''}] \n` +
+				'*INTERPRETACIONES*' +
+				`\n${interpretaciones};`
+
+			await guardarResultadoPrueba(numeroUsuario, tipoTest, datosFormateados)
+
+			// await guardarResultadoPrueba(numeroUsuario, tipoTest, {
+			// 	puntaje: puntajes,
+			// 	respuestasPorPuntos: estado.resPreg,
+			// 	interpretacion: await evaluarDASS21(puntajes, {
+			// 		depresion: cuestDass21.umbralesDep,
+			// 		ansiedad: cuestDass21.umbralesAns,
+			// 		estres: cuestDass21.umbralesEstr,
+			// 	})
+			// });
 
 			const resultados = await evaluarDASS21(
 				puntajes,
@@ -359,9 +381,9 @@ export const evaluarDASS21 = async (puntajes, umbrales) => {
 
 	console.log('Resultado final:', resultado)
 
-	return `*Depresión:* ${resultado.depresion.nivel} (${resultado.depresion.puntaje} puntos)
-*Ansiedad:* ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje} puntos)
-*Estrés:* ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos)`;
+	return  `    Depresión: ${resultado.depresion.nivel} (${resultado.depresion.puntaje} puntos) \n` +
+			`    Ansiedad: ${resultado.ansiedad.nivel} (${resultado.ansiedad.puntaje} puntos) \n` +
+			`    Estrés:* ${resultado.estres.nivel} (${resultado.estres.puntaje} puntos);`
 }
 
 

@@ -29,16 +29,16 @@ const cuestGhq12 = {
     umbrales: {
         bajo: {
             max: 11,
-            mensaje: 'No hay presencia de síntomas significativos de malestar psicológico 🟢',
+            mensaje: '    No hay presencia de síntomas significativos de malestar psicológico 🟢',
         },
         medio: { 
             min: 12, 
             max: 18, 
-            mensaje: 'Hay cierto grado de preocupación emocional 🟡' 
+            mensaje: '    Hay cierto grado de preocupación emocional 🟡' 
         },
         alto: { 
             min: 19, 
-            mensaje: 'Hay un indicador de malestar psicológico significativo 🔴' 
+            mensaje: '    Hay un indicador de malestar psicológico significativo 🔴' 
         },
     },
     resPreg: {
@@ -120,12 +120,32 @@ export const procesarGHQ12 = async (numeroUsuario, respuestas) => {
             )
             await savePuntajeUsuario(numeroUsuario, tipoTest, estado.Puntaje, estado.resPreg )
 
+            // await guardarResultadoPrueba(numeroUsuario, tipoTest, {
+            //     puntaje: estado.Puntaje,
+            //     respuestasPorPuntos: estado.resPreg,
+            //     interpretacion: await evaluarGHQ12(estado.Puntaje, umbrales)
+            // });
+
             // Se guarda el resultado en la BD
-            await guardarResultadoPrueba(numeroUsuario, tipoTest, {
-                puntaje: estado.Puntaje,
-                respuestasPorPuntos: estado.resPreg,
-                interpretacion: await evaluarGHQ12(estado.Puntaje, umbrales)
-            });
+            const interpretacion = await evaluarGHQ12(estado.Puntaje, umbrales)            
+            const datosFormateados = 
+            '*PUNTAJE' +
+            `\n    Total: ${estado.Puntaje} \n` +
+            '*RESPUESTAS POR PUNTOS*' +
+            `\n    Puntaje 0: [${estado.resPreg[0]?.join(', ') || ''}]` +
+            `\n    Puntaje 1: [${estado.resPreg[1]?.join(', ') || ''}]` +
+            `\n    Puntaje 2: [${estado.resPreg[2]?.join(', ') || ''}]` +
+            `\n    Puntaje 3: [${estado.resPreg[3]?.join(', ') || ''}] \n` +
+            '*INTERPRETACIÓN*' +
+            `\n    ${interpretacion}`;
+
+            await guardarResultadoPrueba(numeroUsuario, tipoTest, datosFormateados);
+
+            // await guardarResultadoPrueba(numeroUsuario, tipoTest, {
+            //     puntaje: estado.Puntaje,
+            //     respuestasPorPuntos: estado.resPreg,
+            //     interpretacion: await evaluarGHQ12(estado.Puntaje, umbrales)
+            // });
 
 
             try {

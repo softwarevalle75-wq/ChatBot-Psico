@@ -56,7 +56,7 @@ model HistorialTest {
   usuarioId         String
   tipoTest          String
   fechaCompletado   DateTime @default(now())
-  resultados        Json
+  resultados        String @db.Text
 
   @@index([usuarioId]) // Indice para optimizar busquedas por usuario
 }
