@@ -20,7 +20,7 @@ model informacionUsuario {
   segundoCorreo           String?
   fechaNacimiento         DateTime
   perteneceUniversidad    String   @default("No") 
-  semestre                String?
+  semestre                Int?
   jornada                 String?
   carrera                 String?
   password                String

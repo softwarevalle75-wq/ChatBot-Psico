@@ -45,7 +45,7 @@ export const checkUserAuthentication = async (telefono) => {
             return {
                 authenticated: true,
                 registered: true,
-                consentimientoInformado: 'No',
+                consentimientoInformado: false,
                 message: 'Debe completar el consentimiento informado en la página web.'
             };
         }

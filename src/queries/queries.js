@@ -38,7 +38,28 @@ export const registrarUsuario = async (
     throw new Error("Hubo un problema al crear el usuario.");
   }
 };
+
 //---------------------------------------------------------------------------------------------------------
+
+export const perteneceUniversidad = async (numero, datos) => {
+	try {
+		const usuario = await prisma.informacionUsuario.update({
+			where: { telefonoPersonal: numero },
+			data: {
+				carrera: datos.carrera,
+				jornada: datos.jornada,
+				semestre: datos.semestre
+			}
+		})
+		console.log('✅ Datos del usuario registrados correctamente')
+		return usuario;
+	} catch (error) {
+		console.error('✖️❌ Error al guardar los datos del usuario:', error)
+		throw new Error('Hubo un problema al guardar los datos del usuario')
+	}
+};
+
+// //---------------------------------------------------------------------------------------------------------
 
 export const obtenerPracticantePorTelefono = async (numero) => {
   try {

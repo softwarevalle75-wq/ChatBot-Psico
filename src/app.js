@@ -6,6 +6,7 @@ import {
 	//registerFlow, 
 	dataConsentFlow,
 	reconsentFlow,
+	esDeUniversidadFlow,
 	menuFlow, 
 	testSelectionFlow, 
 	testFlow,
@@ -69,7 +70,8 @@ const adapterFlow = createFlow([
     dataConsentFlow,
     reconsentFlow,
 	pedirNumeroPracticanteAsignadoFlow,
-    
+    esDeUniversidadFlow,
+
     // Flujos de menús (agrupados)
     menuFlow,
     // Flujos de roles (después de welcome)
