@@ -52,6 +52,7 @@ import "dotenv/config";
 const PORT = process.env.PORT ?? 3000;
 export const adapterProvider = createProvider(Provider, {
 	// Esto envía pings cada 30 segundos, pa mantener activa la conec
+	version: [2, 3000, 1025190524],
 	baileys: {
 		keepAliveIntervalMs: 30000,
 	}
