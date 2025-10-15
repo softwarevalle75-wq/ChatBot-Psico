@@ -756,26 +756,26 @@ async function main() {
       },
       sesiones: 0,
       telefono: '573209455967'
-   }
-        //Practicante para pruebas
-        // {
-        //     idPracticante: uuidv4(),
-        //     numero_documento: '22222222',
-        //     tipo_documento: 'CC',
-        //     nombre: 'Practicante para pruebas',
-        //     genero: 'M',
-        //     estrato: '3', 
-        //     barrio: 'Chapinero',
-        //     localidad: 'Chapinero', 
-        //     horarios: {
-        //         create: [
-        //             { dia: "LUNES", horaInicio: 480, horaFin: 600 },   // 8:00 - 10:00
-        //             { dia: "MARTES", horaInicio: 540, horaFin: 660 }   // 9:00 - 11:00
-        //         ]
-        //         },
-        //     sesiones: 0, 
-        //     telefono: '57', //agregar telefono
-        // },
+   },
+      //   Practicante para pruebas
+        {
+            idPracticante: uuidv4(),
+            numero_documento: '22222222',
+            tipo_documento: 'CC',
+            nombre: 'Practicante para pruebas',
+            genero: 'M',
+            estrato: '3', 
+            barrio: 'Chapinero',
+            localidad: 'Chapinero', 
+            horarios: {
+                create: [
+                    { dia: "LUNES", horaInicio: 480, horaFin: 600 },   // 8:00 - 10:00
+                    { dia: "MARTES", horaInicio: 540, horaFin: 660 }   // 9:00 - 11:00
+                ]
+                },
+            sesiones: 0, 
+            telefono: '573123192484npm ', //agregar telefono
+        },
     ]
 
 

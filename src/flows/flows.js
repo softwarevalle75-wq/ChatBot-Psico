@@ -8,7 +8,8 @@ import {
 	switchFlujo,
 	//switchAyudaPsicologica,
 	guardarPracticanteAsignado,
-  perteneceUniversidad
+  perteneceUniversidad,
+  verificarRolUsuario,
 } from '../queries/queries.js'
 //import { apiRegister } from './register/aiRegister.js'
 import { menuCuestionarios, parsearSeleccionTest} from './tests/controlTest.js'

@@ -17,6 +17,10 @@ model informacionUsuario {
   telefonoPersonal        String    @unique
   segundoTelefono         String?
   correo                  String    @unique
+  documento               String?  @unique
+  tipoDocumento           String   @default("CC")  
+  sesion                  Int      @default(0)
+  estado                  Boolean  @default(true)
   segundoCorreo           String?
   fechaNacimiento         DateTime
   perteneceUniversidad    String   @default("No") 
@@ -32,6 +36,7 @@ model informacionUsuario {
   testActual              String?
   fechaCreacion           DateTime  @default(now())
   fechaActualizacion      DateTime  @updatedAt
+  isAuthenticated         Boolean   @default(false)
   
   // Relación con información sociodemográfica
   informacionSociodemografica InformacionSociodemografica?

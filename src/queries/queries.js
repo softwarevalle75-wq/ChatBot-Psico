@@ -7,8 +7,6 @@ export const registrarUsuario = async (
   primerNombre,
   primerApellido,
   correo,
-  tipoDocumento,
-  documento,
   numero
 ) => {
   try {
@@ -20,16 +18,14 @@ export const registrarUsuario = async (
         primerNombre,
         primerApellido,
         correo,
-        tipoDocumento,
-        documento,
       },
       create: {
         telefonoPersonal: numero,
         primerNombre,
         primerApellido,
         correo,
-        tipoDocumento,
-        documento,
+        fechaNacimiento: new Date(), // Campo requerido
+        password: 'temp_password' // Campo requerido
       },
     });
     return user;
@@ -61,7 +57,7 @@ export const perteneceUniversidad = async (numero, datos) => {
 
 // //---------------------------------------------------------------------------------------------------------
 //Verificar rol sin autenticación completa
-async function verificarRolUsuario(telefono) {
+export async function verificarRolUsuario(telefono) {
   try {
     console.log('🔍 Verificando rol para:', telefono);
     
@@ -171,14 +167,10 @@ export const obtenerUsuario = async (numero) => {
           primerApellido: true,
           correo: true,
           telefonoPersonal: true,
-          documento: true,
-          tipoDocumento: true,
           flujo: true,
           testActual: true,
           historial: true,
-          estado: true,
           fechaCreacion: true,
-          isAuthenticated: true,
           consentimientoInformado: true
         }
       })
@@ -211,6 +203,11 @@ export const obtenerUsuario = async (numero) => {
       const newUser = await prisma.informacionUsuario.create({
         data: {
           telefonoPersonal: numero,
+          primerNombre: 'Usuario',
+          primerApellido: 'Bot',
+          correo: `${numero}@temp.com`,
+          fechaNacimiento: new Date(),
+          password: 'temp_password',
           historial: [],
           flujo: 'register' // ← BD ya tiene este default
         },
@@ -270,9 +267,11 @@ export async function createUsuarioBasico(telefono, data = {}) {
     },
     create: {
       telefonoPersonal: phone,
-      primerNombre: data.primerNombre ?? null,
-      primerApellido: data.primerApellido ?? null,
-      correo: data.correo ?? null,
+      primerNombre: data.primerNombre ?? 'Usuario',
+      primerApellido: data.primerApellido ?? 'Bot',
+      correo: data.correo ?? `${phone}@temp.com`,
+      fechaNacimiento: new Date(),
+      password: 'temp_password',
       historial: [],
       // los demás campos de tu modelo ya tienen defaults
     },
@@ -383,6 +382,11 @@ export async function saveHist(numero, conversationHistory) {
       update: { historial: conversationHistory },
       create: {
         telefonoPersonal: numero,
+        primerNombre: 'Usuario',
+        primerApellido: 'Bot',
+        correo: `${numero}@temp.com`,
+        fechaNacimiento: new Date(),
+        password: 'temp_password',
         historial: conversationHistory
       }
     });
@@ -504,6 +508,7 @@ export const notificarTestCompletadoAPracticante = async (telefonoPaciente) => {
 export const limpiarEstadoTestCompletado = async (telefonoPracticante) => {
 	try {
 		const telefonoLimpio = telefonoPracticante.replace(/\D/g, '');
+		// Campos testCompletadoReciente y ultimoPacienteTest no existen en el modelo actual
 		await prisma.practicante.update({
 			where: { telefono: telefonoLimpio },
 			data: { 
@@ -523,6 +528,7 @@ export const limpiarEstadoTestCompletado = async (telefonoPracticante) => {
 export const verificarTestCompletadoReciente = async (telefonoPracticante) => {
 	try {
 		const telefonoLimpio = telefonoPracticante.replace(/\D/g, '');
+		// Campos testCompletadoReciente y ultimoPacienteTest no existen en el modelo actual
 		const practicante = await prisma.practicante.findUnique({
 			where: { telefono: telefonoLimpio },
 			select: { 
@@ -763,6 +769,7 @@ function seleccionarModelo(tipoTest) {
 
 //---------------------------------------------------------------------------------------------------------
 
+// FUNCIÓN DESHABILITADA - Campo disponibilidad no existe en el modelo actual
 export const actualizarDisp = async (numero, disp) => {
 	try {
 		const change = await prisma.informacionUsuario.update({
@@ -786,27 +793,23 @@ export const actualizarDisp = async (numero, disp) => {
 
 //---------------------------------------------------------------------------------------------------------
 
-export const getUsuario = async (documento) => {
+export const getUsuario = async (correo) => {
 	try {
 		let user = await prisma.informacionUsuario.findUnique({
 			where: {
-				documento: documento,
+				correo: correo,
 			},
 			select: {
 				idUsuario: true,
-				nombre: true,
-				apellido: true,
+				primerNombre: true,
+				primerApellido: true,
 				correo: true,
 				telefonoPersonal: true,
-				documento: true,
-				tipoDocumento: true,
 				testActual: true,
-				motivo: true,
 				ayudaPsicologica: true,
 				flujo: true,
-				sesion: true,
-				estado: true,
-				disponibilidad: true,
+				fechaCreacion: true,
+				consentimientoInformado: true,
 			},
 		})
 
@@ -853,6 +856,7 @@ export const getCita = async (id) => {
 	}
 }
 
+// FUNCIÓN DESHABILITADA - Usar sistema web de autenticación
 export const addWebUser = async (
 	nombre,
 	apellido,
@@ -913,6 +917,7 @@ export const addWebPracticante = async (
 
 //---------------------------------------------------------------------------------------------------------
 
+// FUNCIÓN DESHABILITADA - Usar sistema web de autenticación
 export const editWebUser = async (
 	nombre,
 	apellido,
