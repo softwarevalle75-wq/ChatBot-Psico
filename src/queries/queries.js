@@ -60,6 +60,44 @@ export const perteneceUniversidad = async (numero, datos) => {
 };
 
 // //---------------------------------------------------------------------------------------------------------
+//Verificar rol sin autenticación completa
+async function verificarRolUsuario(telefono) {
+  try {
+    console.log('🔍 Verificando rol para:', telefono);
+    
+    // Buscar con el número tal como viene
+    let rolInfo = await prisma.rolChat.findUnique({
+      where: { telefono: telefono },
+      select: {
+        telefono: true,
+        rol: true
+      }
+    });
+
+    // Si no encuentra y el número empieza con 57, buscar sin prefijo
+    if (!rolInfo && telefono.startsWith('57')) {
+      const telefonoSinPrefijo = telefono.substring(2);
+      console.log('🔍 Buscando rol sin prefijo 57:', telefonoSinPrefijo);
+      
+      rolInfo = await prisma.rolChat.findUnique({
+        where: { telefono: telefonoSinPrefijo },
+        select: {
+          telefono: true,
+          rol: true
+        }
+      });
+    }
+
+    console.log('📋 Rol encontrado:', rolInfo ? rolInfo.rol : 'No encontrado');
+    return rolInfo;
+    
+  } catch (error) {
+    console.error('❌ Error verificando rol:', error);
+    return null;
+  }
+}
+
+// //---------------------------------------------------------------------------------------------------------
 
 export const obtenerPracticantePorTelefono = async (numero) => {
   try {

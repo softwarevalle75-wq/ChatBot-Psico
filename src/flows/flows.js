@@ -51,11 +51,31 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         return;
       }
 
-      // 2. VERIFICAR AUTENTICACIÓN WEB PRIMERO (SIEMPRE)
+      // 2. ⭐ NUEVO: VERIFICAR SI ES PRACTICANTE PRIMERO (ANTES DE AUTENTICAR)
+      const rolInfo = await verificarRolUsuario(ctx.from);
+      
+      if (rolInfo && rolInfo.rol === 'practicante') {
+        console.log('🔑 Practicante detectado -> Enviando a flujo de practicantes SIN autenticación');
+        
+        const usuarioPracticante = {
+          tipo: 'practicante',
+          data: { telefono: ctx.from, rol: 'practicante' },
+          flujo: 'practMenuFlow'
+        };
+        
+        await state.update({ 
+          initialized: true, 
+          user: usuarioPracticante 
+        });
+        
+        return await handlePracticanteFlow(ctx, usuarioPracticante, state, gotoFlow, flowDynamic);
+      }
+
+      // 3. VERIFICAR AUTENTICACIÓN WEB SOLO PARA USUARIOS NORMALES
       const authUser = await verificarAutenticacionWeb(ctx.from, flowDynamic);
       if (!authUser) return; // Si no está autenticado, parar aquí
       
-      // 3. CREAR OBJETO USER CON DATOS AUTENTICADOS
+      // 4. CREAR OBJETO USER CON DATOS AUTENTICADOS
       const usuarioAutenticado = {
         tipo: 'usuario',
         data: authUser,
@@ -63,10 +83,10 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
       };
       console.log('👤 Usuario autenticado:', usuarioAutenticado);      
       
-      // 4. ACTUALIZAR ESTADO CON USUARIO
+      // 5. ACTUALIZAR ESTADO CON USUARIO
       await state.update({ initialized: true, user: usuarioAutenticado });
 
-      // 5. Verificar si pertenece a la universidad
+      // 6. Verificar si pertenece a la universidad
       if (authUser.perteneceUniversidad === 'Si'){
         console.log(`${ctx.from} pertenece a la Universitaria`)
         
@@ -75,17 +95,12 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         return gotoFlow(esDeUniversidadFlow)
       }
 
-      // 6. MANEJAR POR TIPO DE USUARIO (practicantes tienen lógica especial)
-      if (usuarioAutenticado.tipo === 'practicante') {
-        return await handlePracticanteFlow(ctx, usuarioAutenticado, state, gotoFlow, flowDynamic);
-      }
-
       // 7. MANEJAR USUARIOS NORMALES - SIEMPRE AL MENÚ (ya están autenticados)
       console.log('✅ Usuario autenticado -> menuFlow');
-      // Resetear flujo a menuFlow para evitar redirecciones automáticas
       await switchFlujo(ctx.from, 'menuFlow');
       await state.update({ currentFlow: 'menu' });
       return gotoFlow(menuFlow);
+      
     } catch (e) {
       console.error('❌ welcomeFlow error:', e);
       return gotoFlow(menuFlow);
