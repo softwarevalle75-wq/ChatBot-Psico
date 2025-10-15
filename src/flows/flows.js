@@ -86,7 +86,6 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
       await switchFlujo(ctx.from, 'menuFlow');
       await state.update({ currentFlow: 'menu' });
       return gotoFlow(menuFlow);
-      
     } catch (e) {
       console.error('❌ welcomeFlow error:', e);
       return gotoFlow(menuFlow);
