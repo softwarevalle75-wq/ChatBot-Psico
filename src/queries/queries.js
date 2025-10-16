@@ -202,14 +202,14 @@ export const obtenerUsuario = async (numero) => {
       }
       const newUser = await prisma.informacionUsuario.create({
         data: {
-          telefonoPersonal: numero,
-          primerNombre: 'Usuario',
-          primerApellido: 'Bot',
-          correo: `${numero}@temp.com`,
-          fechaNacimiento: new Date(),
-          password: 'temp_password',
-          historial: [],
-          flujo: 'register' // ← BD ya tiene este default
+			telefonoPersonal: numero,
+			primerNombre: '',
+			primerApellido: '', 	
+			correo: '',
+			fechaNacimiento: new Date(),
+			password: '',
+			historial: [],
+			flujo: 'register' // ← BD ya tiene este default
         },
 
         select: {
