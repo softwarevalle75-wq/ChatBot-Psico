@@ -97,10 +97,11 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
       }
 
       // 7. MANEJAR USUARIOS NORMALES - SIEMPRE AL MENÚ (ya están autenticados)
-      console.log('✅ Usuario autenticado -> menuFlow');
-      await switchFlujo(ctx.from, 'menuFlow');
-      await state.update({ currentFlow: 'menu' });
-      return gotoFlow(menuFlow);
+      return await handleUserFlow(ctx, usuarioAutenticado, state, gotoFlow)
+      // console.log('✅ Usuario autenticado -> menuFlow');
+      // await switchFlujo(ctx.from, 'menuFlow');
+      // await state.update({ currentFlow: 'menu' });
+      // return gotoFlow(menuFlow);
       
     } catch (e) {
       console.error('❌ welcomeFlow error:', e);
@@ -122,6 +123,64 @@ async function handlePracticanteFlow(ctx, user, state, gotoFlow) {
   console.log('🔑 Practicante detectado -> practMenuFlow');
   await state.update({ currentFlow: 'practicante' });
   return gotoFlow(practMenuFlow);
+}
+
+//----
+// Función auxiliar para manejar flujo de usuarios normales
+async function handleUserFlow(ctx, user, state, gotoFlow) {
+  console.log('📋 Flujo BD:', user.flujo);
+  
+  switch (user.flujo) {
+    // case 'register':
+    //   console.log('📝 Usuario en registro -> registerFlow');
+    //   await state.update({ currentFlow: 'register' });
+    //   return gotoFlow(registerFlow);
+      
+    // case 'consentimiento_rechazado':
+    //   console.log('❌ Usuario rechazó consentimiento -> reconsentFlow');
+    //   return gotoFlow(reconsentFlow);
+      
+    case 'menuFlow':
+      console.log('📋 -> menuFlow');
+      await state.update({ currentFlow: 'menu' });
+      return gotoFlow(menuFlow);
+      
+    case 'testFlow':
+      if (await state.get('currentFlow') !== 'test') {
+        console.log('📝 -> testFlow (desde welcomeFlow)');
+        await state.update({ 
+          currentFlow: 'test',
+          justInitializedTest: true,
+          user: user,
+          testAsignadoPorPracticante: true
+        });
+        return gotoFlow(testFlow);
+      } else {
+        console.log('🔄 Ya estamos en testFlow, no redirigir');
+        return;
+      }
+      
+    case 'agendFlow':
+      console.log('📅 -> agendFlow');
+      await state.update({ currentFlow: 'agenda' });
+      return gotoFlow(agendFlow);
+      
+    case 'testSelectionFlow':
+      if (await state.get('currentFlow') !== 'testSelection') {
+        console.log('🎯 -> testSelectionFlow');
+        await state.update({ currentFlow: 'testSelection' });
+        return gotoFlow(testSelectionFlow);
+      } else {
+        console.log('🔄 Ya estamos en testSelectionFlow, no redirigir');
+        return;
+      }
+
+    default:
+      console.log('❓ Flujo por defecto -> menuFlow');
+      await switchFlujo(ctx.from, 'menuFlow');
+      await state.update({ currentFlow: 'menu' });
+      return gotoFlow(menuFlow);
+  }
 }
 
 // ========================================
