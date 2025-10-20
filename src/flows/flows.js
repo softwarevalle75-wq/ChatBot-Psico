@@ -25,6 +25,8 @@ import {
   formatearMensajeCita,
   formatearHorariosDisponibles 
 } from '../helpers/agendHelper.js';
+import Prisma from '@prisma/client'
+export const prisma = new Prisma.PrismaClient()
 //---------------------------------------------------------------------------------------------------------
 
 export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
@@ -57,12 +59,28 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
       
       if (rolInfo && rolInfo.rol === 'practicante') {
         console.log('🔑 Practicante detectado -> Enviando a flujo de practicantes SIN autenticación');
-        
+
+        const practicanteCompleto = await prisma.practicante.findUnique({
+          where: { telefono: rolInfo.telefono },
+          select: {
+            idPracticante: true,
+            nombre: true,
+            telefono: true,
+          }
+        })
+
         const usuarioPracticante = {
           tipo: 'practicante',
-          data: { telefono: ctx.from, rol: 'practicante' },
+          data: { 
+            idPracticante: practicanteCompleto?.idPracticante || null,
+            nombre: practicanteCompleto.nombre || 'Sin nombre',
+            telefono: ctx.from, 
+            rol: 'practicante' 
+          },
           flujo: 'practMenuFlow'
         };
+
+        console.log('👨‍⚕️ Practicante a guardar:', JSON.stringify(usuarioPracticante, null, 2))
         
         await state.update({ 
           initialized: true, 
