@@ -265,7 +265,7 @@
             infoHTML += `
                 <div class="info-item">
                     <strong>Nombre:</strong><br>
-                    <span>${user.primerNombre} ${user.primerApellido}</span>
+                    <span>${[user.primerNombre, user.segundoNombre, user.primerApellido, user.segundoApellido].filter(Boolean).join(' ')}</span>
                 </div>
                 <div class="info-item">
                     <strong>Correo:</strong><br>

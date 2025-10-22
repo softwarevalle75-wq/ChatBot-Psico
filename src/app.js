@@ -44,11 +44,6 @@ import {
 	citasPorPaciente,
 } from "./queries/queries.js";
 
-
-
-import "dotenv/config";
-
-
 const PORT = process.env.PORT ?? 3000;
 export const adapterProvider = createProvider(Provider, {
 	// Esto envía pings cada 30 segundos, pa mantener activa la conec
@@ -110,6 +105,7 @@ const adapterFlow = createFlow([
 			user: process.env.MYSQL_DB_USER,
 			database: process.env.MYSQL_DB_NAME,
 			password: process.env.MYSQL_DB_PASSWORD,
+			timezone: '-05:00' // zona horaria para Colombia
 		});
 		console.log('✅ Base de datos configurada');
 	} catch (error) {

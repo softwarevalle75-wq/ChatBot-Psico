@@ -26,7 +26,7 @@
             width: 100%;
             max-width: 800px;
             margin: 0 auto;
-            padding: 40px;
+            padding: 20px;
         }
 
         .header {
@@ -40,7 +40,7 @@
             align-items: center;
             margin-top: 15px;
             margin-bottom: 40px;
-            gap: 20px;
+            gap: 16px;
         }
 
         .progress-step {
@@ -66,7 +66,7 @@
 
         .progress-circle.active {
             background: #667eea;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 2px 10px rgba(2, 29, 112, 0.3)
         }
 
         .progress-circle.completed {
@@ -180,7 +180,9 @@
         }
 
         .btn {
-            width: 100%;
+            width: 40%;
+            display: block;
+            margin: 0 auto;
             padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -263,6 +265,7 @@
         <div class="header">
             <h1>📊 Información Sociodemográfica</h1>
             <p>Complete la siguiente información para personalizar su experiencia</p>
+            <br>
 
             <!-- Indicadores de progreso -->
             <div class="progress-container">
@@ -445,6 +448,8 @@
                 !data.escolaridad || !data.ocupacion || !data.nivelIngresos) {
                 errorDiv.textContent = 'Todos los campos marcados con * son obligatorios';
                 errorDiv.style.display = 'block';
+                // Llevar el usuario al inicio de la página 
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
             
@@ -499,6 +504,8 @@
                     } else {
                         errorDiv.textContent = result.error || 'Error al guardar la información';
                         errorDiv.style.display = 'block';
+                        // Llevar el usuario al inicio de la página 
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 }
             } catch (error) {
@@ -509,6 +516,8 @@
                     errorDiv.textContent = 'Error inesperado. Intenta nuevamente.';
                 }
                 errorDiv.style.display = 'block';
+                // Llevar el usuario al inicio de la página 
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } finally {
                 loadingDiv.style.display = 'none';
                 submitBtn.disabled = false;

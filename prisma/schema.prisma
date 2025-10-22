@@ -22,7 +22,7 @@ model informacionUsuario {
   sesion                  Int      @default(0)
   estado                  Boolean  @default(true)
   segundoCorreo           String?
-  fechaNacimiento         DateTime
+  fechaNacimiento         DateTime @db.Date // Sólo muestra fecha AA-MM-DD
   perteneceUniversidad    String   @default("No") 
   semestre                Int?
   jornada                 String?
@@ -34,8 +34,8 @@ model informacionUsuario {
   flujo                   String?
   historial               Json?
   testActual              String?
-  fechaCreacion           DateTime  @default(now())
-  fechaActualizacion      DateTime  @updatedAt
+  fechaCreacion           DateTime  @default(now())  @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
+  fechaActualizacion      DateTime  @updatedAt       @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
   isAuthenticated         Boolean   @default(false)
   practicanteAsignado     String?
   
@@ -61,7 +61,7 @@ model HistorialTest {
   usuario           informacionUsuario @relation(fields: [usuarioId], references: [idUsuario])
   usuarioId         String
   tipoTest          String
-  fechaCompletado   DateTime @default(now())
+  fechaCompletado   DateTime @default(now()) @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
   resultados        String @db.Text
 
   @@index([usuarioId]) // Indice para optimizar busquedas por usuario
@@ -115,7 +115,7 @@ model consultorio {
   idConsultorio String   @id @unique @default(uuid())
   nombre        String
   activo        Boolean  @default(true)
-  fechaCreacion DateTime @default(now())
+  fechaCreacion DateTime @default(now()) @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
 
   citas         cita[] // Relación con cita
   registroCitas registroCitas[]
@@ -131,7 +131,7 @@ model practicante {
   barrio           String
   localidad        String
   sesiones         Int      @default(0)
-  fechaCreacion    DateTime @default(now())
+  fechaCreacion    DateTime @default(now())  @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
   telefono         String  @unique
 
   citas         cita[] // Relación con cita
@@ -171,8 +171,8 @@ enum Rol {
 model rolChat {
   telefono   String   @id @unique
   rol        Rol      @default(usuario)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())  @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
+  updatedAt  DateTime @updatedAt       @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
 }
 
 model cita {
@@ -180,9 +180,9 @@ model cita {
   idConsultorio String
   idUsuario     String
   idPracticante String
-  fechaHora     DateTime
+  fechaHora     DateTime                        @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
   estado        String   @default("pendiente")
-  fechaCreacion DateTime @default(now())
+  fechaCreacion DateTime @default(now())        @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
 
   consultorio consultorio        @relation(fields: [idConsultorio], references: [idConsultorio]) // Relación con consultorio
   usuario     informacionUsuario @relation(fields: [idUsuario], references: [idUsuario]) // Relación con informacionUsuario
@@ -194,9 +194,9 @@ model registroCitas {
   idConsultorio String
   idUsuario     String
   idPracticante String
-  fechaHora     DateTime
+  fechaHora     DateTime                        @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
   estado        String   @default("pendiente")
-  fechaCreacion DateTime @default(now())
+  fechaCreacion DateTime @default(now())        @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
 
   consultorio consultorio        @relation(fields: [idConsultorio], references: [idConsultorio]) // Relación con consultorio
   usuario     informacionUsuario @relation(fields: [idUsuario], references: [idUsuario]) // Relación con informacionUsuario
@@ -218,8 +218,8 @@ model InformacionSociodemografica {
   escolaridad           Escolaridad
   ocupacion             String
   nivelIngresos         NivelIngresos
-  fechaCreacion         DateTime @default(now())
-  fechaActualizacion    DateTime @updatedAt
+  fechaCreacion         DateTime @default(now())  @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
+  fechaActualizacion    DateTime @updatedAt       @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
   
   // Relación con usuario
   usuario               informacionUsuario @relation(fields: [usuarioId], references: [idUsuario], onDelete: Cascade)

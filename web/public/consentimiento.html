@@ -26,7 +26,7 @@
             width: 100%;
             max-width: 700px;
             margin: 0 auto;
-            padding: 40px;
+            padding: 20px;
         }
 
         .header {
@@ -40,7 +40,7 @@
             align-items: center;
             margin-top: 15px;
             margin-bottom: 40px;
-            gap: 20px;
+            gap: 12px;
         }
 
         .progress-step {
@@ -66,7 +66,7 @@
 
         .progress-circle.active {
             background: #667eea;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 2px 10px rgba(2, 29, 112, 0.3)
         }
 
         .progress-circle.completed {
@@ -195,7 +195,9 @@
         }
 
         .btn {
-            width: 100%;
+            width: 40%;
+            display: block;
+            margin: 0 auto;
             padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -287,6 +289,7 @@
         <div class="header">
             <h1>📋 Consentimiento informado – Tamizaje en salud mental</h1>
             <p>Programa de Psicología – Institución Universitaria de Colombia</p>
+            <br>
 
             <!-- Indicadores de progreso -->
             <div class="progress-container">
@@ -321,8 +324,6 @@
                 <h3>Acuerdo para Tamizaje en Salud Mental</h3>
             </center>
             <div class="consent-text">
-                <!-- <p><strong>Programa de Psicología – Institución Universitaria de Colombia</strong></p> -->
-
                 <p>Al participar en este tamizaje, declaro que:</p>
 
                 <p>Su objetivo es identificar aspectos relacionados con mi salud mental para orientar acciones de apoyo y, si es necesario, remisión a servicios especializados.</p>
@@ -350,7 +351,7 @@
         </div>
 
         <!-- Información Universitaria -->
-        <div class="section" id="universitySection" style="display: none;">
+        <!-- <div class="section" id="universitySection" style="display: none;">
             <h3>🎓 Información Académica</h3>
             <p style="color: #666; margin-bottom: 20px;">Como estudiante de la Universidad Universitaria de Colombia, necesitamos algunos datos adicionales:</p>
             
@@ -401,7 +402,7 @@
                     <option value="otra">Otra</option>
                 </select>
             </div>
-        </div>
+        </div> -->
 
         <form id="consentimientoForm">
             <button type="submit" class="btn" id="submitBtn">Terminar</button>
@@ -444,35 +445,37 @@
             successDiv.style.display = 'none';
             
             // Validar consentimiento informado
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
             const consentimiento = document.getElementById('consentimientoInformado');
-            if (!consentimiento) {
+            if (!consentimiento.checked) {
                 errorDiv.textContent = 'Debe aceptar el consentimiento informado para continuar';
                 errorDiv.style.display = 'block';
+                // Llevar el usuario al inicio de la página 
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
             
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
             const data = {
                 userId: user.id,
                 consentimientoInformado: consentimiento.checked ? 'Si' : 'No'
             };
             
             // Si es estudiante universitario, validar campos adicionales
-            if (user.perteneceUniversidad) {
-                const semestre = document.getElementById('semestre').value;
-                const jornada = document.getElementById('jornada').value;
-                const carrera = document.getElementById('carrera').value;
+            // if (user.perteneceUniversidad) {
+            //     const semestre = document.getElementById('semestre').value;
+            //     const jornada = document.getElementById('jornada').value;
+            //     const carrera = document.getElementById('carrera').value;
                 
-                if (!semestre || !jornada || !carrera) {
-                    errorDiv.textContent = 'Todos los campos académicos son obligatorios para estudiantes universitarios';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
+            //     if (!semestre || !jornada || !carrera) {
+            //         errorDiv.textContent = 'Todos los campos académicos son obligatorios para estudiantes universitarios';
+            //         errorDiv.style.display = 'block';
+            //         return;
+            //     }
                 
-                data.semestre = semestre;
-                data.jornada = jornada;
-                data.carrera = carrera;
-            }
+            //     data.semestre = semestre;
+            //     data.jornada = jornada;
+            //     data.carrera = carrera;
+            // }
             
             // Mostrar loading
             loadingDiv.style.display = 'block';
@@ -515,11 +518,15 @@
                 } else {
                     errorDiv.textContent = result.error || 'Error al guardar el consentimiento';
                     errorDiv.style.display = 'block';
+                    // Llevar el usuario al inicio de la página 
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             } catch (error) {
                 console.error('Error:', error);
                 errorDiv.textContent = 'Error de conexión. Intenta nuevamente.';
                 errorDiv.style.display = 'block';
+                // Llevar el usuario al inicio de la página 
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } finally {
                 loadingDiv.style.display = 'none';
                 submitBtn.disabled = false;
