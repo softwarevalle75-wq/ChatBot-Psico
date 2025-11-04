@@ -3,11 +3,6 @@ const prisma = new PrismaClient();
 
 /**
  * Convierte rango horario de horas (8-12) a minutos desde medianoche
- * @param {number} hora - Hora en formato 24h (8, 12, 17, etc)
- * @returns {number} Minutos desde medianoche
- * 
- * Ejemplo: horaAMinutos(8) = 480
- *          horaAMinutos(17) = 1020
  */
 function horaAMinutos(hora) {
   return hora * 60;
@@ -15,11 +10,6 @@ function horaAMinutos(hora) {
 
 /**
  * Convierte minutos desde medianoche a hora legible
- * @param {number} minutos - Minutos desde medianoche
- * @returns {string} Hora en formato "8:00 AM"
- * 
- * Ejemplo: minutosAHora(480) = "8:00 AM"
- *          minutosAHora(1020) = "5:00 PM"
  */
 function minutosAHora(minutos) {
   const horas = Math.floor(minutos / 60);
@@ -30,20 +20,41 @@ function minutosAHora(minutos) {
 }
 
 /**
+ * Obtiene la próxima fecha disponible para un día de la semana
+ */
+function obtenerProximaFecha(diaNombre) {
+  const mapaDias = {
+    'LUNES': 1,
+    'MARTES': 2,
+    'MIERCOLES': 3,
+    'JUEVES': 4,
+    'VIERNES': 5,
+    'SABADO': 6,
+    'DOMINGO': 0
+  };
+
+  const diaObjetivo = mapaDias[diaNombre];
+  const hoy = new Date();
+  const diaActual = hoy.getDay();
+
+  let diasHastaObjetivo = diaObjetivo - diaActual;
+  
+  if (diasHastaObjetivo <= 0) {
+    diasHastaObjetivo += 7;
+  }
+
+  const proximaFecha = new Date(hoy);
+  proximaFecha.setDate(hoy.getDate() + diasHastaObjetivo);
+  proximaFecha.setHours(0, 0, 0, 0);
+
+  return proximaFecha;
+}
+
+/**
  * Busca practicantes disponibles según día y rango horario
- * @param {string} dia - Día de la semana (LUNES, MARTES, MIERCOLES, JUEVES, VIERNES, SABADO)
- * @param {number} horaInicio - Hora inicio en formato 24h (8, 12, 17)
- * @param {number} horaFin - Hora fin en formato 24h (12, 17, 20)
- * @returns {Promise<Array>} Array de practicantes disponibles
- * 
- * Ejemplo:
- * await buscarPracticanteDisponible('LUNES', 8, 12)
- * // Retorna practicantes que trabajan LUNES de 8 AM a 12 PM
  */
 export async function buscarPracticanteDisponible(dia, horaInicio, horaFin, fechaSolicitada) {
   try {
-    // Convertir horas a minutos (8:00 = 480 minutos, 12:00 = 720 minutos)
-    
     const minInicio = horaAMinutos(horaInicio);
     const minFin = horaAMinutos(horaFin);
 
@@ -57,10 +68,6 @@ export async function buscarPracticanteDisponible(dia, horaInicio, horaFin, fech
         horarios: {
           some: {
             dia: dia,
-            // El horario del practicante debe cubrir el rango solicitado
-            // Si el practicante trabaja de 780 a 1020 (13:00-17:00)
-            // y el usuario pide 12:00-17:00 (720-1020)
-            // entonces horaInicio (780) debe ser <= 720 Y horaFin (1020) >= 1020
             horaInicio: { lte: minInicio },
             horaFin: { gte: minFin }
           }
@@ -86,34 +93,24 @@ export async function buscarPracticanteDisponible(dia, horaInicio, horaFin, fech
 
     // Filtrar practicantes que tengan disponibilidad (sin citas en conflicto)
     const practicantesDisponibles = practicantes.filter(practicante => {
-
       const tieneCitaEnHorario = practicante.citas.some(cita => {
-      // Convertir la fecha de la cita a minutos desde medianoche
-      const fechaCita = new Date(cita.fechaHora);
-      const horaCitaEnMinutos = fechaCita.getHours() * 60 + fechaCita.getMinutes();
+        const fechaCita = new Date(cita.fechaHora);
+        const horaCitaEnMinutos = fechaCita.getHours() * 60 + fechaCita.getMinutes();
+        
+        const esMismoDia = fechaCita.toISOString().split('T')[0] === fechaSolicitada.toISOString().split('T')[0];
+        
+        const duracionCita = 60;
+        const finCita = horaCitaEnMinutos + duracionCita;
+        
+        const haySolapamiento = esMismoDia && (
+          (horaCitaEnMinutos < minFin && finCita > minInicio)
+        );
+        
+        return haySolapamiento;
+      });
       
-      // Verificar si la cita está en el mismo día solicitado
-      const esMismoDia = fechaCita.toISOString().split('T')[0] === fechaSolicitada.toISOString().split('T')[0];
-      
-      // Verificar si hay solapamiento de horarios
-      // Una cita típicamente dura 60 minutos (ajusta según tu necesidad)
-      const duracionCita = 60; // minutos
-      const finCita = horaCitaEnMinutos + duracionCita;
-      
-      // Hay conflicto si:
-      // - Es el mismo día
-      // - Y hay solapamiento: la cita comienza antes de que termine el horario solicitado
-      //   Y la cita termina después de que comience el horario solicitado
-      const haySolapamiento = esMismoDia && (
-        (horaCitaEnMinutos < minFin && finCita > minInicio)
-      );
-      
-      return haySolapamiento;
+      return !tieneCitaEnHorario;
     });
-    
-    // El practicante está disponible si NO tiene citas en ese horario
-    return !tieneCitaEnHorario;
-  });
 
     return practicantesDisponibles;
 
@@ -124,53 +121,7 @@ export async function buscarPracticanteDisponible(dia, horaInicio, horaFin, fech
 }
 
 /**
- * Obtiene la próxima fecha disponible para un día de la semana
- * @param {string} diaNombre - Nombre del día (LUNES, MARTES, etc)
- * @returns {Date} Próxima fecha del día solicitado
- * 
- * Ejemplo: Si hoy es Lunes y pides VIERNES, retorna este viernes
- *          Si hoy es Sábado y pides VIERNES, retorna el próximo viernes
- */
-function obtenerProximaFecha(diaNombre) {
-  const mapaDias = {
-    'LUNES': 1,
-    'MARTES': 2,
-    'MIERCOLES': 3,
-    'JUEVES': 4,
-    'VIERNES': 5,
-    'SABADO': 6,
-    'DOMINGO': 0
-  };
-
-  const diaObjetivo = mapaDias[diaNombre];
-  const hoy = new Date();
-  const diaActual = hoy.getDay();
-
-  let diasHastaObjetivo = diaObjetivo - diaActual;
-  
-  // Si el día ya pasó esta semana, programar para la próxima semana
-  if (diasHastaObjetivo <= 0) {
-    diasHastaObjetivo += 7;
-  }
-
-  const proximaFecha = new Date(hoy);
-  proximaFecha.setDate(hoy.getDate() + diasHastaObjetivo);
-  proximaFecha.setHours(0, 0, 0, 0);
-
-  return proximaFecha;
-}
-
-/**
  * Guarda una cita en la base de datos
- * @param {string} telefono - Teléfono del usuario (debe existir en BD)
- * @param {string} idPracticante - ID del practicante
- * @param {string} dia - Día de la semana (LUNES, MARTES, etc)
- * @param {number} horaInicio - Hora de inicio (8, 12, 17)
- * @param {number} horaFin - Hora de fin (12, 17, 20)
- * @returns {Promise<Object>} Objeto con datos de la cita creada
- * 
- * Ejemplo:
- * const cita = await guardarCita('573001234567', 'uuid-practicante', 'LUNES', 8, 12)
  */
 export async function guardarCita(telefono, idPracticante, dia, horaInicio) {
   try {
@@ -201,23 +152,47 @@ export async function guardarCita(telefono, idPracticante, dia, horaInicio) {
       throw new Error('Practicante no encontrado');
     }
 
-    // 3. Obtener consultorio activo (tomamos el primero disponible)
-    const consultorio = await prisma.consultorio.findFirst({
-      where: { activo: true }
-    });
-
-    if (!consultorio) {
-      throw new Error('No hay consultorios disponibles');
-    }
-
-    // 4. Calcular fecha y hora de la cita
+    // 3. Calcular fecha y hora de la cita PRIMERO
     const fechaCita = obtenerProximaFecha(dia);
     fechaCita.setHours(horaInicio, 0, 0, 0);
+
+    console.log('📅 Fecha calculada:', fechaCita);
+
+    // 4. Buscar consultorio disponible (sin citas en ese horario)
+    const consultorios = await prisma.consultorio.findMany({
+      where: { activo: true },
+      include: {
+        citas: {
+          where: {
+            fechaHora: fechaCita,
+            estado: {
+              in: ['pendiente', 'confirmada']
+            }
+          }
+        }
+      }
+    });
+
+    console.log(`🔍 Total consultorios activos: ${consultorios.length}`);
+
+    // Filtrar consultorios que NO tengan citas en ese horario
+    const consultorioDisponible = consultorios.find(consultorio => {
+      const tieneCita = consultorio.citas.length > 0;
+      console.log(`   🏥 ${consultorio.nombre}: ${tieneCita ? '❌ Ocupado' : '✅ Disponible'}`);
+      return !tieneCita;
+    });
+
+    if (!consultorioDisponible) {
+      console.error('❌ Todos los consultorios están ocupados en este horario');
+      throw new Error('No hay consultorios disponibles en este horario. Por favor selecciona otro día u horario.');
+    }
+
+    console.log(`✅ Consultorio asignado: ${consultorioDisponible.nombre}`);
 
     // 5. Crear la cita en la tabla principal
     const cita = await prisma.cita.create({
       data: {
-        idConsultorio: consultorio.idConsultorio,
+        idConsultorio: consultorioDisponible.idConsultorio,
         idUsuario: usuario.idUsuario,
         idPracticante: practicante.idPracticante,
         fechaHora: fechaCita,
@@ -229,7 +204,7 @@ export async function guardarCita(telefono, idPracticante, dia, horaInicio) {
     await prisma.registroCitas.create({
       data: {
         idCita: cita.idCita,
-        idConsultorio: consultorio.idConsultorio,
+        idConsultorio: consultorioDisponible.idConsultorio,
         idUsuario: usuario.idUsuario,
         idPracticante: practicante.idPracticante,
         fechaHora: fechaCita,
@@ -243,7 +218,7 @@ export async function guardarCita(telefono, idPracticante, dia, horaInicio) {
       cita: cita,
       practicante: practicante,
       fecha: fechaCita,
-      consultorio: consultorio
+      consultorio: consultorioDisponible
     };
 
   } catch (error) {
@@ -254,15 +229,6 @@ export async function guardarCita(telefono, idPracticante, dia, horaInicio) {
 
 /**
  * Formatea información de la cita para mostrar al usuario
- * @param {Object} citaData - Datos de la cita retornados por guardarCita()
- * @returns {string} Mensaje formateado para WhatsApp
- * 
- * Ejemplo de salida:
- * ✅ ¡CITA AGENDADA EXITOSAMENTE!
- * 
- * 👨‍⚕️ Psicólogo: Dr. Juan Pérez
- * 📅 Fecha y hora: Lunes, 7 de octubre de 2024 a las 08:00
- * 🏥 Consultorio: Consultorio Principal
  */
 export function formatearMensajeCita(citaData) {
   const { practicante, fecha, consultorio } = citaData;
@@ -289,15 +255,6 @@ export function formatearMensajeCita(citaData) {
 
 /**
  * Obtiene horarios disponibles formateados para mostrar
- * @param {Array} practicantes - Array de practicantes con horarios
- * @returns {string} Mensaje con lista de practicantes
- * 
- * Ejemplo de salida:
- * ✅ Practicantes disponibles:
- * 
- * 1. Dr. Juan Pérez
- *    🕐 Horario: 8:00 AM - 12:00 PM
- *    📊 Sesiones: 15
  */
 export function formatearHorariosDisponibles(practicantes) {
   if (!practicantes || practicantes.length === 0) {

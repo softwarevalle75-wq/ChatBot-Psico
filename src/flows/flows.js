@@ -32,7 +32,10 @@ export const prisma = new Prisma.PrismaClient()
 export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
   async (ctx, { gotoFlow, flowDynamic, state }) => {
     try {
-      console.log('🟡 WELCOME ejecutándose para:', ctx.from, 'mensaje:', ctx.body);
+      console.log('🔍 ===== DEBUG CTX COMPLETO =====')
+      console.log('ctx.from:', ctx.from)
+      console.log('ctx.key:', JSON.stringify(ctx.key, null, 2))
+      console.log('🔍 ==============================')
       
       // 1. VERIFICAR FLUJOS ACTIVOS CRÍTICOS (prioridad máxima)
       const currentFlow = await state.get('currentFlow');
@@ -53,10 +56,18 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         console.log('🚫 Usuario registrando datos universitarios, no interferir con welcomeFlow')
         return;
       }
+      if (currentFlow === 'agendConfirmarRespuesta') {
+        console.log('🚫 Usuario confirmando cita, no interferir con welcomeFlow')
+        return;
+      }
       // if (currentFlow === 'agendSinDisponibilidad') {
-      //   console.log('🚫 Usuario en agendSinDisponibilidad')
-      //   return
+      //   console.log('🚫 Usuario sin disponibilidad, no interferir con welcomeFlow')
+      //   return;
       // }
+      if (currentFlow === 'postAgend') {
+        console.log('🚫 Usuario en postAgend, no interferir con welcomeFlow')
+        return;
+      }
 
       // 2. ⭐ NUEVO: VERIFICAR SI ES PRACTICANTE PRIMERO (ANTES DE AUTENTICAR)
       const rolInfo = await verificarRolUsuario(ctx.from);
@@ -196,6 +207,11 @@ async function handleUserFlow(ctx, user, state, gotoFlow) {
         console.log('🔄 Ya estamos en testSelectionFlow, no redirigir');
         return;
       }
+
+    case 'postAgend':
+      console.log('📅 -> postAgend');
+      await state.update({ currentFlow: 'postAgend' });
+      return gotoFlow(postAgendFlow);
 
     default:
       console.log('❓ Flujo por defecto -> menuFlow');
@@ -767,55 +783,55 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
   )
   // PASO 2: SELECCIÓN DE HORARIO
   .addAnswer(
-  '🕐 SELECCIONAR HORARIO\n\n' +
-  'Elige el horario específico que prefieres:\n\n' +
-  '🔹 1 - 8:00 - 9:00 AM\n' +
-  '🔹 2 - 9:00 - 10:00 AM\n' +
-  '🔹 3 - 10:00 - 11:00 AM\n' +
-  '🔹 4 - 11:00 AM - 12:00 PM\n' +
-  '🔹 5 - 12:00 - 1:00 PM\n' +
-  '🔹 6 - 1:00 - 2:00 PM\n' +
-  '🔹 7 - 2:00 - 3:00 PM\n' +
-  '🔹 8 - 3:00 - 4:00 PM\n' +
-  '🔹 9 - 4:00 - 5:00 PM\n\n' +
-  'Responde con el número del horario:',
-  { capture: true },
-  async (ctx, { flowDynamic, state, fallBack }) => {
-    console.log('🕐 Horario recibido:', ctx.body);
-    const horarioSeleccionado = ctx.body.trim();
-    const horariosValidos = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    
-    if (!horariosValidos.includes(horarioSeleccionado)) {
-      await flowDynamic('❌ Opción no válida. Por favor selecciona un número del 1 al 9.');
-      return fallBack();
+    '🕐 SELECCIONAR HORARIO\n\n' +
+    'Elige el horario específico que prefieres:\n\n' +
+    '🔹 1 - 8:00 - 9:00 AM\n' +
+    '🔹 2 - 9:00 - 10:00 AM\n' +
+    '🔹 3 - 10:00 - 11:00 AM\n' +
+    '🔹 4 - 11:00 AM - 12:00 PM\n' +
+    '🔹 5 - 12:00 - 1:00 PM\n' +
+    '🔹 6 - 1:00 - 2:00 PM\n' +
+    '🔹 7 - 2:00 - 3:00 PM\n' +
+    '🔹 8 - 3:00 - 4:00 PM\n' +
+    '🔹 9 - 4:00 - 5:00 PM\n\n' +
+    'Responde con el número del horario:',
+    { capture: true },
+    async (ctx, { flowDynamic, state, fallBack }) => {
+      console.log('🕐 Horario recibido:', ctx.body);
+      const horarioSeleccionado = ctx.body.trim();
+      const horariosValidos = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      
+      if (!horariosValidos.includes(horarioSeleccionado)) {
+        await flowDynamic('❌ Opción no válida. Por favor selecciona un número del 1 al 9.');
+        return fallBack();
+      }
+      
+      const mapaHorarios = {
+        '1': { inicio: 8, fin: 9, nombre: '8:00 - 9:00 AM', minInicio: 480, minFin: 540 },
+        '2': { inicio: 9, fin: 10, nombre: '9:00 - 10:00 AM', minInicio: 540, minFin: 600 },
+        '3': { inicio: 10, fin: 11, nombre: '10:00 - 11:00 AM', minInicio: 600, minFin: 660 },
+        '4': { inicio: 11, fin: 12, nombre: '11:00 AM - 12:00 PM', minInicio: 660, minFin: 720 },
+        '5': { inicio: 12, fin: 13, nombre: '12:00 - 1:00 PM', minInicio: 720, minFin: 780 },
+        '6': { inicio: 13, fin: 14, nombre: '1:00 - 2:00 PM', minInicio: 780, minFin: 840 },
+        '7': { inicio: 14, fin: 15, nombre: '2:00 - 3:00 PM', minInicio: 840, minFin: 900 },
+        '8': { inicio: 15, fin: 16, nombre: '3:00 - 4:00 PM', minInicio: 900, minFin: 960 },
+        '9': { inicio: 16, fin: 17, nombre: '4:00 - 5:00 PM', minInicio: 960, minFin: 1020 }
+      };
+      
+      const horario = mapaHorarios[horarioSeleccionado];
+      
+      await state.update({ 
+        horarioInicio: horario.inicio,
+        horarioFin: horario.fin,
+        horarioNombre: horario.nombre,
+        minInicio: horario.minInicio,
+        minFin: horario.minFin
+      });
+      
+      console.log('🕐 Horario guardado:', horario);
     }
-    
-    const mapaHorarios = {
-      '1': { inicio: 8, fin: 9, nombre: '8:00 - 9:00 AM', minInicio: 480, minFin: 540 },
-      '2': { inicio: 9, fin: 10, nombre: '9:00 - 10:00 AM', minInicio: 540, minFin: 600 },
-      '3': { inicio: 10, fin: 11, nombre: '10:00 - 11:00 AM', minInicio: 600, minFin: 660 },
-      '4': { inicio: 11, fin: 12, nombre: '11:00 AM - 12:00 PM', minInicio: 660, minFin: 720 },
-      '5': { inicio: 12, fin: 13, nombre: '12:00 - 1:00 PM', minInicio: 720, minFin: 780 },
-      '6': { inicio: 13, fin: 14, nombre: '1:00 - 2:00 PM', minInicio: 780, minFin: 840 },
-      '7': { inicio: 14, fin: 15, nombre: '2:00 - 3:00 PM', minInicio: 840, minFin: 900 },
-      '8': { inicio: 15, fin: 16, nombre: '3:00 - 4:00 PM', minInicio: 900, minFin: 960 },
-      '9': { inicio: 16, fin: 17, nombre: '4:00 - 5:00 PM', minInicio: 960, minFin: 1020 }
-    };
-    
-    const horario = mapaHorarios[horarioSeleccionado];
-    
-    await state.update({ 
-      horarioInicio: horario.inicio,
-      horarioFin: horario.fin,
-      horarioNombre: horario.nombre,
-      minInicio: horario.minInicio,
-      minFin: horario.minFin
-    });
-    
-    console.log('🕐 Horario guardado:', horario);
-  }
-)
-  // PASO 3: BUSCAR DISPONIBILIDAD (INTEGRADO)
+  )
+  // PASO 3: BUSCAR DISPONIBILIDAD
   .addAction(async (ctx, { flowDynamic, gotoFlow, state }) => {
     console.log('🔵 Iniciando búsqueda integrada...');
     
@@ -823,6 +839,7 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
     const horarioInicio = await state.get('horarioInicio');
     const horarioFin = await state.get('horarioFin');
     const horarioNombre = await state.get('horarioNombre');
+    const fechaSolicitada = await state.get('fechaSolicitada');
     const diaNumero = await state.get('diaSeleccionadoNumero');
     
     console.log('📊 Estado completo:', { diaSeleccionado, horarioInicio, horarioFin, diaNumero });
@@ -844,7 +861,8 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
       const practicantesDisponibles = await buscarPracticanteDisponible(
         diaSeleccionado, 
         horarioInicio, 
-        horarioFin
+        horarioFin,
+        fechaSolicitada
       );
       
       console.log('✅ Resultado búsqueda:', practicantesDisponibles?.length || 0);
@@ -854,14 +872,12 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
         
         await state.update({ 
           practicantesDisponibles: practicantesDisponibles,
-          practicanteSeleccionado: practicantesDisponibles[0]
+          practicanteSeleccionado: practicantesDisponibles[0],
+          hayDisponibilidad: true // Flag para saber qué capturar
         });
         
         const mensajeHorarios = formatearHorariosDisponibles(practicantesDisponibles);
         await flowDynamic(mensajeHorarios);
-        
-        // Validar que el practicante tenga nombre
-        // const nombrePracticante = practicanteDisponibles[0]?.nombre ||'Por asignar';
         
         await flowDynamic(
           '📋 *RESUMEN DE TU CITA*\n\n' +
@@ -869,29 +885,26 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
           `🕐 *Horario:* ${horarioNombre}\n` +
           `👨‍⚕️ *Psicólogo asignado:* ${practicantesDisponibles[0].nombre}\n\n` +
           '¿Deseas confirmar esta cita?\n\n' +
-          '🔹 *1* - Sí, confirmar cita\n' +
-          '🔹 *2* - No, volver al menú\n' +
-          '🔹 *3* - Cambiar día/horario'
+          '✅ *1* - Sí, confirmar cita\n' +
+          '❌ *2* - No, volver al menú\n' +
+          '📅 *3* - Cambiar día/horario'
         );
         
-        console.log('🔀 Yendo a confirmación...');
-        return gotoFlow(agendConfirmarRespuestaFlow);
+        // NO hacer gotoFlow, continúa en el mismo flujo
         
       } else {
         console.log('❌ NO HAY DISPONIBILIDAD');
-
-        // Actualizar flujo en BD
-        await state.update({ currentFlow: 'agendSinDisponibilidad' });
-        await switchFlujo(ctx.from, 'agendSinDisponibilidad');
-
+        
+        await state.update({ 
+          hayDisponibilidad: false // Flag para saber qué capturar
+        });
+        
         await flowDynamic(
           '❌ Lo sentimos, no hay psicólogos disponibles en este horario.\n\n' +
           '¿Qué deseas hacer?\n\n' +
           '🔹 1 - Seleccionar otro día/horario\n' +
           '🔹 2 - Volver al menú principal'
         );
-        
-        return gotoFlow(agendSinDisponibilidadFlow);
       }
       
     } catch (error) {
@@ -902,155 +915,159 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
       await switchFlujo(ctx.from, 'menuFlow');
       return gotoFlow(menuFlow);
     }
-  });
-
-// ========================================
-// 4. FLUJO RESPUESTA CONFIRMACIÓN
-// ========================================
-
-export const agendConfirmarRespuestaFlow = addKeyword(utils.setEvent('AGEND_CONFIRMAR_RESPUESTA_FLOW'))
+  })
+  // PASO 4: CAPTURAR RESPUESTA (MANEJA AMBOS CASOS)
   .addAnswer(
     '',
     { capture: true },
     async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
       const respuesta = ctx.body.trim();
+      const hayDisponibilidad = await state.get('hayDisponibilidad');
       
-      if (respuesta === '1') {
-        // ✅ CONFIRMAR CITA
-        try {
-          await flowDynamic('💾 Guardando tu cita...');
-          
-          const diaSeleccionado = await state.get('diaSeleccionado');
-          const horarioInicio = await state.get('horarioInicio');
-          const horarioFin = await state.get('horarioFin');
-          const practicanteSeleccionado = await state.get('practicanteSeleccionado');
-          
-          if (!practicanteSeleccionado) {
-            throw new Error('No hay practicante seleccionado');
+      console.log('📥 Respuesta recibida:', respuesta, '| Disponibilidad:', hayDisponibilidad);
+      
+      if (hayDisponibilidad) {
+        // ==== CASO: HAY DISPONIBILIDAD (opciones 1, 2, 3) ====
+        
+        if (respuesta === '1') {
+          // ✅ CONFIRMAR CITA
+          try {
+            await flowDynamic('💾 Guardando tu cita...');
+            
+            const diaSeleccionado = await state.get('diaSeleccionado');
+            const horarioInicio = await state.get('horarioInicio');
+            const horarioFin = await state.get('horarioFin');
+            const fechaSolicitada = await state.get('fechaSolicitada');
+            const practicanteSeleccionado = await state.get('practicanteSeleccionado');
+            
+            if (!practicanteSeleccionado) {
+              throw new Error('No hay practicante seleccionado');
+            }
+            
+            // Guardar la cita en BD
+            const citaData = await guardarCita(
+              ctx.from,
+              practicanteSeleccionado.idPracticante,
+              diaSeleccionado,
+              horarioInicio,
+              horarioFin,
+              fechaSolicitada
+            );
+            
+            // Formatear y enviar mensaje de confirmación
+            const mensajeConfirmacion = formatearMensajeCita(citaData);
+            await flowDynamic(mensajeConfirmacion);
+            
+            await flowDynamic(
+              '\n¿Qué deseas hacer ahora?\n\n' +
+              '🔹 1 - Realizar cuestionarios psicológicos\n' +
+              '🔹 2 - Volver al menú principal'
+            );
+            
+            // Limpiar estado de agendamiento
+            await state.update({ 
+              currentFlow: 'postAgend',
+              diaSeleccionado: null,
+              horarioInicio: null,
+              horarioFin: null,
+              practicanteSeleccionado: null,
+              practicantesDisponibles: null,
+              hayDisponibilidad: null
+            });
+            
+            await switchFlujo(ctx.from, 'postAgend');
+            return gotoFlow(postAgendFlow);
+            
+          } catch (error) {
+            console.error('❌ Error guardando cita:', error);
+            await flowDynamic(
+              '❌ Error al guardar la cita.\n\n' +
+              (error.message === 'Usuario no encontrado' 
+                ? 'No se encontró tu información. Por favor, regístrate primero.' 
+                : 'Ocurrió un error. Por favor, intenta nuevamente.')
+            );
+            await state.update({ currentFlow: 'menu' });
+            await switchFlujo(ctx.from, 'menuFlow');
+            return gotoFlow(menuFlow);
           }
           
-          // Guardar la cita en BD
-          const citaData = await guardarCita(
-            ctx.from,
-            practicanteSeleccionado.idPracticante,
-            diaSeleccionado,
-            horarioInicio,
-            horarioFin
-          );
-          
-          // Formatear y enviar mensaje de confirmación
-          const mensajeConfirmacion = formatearMensajeCita(citaData);
-          await flowDynamic(mensajeConfirmacion);
-          
-          await flowDynamic(
-            '\n¿Qué deseas hacer ahora?\n\n' +
-            '🔹 1 - Realizar cuestionarios psicológicos\n' +
-            '🔹 2 - Volver al menú principal'
-          );
-          
-          // Limpiar estado de agendamiento
+        } else if (respuesta === '2') {
+          // ❌ CANCELAR - Volver al menú
+          await flowDynamic('👋 Entendido. Volviendo al menú principal...');
           await state.update({ 
-            currentFlow: 'postAgend',
+            currentFlow: 'menu',
             diaSeleccionado: null,
             horarioInicio: null,
             horarioFin: null,
             practicanteSeleccionado: null,
-            practicantesDisponibles: null
+            practicantesDisponibles: null,
+            hayDisponibilidad: null
           });
-          
-          return gotoFlow(postAgendFlow);
-          
-        } catch (error) {
-          console.error('❌ Error guardando cita:', error);
-          await flowDynamic(
-            '❌ Error al guardar la cita.\n\n' +
-            (error.message === 'Usuario no encontrado' 
-              ? 'No se encontró tu información. Por favor, regístrate primero.' 
-              : 'Ocurrió un error. Por favor, intenta nuevamente.')
-          );
-          await state.update({ currentFlow: 'menu' });
           await switchFlujo(ctx.from, 'menuFlow');
           return gotoFlow(menuFlow);
+          
+        } else if (respuesta === '3') {
+          // 🔄 CAMBIAR - Reiniciar proceso
+          await state.update({
+            diaSeleccionado: null,
+            horarioInicio: null,
+            horarioFin: null,
+            practicanteSeleccionado: null,
+            practicantesDisponibles: null,
+            hayDisponibilidad: null
+          });
+          await flowDynamic('🔄 Perfecto. Selecciona nuevamente el día y horario...');
+          await switchFlujo(ctx.from, 'agendFlow');
+          return gotoFlow(agendFlow);
+          
+        } else {
+          await flowDynamic('❌ Opción no válida. Por favor selecciona 1, 2 o 3.');
+          return fallBack();
         }
         
-      } else if (respuesta === '2') {
-        // ❌ CANCELAR - Volver al menú
-        await flowDynamic('👋 Entendido. Volviendo al menú principal...');
-        await state.update({ 
-          currentFlow: 'menu',
-          diaSeleccionado: null,
-          horarioInicio: null,
-          horarioFin: null,
-          practicanteSeleccionado: null,
-          practicantesDisponibles: null
-        });
-        await switchFlujo(ctx.from, 'menuFlow');
-        return gotoFlow(menuFlow);
-        
-      } else if (respuesta === '3') {
-        // 🔄 CAMBIAR - Reiniciar proceso
-        await state.update({
-          diaSeleccionado: null,
-          horarioInicio: null,
-          horarioFin: null,
-          practicanteSeleccionado: null,
-          practicantesDisponibles: null
-        });
-        await flowDynamic('🔄 Perfecto. Selecciona nuevamente el día y horario...');
-        return gotoFlow(agendFlow);
-        
       } else {
-        await flowDynamic('❌ Opción no válida. Por favor selecciona 1, 2 o 3.');
-        return fallBack();
-      }
-    }
-  );
-
-// ========================================
-// 5. FLUJO SIN DISPONIBILIDAD
-// ========================================
-
-export const agendSinDisponibilidadFlow = addKeyword(EVENTS.ACTION)
-  .addAnswer(
-    '',
-    { capture: true },
-    async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
-      const respuesta = ctx.body.trim();
-      
-      if (respuesta === '1') {
-        // Seleccionar otro horario
-        await state.update({
-          currentFlow: 'agendSinDisponibilidad',
-          diaSeleccionado: null,
-          horarioInicio: null,
-          horarioFin: null,
-          practicanteSeleccionado: null,
-          practicantesDisponibles: null
-        });
-        await flowDynamic('🔄 Selecciona nuevamente el día y horario...');
-        await switchFlujo(ctx.from, 'agend');
-        await state.update({ currentFlow: 'agendSinDisponibilidad' });
-        return gotoFlow(agendFlow);
+        // ==== CASO: NO HAY DISPONIBILIDAD (opciones 1, 2) ====
         
-      } else if (respuesta === '2') {
-        // Volver al menú
-        console.log('👋👋👋 Volviendo al menu en agendSinDisponibilidad')
-        await flowDynamic('👋 Volviendo al menú principal...');
-        await state.update({ 
-          currentFlow: 'menu',
-          diaSeleccionado: null,
-          horarioInicio: null,
-          horarioFin: null,
-          practicanteSeleccionado: null,
-          practicantesDisponibles: null
-        });
-        await switchFlujo(ctx.from, 'menuFlow');
-        await state.update({ currentFlow: 'menu' });
-        return gotoFlow(menuFlow);
-        
-      } else {
-        await flowDynamic('❌ Opción no válida. Por favor selecciona 1 o 2.');
-        return fallBack();
+        if (respuesta === '1') {
+          // ✅ Seleccionar otro horario
+          console.log('🔄 Usuario elige cambiar día/horario');
+          
+          await state.update({
+            diaSeleccionado: null,
+            horarioInicio: null,
+            horarioFin: null,
+            practicanteSeleccionado: null,
+            practicantesDisponibles: null,
+            hayDisponibilidad: null
+          });
+          
+          await flowDynamic('🔄 Perfecto. Selecciona nuevamente el día y horario...');
+          await switchFlujo(ctx.from, 'agendFlow');
+          return gotoFlow(agendFlow);
+          
+        } else if (respuesta === '2') {
+          // ✅ Volver al menú
+          console.log('👋 Usuario vuelve al menú');
+          
+          await flowDynamic('👋 Volviendo al menú principal...');
+          
+          await state.update({ 
+            currentFlow: 'menu',
+            diaSeleccionado: null,
+            horarioInicio: null,
+            horarioFin: null,
+            practicanteSeleccionado: null,
+            practicantesDisponibles: null,
+            hayDisponibilidad: null
+          });
+          
+          await switchFlujo(ctx.from, 'menuFlow');
+          return gotoFlow(menuFlow);
+          
+        } else {
+          await flowDynamic('❌ Opción no válida. Por favor selecciona 1 o 2.');
+          return fallBack();
+        }
       }
     }
   );

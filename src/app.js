@@ -43,6 +43,7 @@ import {
 	getWebCitas,
 	citasPorPaciente,
 } from "./queries/queries.js";
+import { getRealPhoneFromCtx } from "./helpers/jidHelper.js";
 
 const PORT = process.env.PORT ?? 3000;
 export const adapterProvider = createProvider(Provider, {
@@ -52,6 +53,25 @@ export const adapterProvider = createProvider(Provider, {
 		keepAliveIntervalMs: 30000,
 	}
 })
+//---------------------------------------------------------------------------------------------------------
+
+adapterProvider.on("message", (ctx) => {
+	try {
+		const realPhone = getRealPhoneFromCtx(ctx)
+		const realJid = realPhone ? `${realPhone}` : null
+
+		ctx.realPhone = realPhone
+		ctx.realJid = realJid
+
+		// Se normaliza ctx.from
+		if (realPhone) ctx.from = realJid
+		if (realJid && ctx?.key) ctx.key.remoteJid = realJid
+		
+	} catch (e) {
+		console.error('Error en middleware JID:', e)		
+	}
+})
+
 //---------------------------------------------------------------------------------------------------------
 
 const main = async () => {
@@ -87,7 +107,7 @@ const adapterFlow = createFlow([
     
     // Flujo asistente (al final, como fallback)
     assistantFlow
-]);
+]);	
 
 
 	console.log('📊 Configurando base de datos...');

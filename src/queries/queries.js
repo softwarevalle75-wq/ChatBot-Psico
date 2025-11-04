@@ -1,6 +1,7 @@
 import Prisma from '@prisma/client'
 export const prisma = new Prisma.PrismaClient()
 import { adapterProvider } from '../app.js'
+import { ensureJid } from '../helpers/jidHelper.js'
 //---------------------------------------------------------------------------------------------------------
 
 export const registrarUsuario = async (
@@ -469,7 +470,8 @@ export const sendAutonomousMessage = async (numero, mensaje) => {
 		const numeroLimpio = numero.replace(/\D/g, '');
 		const numeroCompleto = `${numeroLimpio}@s.whatsapp.net`;
 		
-		await adapterProvider.sendText(numeroCompleto, mensaje);
+		const jid = ensureJid(numeroCompleto); // canoniza el número
+		await adapterProvider.sendText(jid, mensaje);
 		
 		console.log(`Mensaje autónomo enviado a ${numero}: ${mensaje}`);
 		return true;
