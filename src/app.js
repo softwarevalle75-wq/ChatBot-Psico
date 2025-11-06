@@ -10,8 +10,7 @@ import {
 	menuFlow, 
 	testSelectionFlow, 
 	testFlow,
-	agendFlow, 
-	postAgendFlow, 
+	agendFlow,  
 	assistantFlow, 
 	pedirNumeroPracticanteAsignadoFlow
 } from "./flows/flows.js";
@@ -103,7 +102,6 @@ const adapterFlow = createFlow([
     
     // Flujos de agendamiento
     agendFlow,
-    postAgendFlow,
     
     // Flujo asistente (al final, como fallback)
     assistantFlow

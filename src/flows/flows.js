@@ -980,6 +980,19 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
             
           } catch (error) {
             console.error('❌ Error guardando cita:', error);
+
+            if (error.message.includes('consultorios disponibles')) {
+              await flowDynamic(
+                '🏥 Lo sentimos, todos los consultorios están ocupados en este horario.\n\n' +
+                '¿Qué deseas hacer?\n\n' +
+                '🔹 1 - Seleccionar otro día/horario\n' +
+                '🔹 2 - Volver al menú principal'
+              )
+
+              await state.update ({ hayDisponibilidad: false });
+              return fallBack();
+            }
+
             await flowDynamic(
               '❌ Error al guardar la cita.\n\n' +
               (error.message === 'Usuario no encontrado' 
