@@ -1,6 +1,6 @@
 import { createBot, createProvider, createFlow } from "@builderbot/bot";
 import { MysqlAdapter as Database } from "@builderbot/database-mysql";
-import { BaileysProvider as Provider } from "@builderbot/provider-baileys";
+import { BaileysProvider as Provider } from "builderbot-provider-sherpa";
 import { 
 	welcomeFlow, 
 	//registerFlow, 
@@ -47,8 +47,9 @@ import { getRealPhoneFromCtx } from "./helpers/jidHelper.js";
 const PORT = process.env.PORT ?? 3000;
 export const adapterProvider = createProvider(Provider, {
 	// Esto envía pings cada 30 segundos, pa mantener activa la conec
-	version: [2, 3000, 1025190524],
+	version: [2, 3000, 1033834674],
 	baileys: {
+		writeMyself: 'both',
 		keepAliveIntervalMs: 30000,
 	}
 })
