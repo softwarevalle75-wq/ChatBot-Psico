@@ -820,7 +820,6 @@ async function main() {
       skipDuplicates: true,
     });
 
-
 }
 
 main()

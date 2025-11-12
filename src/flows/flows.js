@@ -18,6 +18,7 @@ import { procesarDass21 } from './tests/dass21.js'
 import { procesarGHQ12 } from './tests/ghq12.js'
 // Importar el helper al inicio del archivo
 import { verificarAutenticacionWeb } from '../helpers/auntenticarUsuario.js';
+import { adminMenuFlow } from './roles/adminMenuFlow.js'
 import { practMenuFlow, practEsperarResultados } from './roles/practMenuFlow.js'
 import { 
   buscarPracticanteDisponible, 
@@ -71,38 +72,65 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
 
       // 2. ⭐ NUEVO: VERIFICAR SI ES PRACTICANTE PRIMERO (ANTES DE AUTENTICAR)
       const rolInfo = await verificarRolUsuario(ctx.from);
-      
-      if (rolInfo && rolInfo.rol === 'practicante') {
-        console.log('🔑 Practicante detectado -> Enviando a flujo de practicantes SIN autenticación');
 
-        const practicanteCompleto = await prisma.practicante.findUnique({
-          where: { telefono: rolInfo.telefono },
-          select: {
-            idPracticante: true,
-            nombre: true,
-            telefono: true,
-          }
-        })
+      if (rolInfo) {
+        // ===== PRACTICANTE =====
+        if (rolInfo.rol === 'practicante') {
+          console.log('🔑 Practicante detectado -> Enviando a flujo de practicantes SIN autenticación');
 
-        const usuarioPracticante = {
-          tipo: 'practicante',
-          data: { 
-            idPracticante: practicanteCompleto?.idPracticante || null,
-            nombre: practicanteCompleto.nombre || 'Sin nombre',
-            telefono: ctx.from, 
-            rol: 'practicante' 
-          },
-          flujo: 'practMenuFlow'
-        };
+          const practicanteCompleto = await prisma.practicante.findUnique({
+            where: { telefono: rolInfo.telefono },
+            select: {
+              idPracticante: true,
+              nombre: true,
+              telefono: true,
+            }
+          });
 
-        console.log('👨‍⚕️ Practicante a guardar:', JSON.stringify(usuarioPracticante, null, 2))
-        
-        await state.update({ 
-          initialized: true, 
-          user: usuarioPracticante 
-        });
-        
-        return await handlePracticanteFlow(ctx, usuarioPracticante, state, gotoFlow, flowDynamic);
+          const usuarioPracticante = {
+            tipo: 'practicante',
+            data: { 
+              idPracticante: practicanteCompleto?.idPracticante || null,
+              nombre: practicanteCompleto?.nombre || 'Sin nombre',
+              telefono: ctx.from, 
+              rol: 'practicante' 
+            },
+            flujo: 'practMenuFlow'
+          };
+
+          console.log('👨‍⚕️ Practicante a guardar:', JSON.stringify(usuarioPracticante, null, 2));
+          
+          await state.update({ 
+            initialized: true, 
+            user: usuarioPracticante 
+          });
+          
+          return await handlePracticanteFlow(ctx, usuarioPracticante, state, gotoFlow, flowDynamic);
+        }
+
+        // ===== ADMINISTRADOR =====
+        if (rolInfo.rol === 'admin') {
+          console.log('👑 Administrador detectado -> Enviando a flujo de admin SIN autenticación');
+
+          const usuarioAdmin = {
+            tipo: 'admin',
+            data: { 
+              telefono: ctx.from, 
+              rol: 'admin',
+              nombre: 'Administrador'
+            },
+            flujo: 'adminMenuFlow'
+          };
+
+          console.log('👑 Admin a guardar:', JSON.stringify(usuarioAdmin, null, 2));
+          
+          await state.update({ 
+            initialized: true, 
+            user: usuarioAdmin 
+          });
+          
+          return await handleAdminFlow(ctx, usuarioAdmin, state, gotoFlow, flowDynamic);
+        }
       }
 
       // 3. VERIFICAR AUTENTICACIÓN WEB SOLO PARA USUARIOS NORMALES
@@ -143,7 +171,10 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
   }
 );
 
+//--------------------------------------------------------------------------------------------------------------
 // Función auxiliar para manejar flujo de practicantes
+//--------------------------------------------------------------------------------------------------------------
+
 async function handlePracticanteFlow(ctx, user, state, gotoFlow) {
   const esperandoResultados = await state.get('esperandoResultados');
   const currentFlow = await state.get('currentFlow');
@@ -158,8 +189,23 @@ async function handlePracticanteFlow(ctx, user, state, gotoFlow) {
   return gotoFlow(practMenuFlow);
 }
 
-//----
+//--------------------------------------------------------------------------------------------------------------
+// Función auxiliar para manejar flujo de administradores
+//--------------------------------------------------------------------------------------------------------------
+
+async function handleAdminFlow(ctx, user, state, gotoFlow) {
+
+  console.log('👑 Administrador detectado -> adminMenuFlow');
+  await state.update({ currentFlow: 'admin' });
+  return gotoFlow(adminMenuFlow);
+}
+
+
+//--------------------------------------------------------------------------------------------------------------
 // Función auxiliar para manejar flujo de usuarios normales
+//--------------------------------------------------------------------------------------------------------------
+
+
 async function handleUserFlow(ctx, user, state, gotoFlow) {
   console.log('📋 Flujo BD:', user.flujo);
   

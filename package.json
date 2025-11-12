@@ -23,7 +23,7 @@
     "@formkit/tempo": "^0.1.2",
     "@prisma/client": "6.18.0",
     "bcrypt": "^6.0.0",
-    "builderbot-provider-sherpa": "^0.1.0",
+    "builderbot-provider-sherpa": "^0.0.8",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^4.21.2",
