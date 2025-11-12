@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-
+import { config } from 'dotenv';
+config();
 const prisma = new PrismaClient();
 
 async function main() {
@@ -756,7 +757,7 @@ async function main() {
       },
       sesiones: 0,
       telefono: '573209455967'
-   },
+   },   
       //   Practicante para pruebas
         {
             idPracticante: uuidv4(),
@@ -806,11 +807,15 @@ async function main() {
             }
         });
     }
-  
+
+//-------------------------------------------------------------------------------------------------------------------------------------------
+
+// Crear consultorios
+
 //-------------------------------------------------------------------------------------------------------------------------------------------
   const admins = [
     {
-      telefono: '573212671263',
+      telefono: process.env.PRIMER_ADMIN || 573183644600,
       rol: 'admin',
       updatedAt: new Date(),
     }

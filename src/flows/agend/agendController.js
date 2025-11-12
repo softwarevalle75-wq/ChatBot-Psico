@@ -24,11 +24,20 @@ export async function asignarCita(usuario) {
 
 		const nuevaCita = await prisma.cita.create({
 			data: {
-				idConsultorio: consultorio.idConsultorio,
-				idUsuario: usuario.idUsuario,
-				idPracticante: practicante.idPracticante,
+				//nombre usuario, nombre prácticante, fecha y hora, consultorio
+				primerNombre: usuario.primerNombre,
+				segundoNombre: usuario.segundoNombre,
+				primerApellido: usuario.primerApellido,
 				fechaHora: horario.fechaHora,
-				estado: "pendiente",
+				nombreConsultorio: consultorio.nombre,
+				nombrePracticante: practicante.nombre,
+				estado: 'pendiente'
+				//----
+				// idConsultorio: consultorio.idConsultorio,
+				// idUsuario: usuario.idUsuario,
+				// idPracticante: practicante.idPracticante,
+				// fechaHora: horario.fechaHora,
+				// estado: "pendiente",
 			},
 		});
 

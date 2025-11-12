@@ -53,6 +53,9 @@ model informacionUsuario {
 
   // Historial de pruebas
   historialTests HistorialTest[]
+
+  //citas
+  @@unique([primerNombre, segundoNombre, primerApellido])
 }
 
 //Modelo Historial pruebas usuario
@@ -113,7 +116,7 @@ model tests {
 
 model consultorio {
   idConsultorio String   @id @unique @default(uuid())
-  nombre        String
+  nombre        String   @unique
   activo        Boolean  @default(true)
   fechaCreacion DateTime @default(now()) @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
 
@@ -125,7 +128,7 @@ model practicante {
   idPracticante    String   @id @unique @default(uuid())
   numero_documento String   @unique
   tipo_documento   String   @default("CC")
-  nombre           String
+  nombre           String   @unique
   genero           String
   estrato          String
   barrio           String
@@ -176,17 +179,21 @@ model rolChat {
 }
 
 model cita {
-  idCita        String   @id @unique @default(uuid())
-  idConsultorio String
-  idUsuario     String
-  idPracticante String
-  fechaHora     DateTime                        @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
-  estado        String   @default("pendiente")
-  fechaCreacion DateTime @default(now())        @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
+  idCita            String       @id @unique @default(uuid())
+  primerNombre      String  
+  segundoNombre     String
+  primerApellido    String
+  fechaHora     DateTime     @db.Timestamp(0) // quita los milisegundos, importante el 0 (representa la presición)
+  nombreConsultorio String  
+  nombrePracticante String
+  estado            String   @default("pendiente")
 
-  consultorio consultorio        @relation(fields: [idConsultorio], references: [idConsultorio]) // Relación con consultorio
-  usuario     informacionUsuario @relation(fields: [idUsuario], references: [idUsuario]) // Relación con informacionUsuario
-  practicante practicante        @relation(fields: [idPracticante], references: [idPracticante]) // Relación con practicante
+  // relación hacia informacionUsuario y consultorio
+  usuario informacionUsuario @relation(fields: [primerNombre, segundoNombre, primerApellido], references: [primerNombre, segundoNombre, primerApellido]) // Relación con informacionUsuario
+  consultorio consultorio @relation(fields: [nombreConsultorio], references: [nombre]) // Relación con consultorio
+
+  // relación hacia practicante 
+  practicante practicante @relation(fields: [nombrePracticante], references: [nombre]) // Relación con practicante
 }
 
 model registroCitas {

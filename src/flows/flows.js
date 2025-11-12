@@ -61,14 +61,6 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         console.log('🚫 Usuario confirmando cita, no interferir con welcomeFlow')
         return;
       }
-      // if (currentFlow === 'agendSinDisponibilidad') {
-      //   console.log('🚫 Usuario sin disponibilidad, no interferir con welcomeFlow')
-      //   return;
-      // }
-      if (currentFlow === 'postAgend') {
-        console.log('🚫 Usuario en postAgend, no interferir con welcomeFlow')
-        return;
-      }
 
       // 2. ⭐ NUEVO: VERIFICAR SI ES PRACTICANTE PRIMERO (ANTES DE AUTENTICAR)
       const rolInfo = await verificarRolUsuario(ctx.from);
@@ -253,11 +245,6 @@ async function handleUserFlow(ctx, user, state, gotoFlow) {
         console.log('🔄 Ya estamos en testSelectionFlow, no redirigir');
         return;
       }
-
-    case 'postAgend':
-      console.log('📅 -> postAgend');
-      await state.update({ currentFlow: 'postAgend' });
-      return gotoFlow(postAgendFlow);
 
     default:
       console.log('❓ Flujo por defecto -> menuFlow');
@@ -680,11 +667,8 @@ export const esDeUniversidadFlow = addKeyword(utils.setEvent('PERTENECE_UNIVERSI
     console.log('🟢 esDeUniversidadFlow Inicializado para:', ctx.from);
   })
   .addAnswer(
-    'Has indicado que perteneces a la universidad Universitaria de Colombia \n\n' +
-    'Para continuar debes ingresar los siguientes datos:' +
-    '\n🔷 Carrera:' +
-    '\n🔷 Jornada:' +
-    '\n🔷 Semestre:'
+    'Has indicado que *perteneces a la universidad* Universitaria de Colombia \n\n' +
+    '👉 Para continuar debes _*ingresar algunos datos*_ a continuación:'
   )
   // capturar carrera
   .addAnswer(
@@ -694,7 +678,7 @@ export const esDeUniversidadFlow = addKeyword(utils.setEvent('PERTENECE_UNIVERSI
       const carrera = ctx.body.trim();
       console.log(ctx.body)
 
-      if(!carrera || carrera.length < 4 ){
+      if(!carrera || carrera.length < 4 && carrera.length > 50){
         await flowDynamic('❌ Debes ingresar una *carrera válida*')
         return fallBack();
       }
@@ -710,7 +694,7 @@ export const esDeUniversidadFlow = addKeyword(utils.setEvent('PERTENECE_UNIVERSI
     async (ctx, { flowDynamic, state, fallBack}) => {
       const jornada = ctx.body.trim();
 
-      if(!jornada || jornada.length < 4 ){
+      if(!jornada || jornada.length < 4 && jornada.length > 50){
         await flowDynamic('❌ Debes ingresar una *jornada válida* _(diurna / nocturna)_')
         return fallBack();
       }
@@ -919,7 +903,7 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
         await state.update({ 
           practicantesDisponibles: practicantesDisponibles,
           practicanteSeleccionado: practicantesDisponibles[0],
-          hayDisponibilidad: true // Flag para saber qué capturar
+          hayDisponibilidad: true
         });
         
         const mensajeHorarios = formatearHorariosDisponibles(practicantesDisponibles);
@@ -936,13 +920,11 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
           '📅 *3* - Cambiar día/horario'
         );
         
-        // NO hacer gotoFlow, continúa en el mismo flujo
-        
       } else {
         console.log('❌ NO HAY DISPONIBILIDAD');
         
         await state.update({ 
-          hayDisponibilidad: false // Flag para saber qué capturar
+          hayDisponibilidad: false
         });
         
         await flowDynamic(
@@ -962,7 +944,7 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
       return gotoFlow(menuFlow);
     }
   })
-  // PASO 4: CAPTURAR RESPUESTA (MANEJA AMBOS CASOS)
+  // PASO 4: CAPTURAR RESPUESTA (DISPONIBILIDAD O NO)
   .addAnswer(
     '',
     { capture: true },
@@ -1010,9 +992,9 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
               '🔹 2 - Volver al menú principal'
             );
             
-            // Limpiar estado de agendamiento
+            // Actualizar estado para capturar siguiente respuesta
             await state.update({ 
-              currentFlow: 'postAgend',
+              citaConfirmada: true,
               diaSeleccionado: null,
               horarioInicio: null,
               horarioFin: null,
@@ -1020,9 +1002,6 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
               practicantesDisponibles: null,
               hayDisponibilidad: null
             });
-            
-            await switchFlujo(ctx.from, 'postAgend');
-            return gotoFlow(postAgendFlow);
             
           } catch (error) {
             console.error('❌ Error guardando cita:', error);
@@ -1033,9 +1012,9 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
                 '¿Qué deseas hacer?\n\n' +
                 '🔹 1 - Seleccionar otro día/horario\n' +
                 '🔹 2 - Volver al menú principal'
-              )
+              );
 
-              await state.update ({ hayDisponibilidad: false });
+              await state.update({ hayDisponibilidad: false });
               return fallBack();
             }
 
@@ -1129,30 +1108,38 @@ export const agendFlow = addKeyword(utils.setEvent('AGEND_FLOW'))
         }
       }
     }
-  );
-
-// ========================================
-// 6. POST AGEND FLOW - DESPUÉS DE AGENDAR
-// ========================================
-
-export const postAgendFlow = addKeyword(utils.setEvent('POST_AGEND_FLOW'))
+  )
+  // PASO 5: POST-CONFIRMACIÓN (CUESTIONARIOS O MENÚ)
   .addAnswer(
     '',
     { capture: true },
     async (ctx, { flowDynamic, gotoFlow, state, fallBack }) => {
+      const citaConfirmada = await state.get('citaConfirmada');
+      
+      // Solo procesar si hay una cita confirmada
+      if (!citaConfirmada) {
+        return;
+      }
+      
       const msg = ctx.body.trim();
       
       if (msg === '1') {
         // Hacer cuestionarios
         await flowDynamic(menuCuestionarios());
         await switchFlujo(ctx.from, 'testSelectionFlow');
-        await state.update({ currentFlow: 'testSelection' });
+        await state.update({ 
+          currentFlow: 'testSelection',
+          citaConfirmada: null
+        });
         return gotoFlow(testSelectionFlow);
         
       } else if (msg === '2') {
         // Volver al menú
         await flowDynamic('✅ Perfecto. Regresando al menú principal...');
-        await state.update({ currentFlow: 'menu' });
+        await state.update({ 
+          currentFlow: 'menu',
+          citaConfirmada: null
+        });
         await switchFlujo(ctx.from, 'menuFlow');
         return gotoFlow(menuFlow);
         

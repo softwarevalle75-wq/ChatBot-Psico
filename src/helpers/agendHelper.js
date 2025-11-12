@@ -192,17 +192,33 @@ export async function guardarCita(telefono, idPracticante, dia, horaInicio) {
     // 5. Crear la cita en la tabla principal
     const cita = await prisma.cita.create({
       data: {
-        idConsultorio: consultorioDisponible.idConsultorio,
-        idUsuario: usuario.idUsuario,
-        idPracticante: practicante.idPracticante,
-        fechaHora: fechaCita,
+        primerNombre: usuario.primerNombre,
+				segundoNombre: usuario.segundoNombre || '',
+				primerApellido: usuario.primerApellido,
+				fechaHora: fechaCita,
+				nombreConsultorio: consultorioDisponible.nombre,
+				nombrePracticante: practicante.nombre,
         estado: 'pendiente'
+        //---
+        // idConsultorio: consultorioDisponible.idConsultorio,
+        // idUsuario: usuario.idUsuario,
+        // idPracticante: practicante.idPracticante,
+        // fechaHora: fechaCita,
+        // estado: 'pendiente'
       }
     });
 
     // 6. También crear en registroCitas para historial
     await prisma.registroCitas.create({
       data: {
+        // primerNombre: usuario.primerNombre,
+				// segundoNombre: usuario.segundoNombre,
+				// primerApellido: usuario.primerApellido,
+				// fechaHora: fechaCita,
+				// nombreConsultorio: consultorioDisponible.nombre,
+				// nombrePracticante: practicante.nombre,
+        // estado: 'pendiente'
+        //---
         idCita: cita.idCita,
         idConsultorio: consultorioDisponible.idConsultorio,
         idUsuario: usuario.idUsuario,
