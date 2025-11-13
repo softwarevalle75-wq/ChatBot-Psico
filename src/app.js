@@ -17,17 +17,26 @@ import {
 
 // Importar flujos de autenticación web (temporalmente comentado)
 // import { 
-//	welcomeAuthFlow, 
-//	checkAuthFlow 
-// } from "./flows/authFlow.js";
+	//	welcomeAuthFlow, 
+	//	checkAuthFlow 
+	// } from "./flows/authFlow.js";
+	
+	import {
+		adminEntryFlow,
+		adminMenuFlow,
+		adminPedirTelefonoFlow,
+		adminAsignarRolFlow,
+		adminMenuMiddleware
+	} from './flows/roles/adminMenuFlow.js'
+	
+	import { 
+		practMenuFlow, 
+		practOfrecerTestFlow__ElegirTest, 
+		practOfrecerTestFlow__PedirTelefono, 
+		practConsejosFlow,
+		practEsperarResultados
+	} from './flows/roles/practMenuFlow.js'
 
-import { 
-	practMenuFlow, 
-	practOfrecerTestFlow__ElegirTest, 
-	practOfrecerTestFlow__PedirTelefono, 
-	practConsejosFlow,
-	practEsperarResultados
-} from './flows/roles/practMenuFlow.js'
 
 import {
 	getPracticante,
@@ -90,6 +99,13 @@ const adapterFlow = createFlow([
 
     // Flujos de menús (agrupados)
     menuFlow,
+
+	adminEntryFlow,
+    adminMenuFlow,
+    adminPedirTelefonoFlow,
+    adminAsignarRolFlow,
+    adminMenuMiddleware,
+
     // Flujos de roles (después de welcome)
     practMenuFlow,
     practEsperarResultados,

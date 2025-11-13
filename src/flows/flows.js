@@ -18,7 +18,13 @@ import { procesarDass21 } from './tests/dass21.js'
 import { procesarGHQ12 } from './tests/ghq12.js'
 // Importar el helper al inicio del archivo
 import { verificarAutenticacionWeb } from '../helpers/auntenticarUsuario.js';
-import { adminMenuFlow } from './roles/adminMenuFlow.js'
+import { 
+  adminEntryFlow, 
+  // adminMenuFlow,
+  // adminMenuMiddleware,
+  // adminPedirTelefonoFlow,
+  // adminAsignarRolFlow 
+} from './roles/adminMenuFlow.js'
 import { practMenuFlow, practEsperarResultados } from './roles/practMenuFlow.js'
 import { 
   buscarPracticanteDisponible, 
@@ -121,7 +127,10 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
             user: usuarioAdmin 
           });
           
-          return await handleAdminFlow(ctx, usuarioAdmin, state, gotoFlow, flowDynamic);
+          console.log('🔀 Llamando handleAdminFlow...'); // ← AGREGAR
+          const resultado = await handleAdminFlow(ctx, usuarioAdmin, state, gotoFlow, flowDynamic);
+          console.log('✅ handleAdminFlow ejecutado'); // ← AGREGAR
+          return resultado;
         }
       }
 
@@ -187,9 +196,11 @@ async function handlePracticanteFlow(ctx, user, state, gotoFlow) {
 
 async function handleAdminFlow(ctx, user, state, gotoFlow) {
 
-  console.log('👑 Administrador detectado -> adminMenuFlow');
-  await state.update({ currentFlow: 'admin' });
-  return gotoFlow(adminMenuFlow);
+  await state.update({ 
+    currentFlow: 'admin',
+    user: user  // ← Asegurarse de guardar el user
+  });
+  return gotoFlow(adminEntryFlow);
 }
 
 

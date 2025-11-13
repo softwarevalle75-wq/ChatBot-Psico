@@ -11,27 +11,6 @@ async function main() {
         //1
         {
       idPracticante: uuidv4(),
-      numero_documento: '99999999999',
-      tipo_documento: 'CC',
-      nombre: 'Cristian Mendoza',
-      genero: 'M',
-      estrato: '3',
-      barrio: 'Chapinero',
-      localidad: 'Chapinero',
-      horarios: {
-         create: [
-            { dia: "LUNES", horaInicio: 1020, horaFin: 1080 },
-            { dia: "MARTES", horaInicio: 1020, horaFin: 1080 },
-            { dia: "MIERCOLES", horaInicio: 1020, horaFin: 1080 },
-            { dia: "JUEVES", horaInicio: 1020, horaFin: 1080 },
-            { dia: "VIERNES", horaInicio: 1020, horaFin: 1080 }
-         ]
-      },
-      sesiones: 0,
-      telefono: '573153340800'
-   },
-        {
-      idPracticante: uuidv4(),
       numero_documento: '111111111',
       tipo_documento: 'CC',
       nombre: 'Maria Del Carmen Corredor Sarmiento',
