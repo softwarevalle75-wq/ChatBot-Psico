@@ -23,14 +23,14 @@ export const phoneFromAny = (candidate) => {
   // 🔥 JID normal (573122038876@s.whatsapp.net)
   match = str.match(/(\d{10,15})@s\.whatsapp\.net/)
   if (match) {
-    console.log('🔍 JID normal detectado:', match[1])
+    // console.log('🔍 JID normal detectado:', match[1])
     return match[1]
   }
   
   // 🔥 Solo dígitos (pero con validación de longitud)
   match = str.match(/\d{10,15}/)
   if (match) {
-    console.log('🔍 Solo dígitos detectado:', match[0])
+    // console.log('🔍 Solo dígitos detectado:', match[0])
     return match[0]
   }
   
@@ -51,7 +51,7 @@ export const getRealPhoneFromCtx = (ctx) => {
     const remoteJidAlt = ctx?.key?.remoteJidAlt
     
     console.log('🔍 remoteJid:', remoteJid)
-    console.log('🔍 remoteJidAlt:', remoteJidAlt)
+    // console.log('🔍 remoteJidAlt:', remoteJidAlt)
     
     // Intentar extraer de remoteJidAlt primero (si no tiene @lid)
     if (remoteJidAlt && !remoteJidAlt.includes('@lid')) {

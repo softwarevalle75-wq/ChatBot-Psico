@@ -19,8 +19,8 @@ import { procesarGHQ12 } from './tests/ghq12.js'
 // Importar el helper al inicio del archivo
 import { verificarAutenticacionWeb } from '../helpers/auntenticarUsuario.js';
 import { 
-  adminEntryFlow, 
-  // adminMenuFlow,
+  // adminEntryFlow, 
+  adminMenuFlow,
   // adminMenuMiddleware,
   // adminPedirTelefonoFlow,
   // adminAsignarRolFlow 
@@ -29,7 +29,7 @@ import { practMenuFlow, practEsperarResultados } from './roles/practMenuFlow.js'
 import { 
   buscarPracticanteDisponible, 
   guardarCita, 
-  formatearMensajeCita,
+  formatearMensajeCita, 
   formatearHorariosDisponibles 
 } from '../helpers/agendHelper.js';
 import Prisma from '@prisma/client'
@@ -39,10 +39,10 @@ export const prisma = new Prisma.PrismaClient()
 export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
   async (ctx, { gotoFlow, flowDynamic, state }) => {
     try {
-      console.log('🔍 ===== DEBUG CTX COMPLETO =====')
-      console.log('ctx.from:', ctx.from)
-      console.log('ctx.key:', JSON.stringify(ctx.key, null, 2))
-      console.log('🔍 ==============================')
+      // console.log('🔍 ===== DEBUG CTX COMPLETO =====')
+      // console.log('ctx.from:', ctx.from)
+      // console.log('ctx.key:', JSON.stringify(ctx.key, null, 2))
+      // console.log('🔍 ==============================')
       
       // 1. VERIFICAR FLUJOS ACTIVOS CRÍTICOS (prioridad máxima)
       const currentFlow = await state.get('currentFlow');
@@ -68,7 +68,12 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         return;
       }
 
-      // 2. ⭐ NUEVO: VERIFICAR SI ES PRACTICANTE PRIMERO (ANTES DE AUTENTICAR)
+      // 2. ⭐ NUEVO: VERIFICAR SI ES PRACTICANTE PRIMERO (ANTES DE AUTENTICAR)      
+      if (currentFlow === 'admin'){
+        console.log('Ya esta en flujo admin, se omite verificación de rol')
+        return;
+      }
+
       const rolInfo = await verificarRolUsuario(ctx.from);
 
       if (rolInfo) {
@@ -120,16 +125,16 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
             flujo: 'adminMenuFlow'
           };
 
-          console.log('👑 Admin a guardar:', JSON.stringify(usuarioAdmin, null, 2));
+          // console.log('👑 Admin a guardar:', JSON.stringify(usuarioAdmin, null, 2));
           
           await state.update({ 
             initialized: true, 
-            user: usuarioAdmin 
+            user: usuarioAdmin,
+            currentFlow: 'admin'
           });
           
-          console.log('🔀 Llamando handleAdminFlow...'); // ← AGREGAR
+          console.log('🔀 Llamando handleAdminFlow...'); 
           const resultado = await handleAdminFlow(ctx, usuarioAdmin, state, gotoFlow, flowDynamic);
-          console.log('✅ handleAdminFlow ejecutado'); // ← AGREGAR
           return resultado;
         }
       }
@@ -196,11 +201,22 @@ async function handlePracticanteFlow(ctx, user, state, gotoFlow) {
 
 async function handleAdminFlow(ctx, user, state, gotoFlow) {
 
-  await state.update({ 
-    currentFlow: 'admin',
-    user: user  // ← Asegurarse de guardar el user
-  });
-  return gotoFlow(adminEntryFlow);
+  // await state.update({ 
+  //   currentFlow: 'admin',
+  //   user: user  // ← Asegurarse de guardar el user
+  // });
+
+  // const currentFlow = await state.get('currentFlow');
+  
+  console.log('🔑 Admin detectado -> adminEntryFlow');
+  await state.update({ currentFlow: 'admin', user: user });
+
+  // if (currentFlow === 'admin') {
+  //   console.log('🚫 Admin ya en menú, no interferir con welcomeFlow');
+  //   return;
+  // }
+
+  return gotoFlow(adminMenuFlow);
 }
 
 

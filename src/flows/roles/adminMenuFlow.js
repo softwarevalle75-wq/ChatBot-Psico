@@ -1,5 +1,3 @@
-// ==================== adminMenuFlow.js ====================
-
 import { addKeyword } from '@builderbot/bot';
 import { setRolTelefono, getRolTelefono, createUsuarioBasico, ensureRolMapping, obtenerUsuario } from '../../queries/queries.js';
 
@@ -19,8 +17,8 @@ const askRole  = '🎭 ¿Qué rol quieres asignar? Escribe: *usuario*, *practica
 const validRoles = new Set(['usuario', 'practicante', 'admin']);
 const normalizePhone = (raw) => (raw || '').replace(/\D/g, '');
 
-// ========== FLUJO DE ENTRADA ==========
-// ========== FLUJO DE ENTRADA SIMPLIFICADO ==========
+// ===============================================================================================
+
 export const adminEntryFlow = addKeyword(['admin'])
   .addAction(async (ctx, { state, gotoFlow, flowDynamic }) => {
     console.log('🔐 AdminEntryFlow - Usuario ya verificado en welcomeFlow');
@@ -41,59 +39,48 @@ export const adminEntryFlow = addKeyword(['admin'])
     return gotoFlow(adminMenuFlow);
   });
 
-// ========== MENÚ PRINCIPAL ==========
-// CAMBIO IMPORTANTE: Usar keywords específicas en lugar de __NUNCA__
-export const adminMenuFlow = addKeyword(['1', '2', '3', '9', 'menu'])
+// ===============================================================================================
+export const adminMenuFlow = addKeyword(['menu'])
   .addAction(async (_, { state }) => {
     await state.update({ currentFlow: 'admin' });
-    console.log('🔥 Admin Menu Flow - Estado actualizado');
   })
-  .addAnswer('👑 *Panel de Administración*')
   .addAnswer(
     MENU, 
     { capture: true }, 
-    async (ctx, { state, flowDynamic, gotoFlow }) => {
+    async (ctx, { state, flowDynamic, gotoFlow, fallBack }) => {
       console.log('📥 Admin Menu - Opción recibida:', ctx.body);
       const opt = (ctx.body || '').trim();
       
       // Validar opción
       if (!['1','2','3','9'].includes(opt)) {
-        await flowDynamic('❌ Opción inválida. Responde con *1*, *2*, *3* o *9*.');
-        return gotoFlow(adminMenuFlow);
+        return fallBack('❌ Opción inválida. Responde con *1*, *2*, *3* o *9*.');        
       }
 
       // Opción de salir
       if (opt === '9') {
+        await state.update({ currentFlow: null });
         await state.clear();
         return await flowDynamic('👋 Saliendo del menú admin.');
       }
 
-      // Guardar opción y continuar
+      // Guardar opción
       console.log('✅ Opción válida, guardando:', opt);
       await state.update({ admin_opt: opt });
-      console.log('🔀 Redirigiendo a adminPedirTelefonoFlow');
+      
+      console.log('🔀 Redirigiendo a adminPedirTelefonoFlow');      
       return gotoFlow(adminPedirTelefonoFlow);
     }
   );
 
-// ========== PEDIR TELÉFONO ==========
-// CAMBIO: Usar keyword de captura universal
+// ===============================================================================================
+
 export const adminPedirTelefonoFlow = addKeyword(['__capture_only__'])
-  .addAction(async (_, { state, flowDynamic }) => {
-    await state.update({ currentFlow: 'admin' });
-    console.log('📱 Admin Pedir Teléfono - Inicializado');
-    
-    // Enviar pregunta solo si es la primera vez
-    const phoneAsked = await state.get('phone_asked');
-    if (!phoneAsked) {
-      await state.update({ phone_asked: true });
-      await flowDynamic(askPhone);
-    }
-  })
-  .addAction(
-    { capture: true },
+  .addAnswer(
+    askPhone,
+    { capture: true }, 
     async (ctx, { state, flowDynamic, gotoFlow }) => {
       console.log('📥 Teléfono recibido:', ctx.body);
+      
       const stepOpt = await state.get('admin_opt');
       
       // Verificar que exista la opción guardada
@@ -118,12 +105,9 @@ export const adminPedirTelefonoFlow = addKeyword(['__capture_only__'])
       }
 
       console.log('✅ Teléfono normalizado:', phone);
-      await state.update({ 
-        admin_phone: phone,
-        phone_asked: false // Reset flag
-      });
+      await state.update({ admin_phone: phone });
 
-      // OPCIÓN 3: Ver rol actual (termina aquí)
+      // OPCIÓN 3: Ver rol actual
       if (stepOpt === '3') {
         console.log('🔍 Consultando rol para:', phone);
         try {
@@ -140,27 +124,25 @@ export const adminPedirTelefonoFlow = addKeyword(['__capture_only__'])
         return gotoFlow(adminMenuFlow);
       }
 
-      // Opciones 1 y 2: continuar al flujo de asignar rol
+      // Opciones 1 y 2: continuar
       console.log('🔀 Continuando a adminAsignarRolFlow');
       return gotoFlow(adminAsignarRolFlow);
     }
   );
+// ===============================================================================================
 
-// ========== ASIGNAR ROL ==========
-// CAMBIO: Usar keyword de captura universal
 export const adminAsignarRolFlow = addKeyword(['__capture_only__'])
-  .addAction(async (_, { state, flowDynamic }) => {
-    await state.update({ currentFlow: 'admin' });
+  .addAction(async (_, { state }) => {
     console.log('👤 Admin Asignar Rol - Inicializado');
     
     // Enviar pregunta solo si es la primera vez
     const roleAsked = await state.get('role_asked');
     if (!roleAsked) {
       await state.update({ role_asked: true });
-      await flowDynamic(askRole);
     }
   })
-  .addAction(
+  .addAnswer(
+    askRole,
     { capture: true },
     async (ctx, { state, flowDynamic, gotoFlow }) => {
       console.log('📥 Rol recibido:', ctx.body);
@@ -210,7 +192,8 @@ export const adminAsignarRolFlow = addKeyword(['__capture_only__'])
     }
   );
 
-// ========== MIDDLEWARE SIMPLIFICADO ==========
+// ===============================================================================================
+
 export const adminMenuMiddleware = addKeyword(['menu'])
   .addAction(async (ctx, { state, gotoFlow, endFlow }) => {
     console.log('📋 Middleware menu - verificando si es admin');

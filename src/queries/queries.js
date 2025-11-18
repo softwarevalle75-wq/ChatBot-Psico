@@ -60,6 +60,7 @@ export const perteneceUniversidad = async (numero, datos) => {
 //Verificar rol sin autenticación completa
 export async function verificarRolUsuario(telefono) {
   try {
+    console.log('======================================')
     console.log('🔍 Verificando rol para:', telefono);
     
     // Buscar con el número tal como viene
@@ -86,6 +87,7 @@ export async function verificarRolUsuario(telefono) {
     }
 
     console.log('📋 Rol encontrado:', rolInfo ? rolInfo.rol : 'No encontrado');
+	console.log('======================================')
     return rolInfo;
     
   } catch (error) {

@@ -157,67 +157,7 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
         await flowDynamic('❌ Ocurrió un error desconocido. Intenta de nuevo.');
         return fallBack();
       }
-      return gotoFlow(nextFlow);
-      // const mapa = { '1': 'ghq12', '2': 'dass21' };
-      // const opt = (ctx.body || '').trim();
-      // const tipoTest = mapa[opt];
-      
-      // if (!tipoTest) {
-      //   await flowDynamic('❌ Opción inválida. Responde *1* o *2*');
-      //   return fallBack();
-      // }
-      // let tel = await state.get('pacienteTelefono');
-      // tel = 57 + tel;
-      // console.log(tel);
-      
-      // // Obtener info del practicante actual
-      // const user = state.get('user');
-      // await obtenerUsuario(tel);  
-      // console.log(await obtenerUsuario(tel));  
-      
-      // // Asignar el practicante al paciente
-      // console.log(`🔍 DEBUG: User completo:`, user);
-      // if (user && user.data && user.data.idPracticante) {
-      //   try {
-      //     console.log(`🔍 DEBUG: Intentando asignar practicante ${user.data.idPracticante} al paciente ${tel}`);
-      //     await prisma.informacionUsuario.update({
-      //       where: { telefonoPersonal: tel },
-      //       data: { practicanteAsignado: user.data.idPracticante }
-      //     });
-      //     console.log(`✅ Practicante ${user.data.idPracticante} asignado al paciente ${tel}`);
-          
-      //     // Verificar que se guardó correctamente
-      //     const verificacion = await prisma.informacionUsuario.findUnique({
-      //       where: { telefonoPersonal: tel },
-      //       select: { practicanteAsignado: true }
-      //     });
-      //     console.log(`🔍 DEBUG: Verificación - practicanteAsignado guardado:`, verificacion);
-      //   } catch (error) {
-      //     console.error('❌ Error asignando practicante:', error);
-      //   }
-      // } else {
-      //   console.log(`❌ DEBUG: No se puede asignar practicante. User:`, user);
-      // }
-      
-      // // Asignar el tipo de test específico al paciente
-      // try {
-      //   await changeTest(tel, tipoTest);
-      //   console.log(`✅ Test ${tipoTest} asignado al paciente ${tel}`);
-      // } catch (error) {
-      //   console.error('❌ Error asignando test:', error);
-      // }
-      
-      // await cambiarFlujoYNotificar(tel, 'testFlow', `Se te ha asignado una prueba, escribe para iniciar.`)   
-      
-      // await flowDynamic(
-      //   `✅ Listo. Asigné el test *${tipoTest.toUpperCase()}* al paciente *${tel}*.\n` +
-      //   `Cuando el paciente escriba al bot, iniciará el cuestionario.`
-      // );
-
-      // await new Promise(res => setTimeout(res, 500));    
-      // await state.update({ currentFlow: 'esperandoResultados' });
-      // console.log('🔥 Estado actualizado - currentFlow: esperandoResultados');
-      // return gotoFlow(practEsperarResultados);      
+      return gotoFlow(nextFlow);      
     }
   );
 
@@ -295,7 +235,7 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
       return endFlow('❌ No tienes permisos de practicante.');
     }
     return gotoFlow(practMenuFlow);
-  });
+  }); 
   
   
   //------------------------------------------------------------------------------------------------------------------------------
