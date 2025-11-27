@@ -17,7 +17,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 console.log('📲 BotNum desde la config: ',process.env.BOT_NUM)
 
 const app = express();
-const PORT = process.env.WEB_PORT || 3002;
+const PORT =  process.env.WEB_PORT || process.env.PORT || 3002;
 const webHost = process.env.WEB_HOST || 'localhost';
 
 app.get('/config', (req, res) => {
