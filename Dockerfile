@@ -1,39 +1,33 @@
-# Image size ~ 400MB
-FROM node:21-alpine3.18 as builder
+# Imagen base
+FROM node:20-alpine3.18
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-ENV PNPM_HOME=/usr/local/bin
+# Paquetes necesarios para dependencias nativas (por si acaso)
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git
 
-COPY . .
+# Instalar pnpm global
+RUN npm install -g pnpm@9
 
+# Copiar archivos de dependencias
 COPY package*.json *-lock.yaml ./
 
-RUN apk add --no-cache --virtual .gyp \
-        python3 \
-        make \
-        g++ \
-    && apk add --no-cache git \
-    && pnpm install \
-    && apk del .gyp
+# Instalar TODAS las dependencias (incluye prisma CLI)
+RUN pnpm install
 
-FROM node:21-alpine3.18 as deploy
+# Copiar el resto del código
+COPY . .
 
-WORKDIR /app
+# Generar el cliente de Prisma dentro del contenedor
+RUN pnpm prisma generate
 
-ARG PORT
-ENV PORT $PORT
-EXPOSE $PORT
+# Configurar puerto 
+ENV PORT=3000
+EXPOSE 3000
 
-COPY --from=builder /app ./
-COPY --from=builder /app/*.json /app/*-lock.yaml ./
-
-RUN corepack enable && corepack prepare pnpm@latest --activate 
-ENV PNPM_HOME=/usr/local/bin
-
-RUN npm cache clean --force && pnpm install --production --ignore-scripts \
-    && addgroup -g 1001 -S nodejs && adduser -S -u 1001 nodejs \
-    && rm -rf $PNPM_HOME/.npm $PNPM_HOME/.node-gyp
-
-CMD ["npm", "start"]
+# Usar tu script "start": "node start-all.js"
+CMD ["pnpm", "start"]
