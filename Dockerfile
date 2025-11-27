@@ -25,11 +25,13 @@ COPY . .
 # Generar el cliente de Prisma dentro del contenedor
 RUN pnpm prisma generate
 
-RUN pnpm prisma pull
-
 # Configurar puerto 
 ENV PORT=3000
 EXPOSE 3000
 
+# ✅ Ejecuta migraciones AL INICIAR el contenedor, no durante el build
+CMD sh -c "pnpm prisma migrate deploy && pnpm start"
+
 # Usar tu script "start": "node start-all.js"
 CMD ["pnpm", "start"]
+
