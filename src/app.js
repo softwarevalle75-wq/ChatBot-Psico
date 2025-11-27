@@ -533,6 +533,7 @@ const adapterFlow = createFlow([
 	try {
 		httpServer(+PORT);
 		console.log(`✅ Servidor HTTP iniciado correctamente en puerto ${PORT}`);
+		await new Promise(() => {});
 	} catch (error) {
 		console.error('❌ Error iniciando servidor HTTP:', error);
 		throw error;
