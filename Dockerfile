@@ -24,6 +24,7 @@ COPY . .
 
 # Generar el cliente de Prisma dentro del contenedor
 RUN pnpm prisma generate
+
 RUN pnpm prisma pull
 
 # Configurar puerto 
