@@ -30,4 +30,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Usar tu script "start": "node start-all.js"
-CMD ["pnpm", "start"]
+CMD ["pnpm", "bot"]
