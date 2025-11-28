@@ -139,6 +139,7 @@ const adapterFlow = createFlow([
 			user: process.env.MYSQL_DB_USER,
 			database: process.env.MYSQL_DB_NAME,
 			password: process.env.MYSQL_DB_PASSWORD,
+			port: process.env.MYSQL_DB_PORT || 3306,
 			timezone: '-05:00' // zona horaria para Colombia
 		});
 		console.log('✅ Base de datos configurada');
