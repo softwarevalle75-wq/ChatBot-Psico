@@ -30,6 +30,6 @@ ENV PORT=3000
 EXPOSE 3000
 
 # ✅ Ejecuta migraciones AL INICIAR el contenedor, no durante el build
-CMD sh -c "pnpm prisma db push && pnpm start"
+CMD sh -c "pnpm start"
 
 
