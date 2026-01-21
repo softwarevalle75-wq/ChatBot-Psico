@@ -30,6 +30,9 @@ ENV PORT=3000
 EXPOSE 3000
 
 # ✅ Ejecuta migraciones AL INICIAR el contenedor, no durante el build
-CMD sh -c "pnpm start"
-
-
+CMD sh -c "
+  echo '⏳ Esperando MySQL...' &&
+  sleep 5 &&
+  pnpm prisma migrate deploy &&
+  pnpm start
+"

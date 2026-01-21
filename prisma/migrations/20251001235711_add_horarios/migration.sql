@@ -122,8 +122,8 @@ CREATE TABLE `practicante` (
 CREATE TABLE `Horario` (
     `id` VARCHAR(191) NOT NULL,
     `dia` ENUM('LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO') NOT NULL,
-    `horaInicio` DATETIME(3) NOT NULL,
-    `horaFin` DATETIME(3) NOT NULL,
+    `horaInicio` INT NOT NULL,
+    `horaFin` INT NOT NULL,
     `practicanteId` VARCHAR(191) NOT NULL,
 
     PRIMARY KEY (`id`)
