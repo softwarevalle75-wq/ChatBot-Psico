@@ -140,6 +140,33 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
       }
 
       // 3. VERIFICAR AUTENTICACIÓN WEB SOLO PARA USUARIOS NORMALES
+      // TEMPORARY: Allow bypassing auth for testing with DISABLE_AUTH env var
+      if (process.env.DISABLE_AUTH === 'true') {
+        console.log('🔧 La verificación de registro esta deshabilitada...');
+        const mockUser = {
+          idUsuario: 'test-user',
+          primerNombre: 'Test',
+          primerApellido: 'User',
+          correo: 'test@example.com',
+          telefonoPersonal: ctx.from,
+          flujo: 'menuFlow',
+          testActual: null,
+          historial: [],
+          fechaCreacion: new Date(),
+          consentimientoInformado: 'Si',
+          practicanteAsignado: null  // Set to null to test practitioner check; change to a valid ID if needed
+        };
+        const usuarioAutenticado = {
+          tipo: 'usuario',
+          data: mockUser,
+          flujo: 'menuFlow'
+        };
+        console.log('👤 Mock user authenticated:', usuarioAutenticado);
+        await state.update({ initialized: true, user: usuarioAutenticado });
+        // Skip university check and go to menu
+        return await handleUserFlow(ctx, usuarioAutenticado, state, gotoFlow);
+      }
+
       const authUser = await verificarAutenticacionWeb(ctx.from, flowDynamic);
       if (!authUser) return; // Si no está autenticado, parar aquí
       
@@ -654,12 +681,18 @@ export const menuFlow = addKeyword(utils.setEvent('MENU_FLOW'))
         const msg = validarRespuestaMenu(ctx.body, ['1', '2']);
 
         if (msg === '1') {
+          // Verificar asignación de practicante
+          const userFromDB = await obtenerUsuario(ctx.from);
+          if (!userFromDB || !userFromDB.data.practicanteAsignado) {
+            await flowDynamic('🚫 *Debes tener un profesional asignado para realizar cuestionarios.*');
+            return fallBack();
+          } 
           // Hacer cuestionarios
           await flowDynamic(menuCuestionarios());
           await switchFlujo(ctx.from, 'testSelectionFlow') // DESCOMENTADO - ahora funciona
           await state.update({ currentFlow: 'testSelection' }); // ACTUALIZAR ESTADO
           return gotoFlow(testSelectionFlow, { body: '' });
-          
+
         } else if (msg === '2') {
           //await flowDynamic('🛠 Lo sentimos! esta opción no esta disponible en este momento. \n\n*Pero, puedes realizar una prueba*')
           await switchFlujo(ctx.from, 'agendFlow');

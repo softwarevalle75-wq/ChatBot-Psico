@@ -174,7 +174,8 @@ export const obtenerUsuario = async (numero) => {
           testActual: true,
           historial: true,
           fechaCreacion: true,
-          consentimientoInformado: true
+          consentimientoInformado: true,
+          practicanteAsignado: true
         }
       })
 
