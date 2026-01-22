@@ -33,6 +33,8 @@ EXPOSE 3000
 CMD sh -c "\
   echo '⏳ Esperando MySQL...' && \
   sleep 5 && \
-  pnpm prisma migrate deploy && \
+  pnpm prisma migrate reset --force && \ 
   pnpm start\
 "
+
+# Cambiar reset por deploy en producción
