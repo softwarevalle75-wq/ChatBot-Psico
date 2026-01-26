@@ -501,6 +501,12 @@ export const notificarTestCompletadoAPracticante = async (telefonoPaciente) => {
 			"✅ *Test completado.* Los resultados han sido enviados.\n\n_Escribe cualquier mensaje para regresar al menú._"
 		);
 
+		// Cambiar estado de practicante en BD
+		await prisma.informacionUsuario.update({
+			where: { telefonoPersonal: telefonoPracticante },
+			data: { flujo: 'practMenuFlow' }
+		})
+
 		console.log(`✅ Practicante ${telefonoPracticante} notificado del test completado`);
 		return true;
 	} catch (error) {

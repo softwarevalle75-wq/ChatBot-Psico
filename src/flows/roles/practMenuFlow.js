@@ -172,20 +172,12 @@ export const practOfrecerTestFlow__ElegirTest = addKeyword('__NUNCA__')
     console.log('🔥 Estado actualizado - currentFlow: esperandoResultados');
   })
   .addAnswer(
-    '⏳ Por favor, espera a que el paciente termine su prueba.',   
+    '⏳ Por favor, espera a que el paciente termine su prueba.\n\n📝 Cuando termine, recibirás una notificación.',   
     { capture: true },
-    async (_, { flowDynamic, gotoFlow, state }) => {      
-      // A partir de ahora, cualquier mensaje del practicante lo saca del estado de espera
-      console.log('🔄 Mensaje recibido en practEsperarResultados -> salir de espera');
-      await flowDynamic('✅ *Test completado.* Regresando al menú del practicante...');
+    async (_, { flowDynamic}) => {
 
-      await state.update({
-        currentFlow: 'practicante',
-        esperandoResultados: false,
-        testCompletadoPorPaciente: false,
-      });
-
-      return gotoFlow(practMenuFlow);
+      await flowDynamic('⏳ Por favor, espera a que el paciente termine su prueba.');
+      return;
     }
   )
 

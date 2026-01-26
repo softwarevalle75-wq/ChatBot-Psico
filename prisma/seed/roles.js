@@ -754,7 +754,7 @@ async function main() {
                 ]
                 },
             sesiones: 0, //agregar sesiones
-            telefono: '573123192484', //agregar telefono
+            telefono: '573215963002', //agregar telefono
         },
     ]
 

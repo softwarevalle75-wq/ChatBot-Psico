@@ -139,34 +139,7 @@ export const welcomeFlow = addKeyword(EVENTS.WELCOME).addAction(
         }
       }
 
-      // 3. VERIFICAR AUTENTICACIÓN WEB SOLO PARA USUARIOS NORMALES
-      // TEMPORARY: Allow bypassing auth for testing with DISABLE_AUTH env var
-      if (process.env.DISABLE_AUTH === 'true') {
-        console.log('🔧 La verificación de registro esta deshabilitada...');
-        const mockUser = {
-          idUsuario: 'test-user',
-          primerNombre: 'Test',
-          primerApellido: 'User',
-          correo: 'test@example.com',
-          telefonoPersonal: ctx.from,
-          flujo: 'menuFlow',
-          testActual: null,
-          historial: [],
-          fechaCreacion: new Date(),
-          consentimientoInformado: 'Si',
-          practicanteAsignado: null  // Set to null to test practitioner check; change to a valid ID if needed
-        };
-        const usuarioAutenticado = {
-          tipo: 'usuario',
-          data: mockUser,
-          flujo: 'menuFlow'
-        };
-        console.log('👤 Mock user authenticated:', usuarioAutenticado);
-        await state.update({ initialized: true, user: usuarioAutenticado });
-        // Skip university check and go to menu
-        return await handleUserFlow(ctx, usuarioAutenticado, state, gotoFlow);
-      }
-
+      // 3. VERIFICAR AUTENTICACIÓN WEB SOLO PARA USUARIOS NORMALES      
       const authUser = await verificarAutenticacionWeb(ctx.from, flowDynamic);
       if (!authUser) return; // Si no está autenticado, parar aquí
       
