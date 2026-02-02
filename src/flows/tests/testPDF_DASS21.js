@@ -161,6 +161,26 @@ export const generarPDFResultadosDASS21 = async (numeroUsuario, puntajes, respue
                 doc.text(`• ${rec}`, { indent: 10 })
                    .moveDown(0.3);
             });
+
+            // RESUMEN POR SUBESCALA
+            if (doc.y > 650) {
+                doc.addPage();
+            }
+            doc.moveDown(1)
+               .fontSize(14)
+               .font('Helvetica-Bold')
+               .text('RESUMEN POR SUBESCALA:', { underline: true })
+               .moveDown(0.5);
+
+            const resumenSubescalas = calcularResumenPorSubescalaDASS21(respuestas);
+            doc.font('Helvetica')
+               .fontSize(11);
+
+            Object.keys(resumenSubescalas).forEach((subescala) => {
+                const resumen = resumenSubescalas[subescala];
+                doc.text(`• ${subescala}: ${resumen.totalPuntos} puntos | Items elevados (2-3): ${resumen.itemsElevados}`)
+                   .moveDown(0.3);
+            });
             
             // PIE DE PÁGINA
             doc.moveDown(2)
@@ -300,6 +320,33 @@ const obtenerInterpretacionRespuestaDASS21 = (puntos) => {
     if (puntos === 2) return "Respuesta que indica presencia moderada del síntoma, requiere atención.";
     if (puntos === 3) return "Respuesta que indica presencia severa del síntoma, requiere intervención.";
     return "Interpretación no disponible.";
+};
+
+// Función para calcular resumen por subescala DASS-21
+const calcularResumenPorSubescalaDASS21 = (respuestas) => {
+    const resumen = {
+        "Depresión": { totalPuntos: 0, itemsElevados: 0 },
+        "Ansiedad": { totalPuntos: 0, itemsElevados: 0 },
+        "Estrés": { totalPuntos: 0, itemsElevados: 0 }
+    };
+    const preguntasCompletas = obtenerPreguntasCompletasDASS21();
+
+    for (let i = 0; i < preguntasCompletas.length; i++) {
+        const pregunta = preguntasCompletas[i];
+        const respuestaUsuario = obtenerRespuestaUsuarioDASS21(respuestas, i + 1);
+        const puntos = respuestaUsuario.puntos || 0;
+
+        if (!resumen[pregunta.subescala]) {
+            resumen[pregunta.subescala] = { totalPuntos: 0, itemsElevados: 0 };
+        }
+
+        resumen[pregunta.subescala].totalPuntos += puntos;
+        if (puntos >= 2) {
+            resumen[pregunta.subescala].itemsElevados += 1;
+        }
+    }
+
+    return resumen;
 };
 
 // Función para generar análisis detallado DASS-21

@@ -133,6 +133,26 @@ export const generarPDFResultados = async (numeroUsuario, puntaje, respuestas, u
                 doc.text(`• ${rec}`, { indent: 10 })
                    .moveDown(0.3);
             });
+
+            // RESUMEN POR ÁREA
+            if (doc.y > 650) {
+                doc.addPage();
+            }
+            doc.moveDown(1)
+               .fontSize(14)
+               .font('Helvetica-Bold')
+               .text('RESUMEN POR ÁREA:', { underline: true })
+               .moveDown(0.5);
+
+            const resumenAreas = calcularResumenPorAreaGHQ12(respuestas);
+            doc.font('Helvetica')
+               .fontSize(11);
+
+            Object.keys(resumenAreas).forEach((area) => {
+                const resumen = resumenAreas[area];
+                doc.text(`• ${area}: ${resumen.totalPuntos} puntos | Items elevados (2-3): ${resumen.itemsElevados}`)
+                   .moveDown(0.3);
+            });
             
             // PIE DE PÁGINA
             doc.moveDown(2)
@@ -227,6 +247,29 @@ const obtenerInterpretacionRespuesta = (numeroPregunta, puntos) => {
     if (puntos === 2) return "Respuesta que sugiere cierta preocupación en esta área específica.";
     if (puntos === 3) return "Respuesta que indica malestar significativo en esta área, requiere atención.";
     return "Interpretación no disponible.";
+};
+
+// Función para calcular resumen por área GHQ-12
+const calcularResumenPorAreaGHQ12 = (respuestas) => {
+    const resumen = {};
+    const preguntasCompletas = obtenerPreguntasCompletas();
+
+    for (let i = 0; i < preguntasCompletas.length; i++) {
+        const pregunta = preguntasCompletas[i];
+        const respuestaUsuario = obtenerRespuestaUsuario(respuestas, i + 1);
+        const puntos = respuestaUsuario.puntos || 0;
+
+        if (!resumen[pregunta.area]) {
+            resumen[pregunta.area] = { totalPuntos: 0, itemsElevados: 0 };
+        }
+
+        resumen[pregunta.area].totalPuntos += puntos;
+        if (puntos >= 2) {
+            resumen[pregunta.area].itemsElevados += 1;
+        }
+    }
+
+    return resumen;
 };
 
 // Función para generar análisis detallado

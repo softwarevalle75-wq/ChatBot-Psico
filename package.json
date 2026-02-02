@@ -14,7 +14,11 @@
     "dev-all": "npm run lint && nodemon ./start-all.js",
     "start-all": "node ./start-all.js",
     "test": "vitest run",
-    "gen:pdf": "node ./scripts/generatePdf.js"
+    "gen:pdf": "node ./scripts/generatePdf.js",
+    "gen:pdf:ghq12": "node ./scripts/generatePdf.js --type ghq12",
+    "gen:pdf:dass21": "node ./scripts/generatePdf.js --type dass21",
+    "gen:pdf:both": "npm run gen:pdf:ghq12 && npm run gen:pdf:dass21",
+    "build" : "npm i && npx prisma generate && npx prisma migrate dev --name init && npm run dev-all"
   },
   "prisma": {
     "seed": "node prisma/seed/seed.js"
