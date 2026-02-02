@@ -94,7 +94,7 @@ export const generarPDFResultados = async (numeroUsuario, puntaje, respuestas, u
                    .text(pregunta.texto)
                    .moveDown(0.3);
                 
-                doc.text(`Respuesta seleccionada: ${respuestaUsuario.texto} (${respuestaUsuario.puntos} puntos)`)
+                doc.text(`Respuesta seleccionada: ${respuestaUsuario.texto} - ${respuestaUsuario.area} (${respuestaUsuario.puntos} puntos)`)
                    .fontSize(10)
                    .font('Helvetica-Oblique')
                    .text(`Interpretación: ${respuestaUsuario.interpretacion}`)
@@ -178,18 +178,18 @@ const determinarCategoria = (puntaje, umbrales) => {
 // Función para obtener las preguntas completas (debes adaptarla a tu estructura)
 const obtenerPreguntasCompletas = () => {
     return [
-        { texto: "¿Ha podido concentrarse bien en lo que hace?" },
-        { texto: "¿Sus preocupaciones le han hecho perder mucho el sueño?" },
-        { texto: "¿Ha sentido que está desempeñando un papel útil en la vida?" },
-        { texto: "¿Se ha sentido capaz de tomar decisiones?" },
-        { texto: "¿Se ha sentido constantemente agobiado y en tensión?" },
-        { texto: "¿Ha sentido que no puede superar sus dificultades?" },
-        { texto: "¿Ha sido capaz de disfrutar de sus actividades normales de cada día?" },
-        { texto: "¿Ha sido capaz de hacer frente adecuadamente a sus problemas?" },
-        { texto: "¿Se ha sentido poco feliz o deprimido/a?" },
-        { texto: "¿Ha perdido confianza en sí mismo/a?" },
-        { texto: "¿Ha pensado que usted es una persona que no vale para nada?" },
-        { texto: "¿Se siente razonablemente feliz considerando todas las circunstancias?" }
+        { texto: "¿Ha podido concentrarse bien en lo que hace?", area: "Disfunción social" },
+        { texto: "¿Sus preocupaciones le han hecho perder mucho el sueño?", area: "Ansiedad / depresión" },
+        { texto: "¿Ha sentido que está desempeñando un papel útil en la vida?", area: "Disfunción social" },
+        { texto: "¿Se ha sentido capaz de tomar decisiones?", area: "Disfunción social" },
+        { texto: "¿Se ha sentido constantemente agobiado y en tensión?", area: "Ansiedad / depresión" },
+        { texto: "¿Ha sentido que no puede superar sus dificultades?", area: "Ansiedad / depresión" },
+        { texto: "¿Ha sido capaz de disfrutar de sus actividades normales de cada día?", area: "Ansiedad / depresión" },
+        { texto: "¿Ha sido capaz de hacer frente adecuadamente a sus problemas?", area: "Disfunción social" },
+        { texto: "¿Se ha sentido poco feliz o deprimido/a?", area: "Ansiedad / depresión" },
+        { texto: "¿Ha perdido confianza en sí mismo/a?", area: "Perdida de confianza" },
+        { texto: "¿Ha pensado que usted es una persona que no vale para nada?", area: "Perdida de confianza" },
+        { texto: "¿Se siente razonablemente feliz considerando todas las circunstancias?", area: "Ansiedad / depresión" }
     ];
 };
 
